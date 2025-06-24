@@ -108,10 +108,6 @@ spec:
   repo: https://helm.traefik.io/traefik
   targetNamespace: kube-system
   set:
-    additionalArguments[0]: "--certificatesresolvers.cloudflare.acme.email=jacek.borkowskiit@gmail.com"
-    additionalArguments[1]: "--certificatesresolvers.cloudflare.acme.storage=/data/acme.json"
-    additionalArguments[2]: "--certificatesresolvers.cloudflare.acme.dnschallenge.provider=cloudflare"
-    additionalArguments[3]: "--certificatesresolvers.cloudflare.acme.dnschallenge.delayBeforeCheck=0"
     additionalArguments[4]: "--log.level=DEBUG"
     additionalArguments[5]: "--entrypoints.web.address=:80"
     additionalArguments[6]: "--entrypoints.websecure.address=:443"
@@ -129,26 +125,6 @@ spec:
               scheme: https
       websecure:
         address: ":443"
-
-    certificatesResolvers:
-      cloudflareR:
-        acme:
-          email: jacek.borkowskiit@gmail.com
-          storage: /data/acme.json
-          dnsChallenge:
-            provider: cloudflare
-            delayBeforeCheck: 0s
-
-        http:
-          tls: 
-            certResolver: cloudflareR
-            domains:
-            - main: borkowskij.com
-              sans:
-                - '*. borkowskij.com'
-    envFrom:
-      - secretRef:
-          name: cloudflare-secret
 
     providers:
       kubernetesIngress:
@@ -256,6 +232,10 @@ function install_pi_hole(){
     echo "Pi-hole namespace already exists."
     return 0
   fi
+  kubectl delete secret wildcard-borkowskij-com --ignore-not-found
+kubectl get secret wildcard-borkowskij-com -n kube-system -o yaml | \
+sed 's/namespace: kube-system/namespace: default/' | \
+kubectl apply -f -
 
   cat <<EOF > /root/yaml/pihole-config.yaml
 # pihole-pv.yaml
@@ -391,6 +371,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: pihole-ingress
+  namespace: default
   annotations:
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
 spec:
@@ -409,7 +390,6 @@ spec:
   - hosts:
     - pihole.borkowskij.com
     secretName: wildcard-borkowskij-com
-
 EOF
 kubectl apply -f /root/yaml/pihole-config.yaml
 }
