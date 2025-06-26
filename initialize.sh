@@ -2,8 +2,6 @@
 set -euo pipefail
 EMAIL=$1 
 CF_TOKEN=$2
-IP_RANGE=$3
-CLOUDFLARE_API_TOKEN=$4
 if [[ -z "$PASS" ]]; then
   echo "Usage: $0 <ssh_password>"
   exit 1
@@ -12,7 +10,7 @@ fi
 function install_utils(){
   echo "🔧 Installing utilities..."
   apt-get update
-  apt-get install -y curl wget jq git
+  apt-get install -y curl wget jq git rsync vim
   mkdir -p /data || true
   mkdir -p /root/yaml || true
 
@@ -71,5 +69,20 @@ echo "$PASS" | sudo -S -i
 echo "$PASS" | sudo -S bash -c "$(declare -f install_utils);   install_utils"
 check_k3s
 wait_on_k3s
-git clone https://github.com/jborkows/k3sfun.git
+mkdir -p ~/.kube || true
+if [ ! -f ~/.kube/config ]; then
+  echo "Creating kube config directory..."
+  mkdir -p ~/.kube
+fi
+if [ -f ~/.kube/config ]; then
+  echo "Backing up existing kube config..."
+  echo "$PASS" | sudo -S cp /etc/rancher/k3s/k3s.yaml ~/.kube/config
+  echo "$PASS" | sudo -S chown $(id -u):$(id -g) ~/.kube/config
+  echo 'KUBECONFIG=~/.kube/config' >> ~/.bashrc
+echo 'kubectl() {
+  KUBECONFIG="${KUBECONFIG:-$HOME/.kube/config}" command kubectl "$@"
+ }' >> ~/.bashrc
+  echo "Kube config copied to ~/.kube/config"
+fi
+git clone https://github.com/jborkows/k3sfun.git || true
 echo "PLEASE LOG INTO SERVER AND RUN ./k3sfun/init.sh"

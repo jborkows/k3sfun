@@ -2,7 +2,7 @@
 echo "🔧 Installing MetalLB..."
 if  kubectl get ns metallb-system &>/dev/null; then
   echo "MetalLB namespace already exists."
-  return 0
+  exit 0
 fi
 if [[ -z "$IP_RANGE" ]]; then
   echo "Please set the IP_RANGE environment variable."
@@ -17,6 +17,7 @@ until kubectl get pods -n metallb-system | grep -q 'Running'; do
 done
 
 current_script_dir=$(dirname "$(readlink -f "$0")")
-sed "s/PORT/$IP_RANGE/g" $current_script_dir/metal.yaml.template | echo
-sed "s/PORT/$IP_RANGE/g" $current_script_dir/metal.yaml.template | kubectl apply -f -
+sed "s/IP_RANGE/$IP_RANGE/g" ${current_script_dir}/metal.yaml > /tmp/metal.yaml
+cat /tmp/metal.yaml 
+kubectl apply -f /tmp/metal.yaml
 

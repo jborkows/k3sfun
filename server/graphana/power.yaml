@@ -1,0 +1,63 @@
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: power-exporter
+  namespace: monitoring
+spec:
+  selector:
+    matchLabels:
+      app: power-exporter
+  template:
+    metadata:
+      labels:
+        app: power-exporter
+    spec:
+      containers:
+      - name: power-exporter
+        image: jborkows/powerusage:latest
+        ports:
+        - containerPort: 9109
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - name: sys-powercap
+          mountPath: /sys/class/powercap
+          readOnly: true
+      volumes:
+      - name: sys-powercap
+        hostPath:
+          path: /sys/class/powercap
+          type: Directory
+      imagePullSecrets:
+        - name: dockerhub-creds
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: power-exporter
+  namespace: monitoring
+  labels:
+    app: power-exporter
+spec:
+  selector:
+    app: power-exporter
+  ports:
+  - port: 9109
+    targetPort: 9109
+    name: http
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: power-exporter
+  namespace: monitoring
+  labels:
+    release: kube-prom-stack
+spec:
+  selector:
+    matchLabels:
+      app: power-exporter
+  endpoints:
+  - port: http
+    interval: 15s

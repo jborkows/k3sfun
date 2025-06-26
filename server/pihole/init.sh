@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-
-if kubectl get ns pihole &>/dev/null; then
+#check if pod pi hole with label app=pihole exists 
+if kubectl get pod -l "app=pihole" &>/dev/null; then
 	echo "Pi-hole namespace already exists."
 	exit 0
 fi
