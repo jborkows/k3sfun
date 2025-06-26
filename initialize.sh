@@ -232,11 +232,22 @@ function install_pi_hole(){
     echo "Pi-hole namespace already exists."
     return 0
   fi
-  kubectl delete secret wildcard-borkowskij-com --ignore-not-found
-kubectl get secret wildcard-borkowskij-com -n kube-system -o yaml | \
-sed 's/namespace: kube-system/namespace: default/' | \
-kubectl apply -f -
 
+  cat <<EOF > /root/yaml/defaul-wildcard.yaml
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: wildcard-borkowskij-com
+  namespace: default
+spec:
+  secretName: wildcard-borkowskij-com
+  dnsNames:
+  - '*.borkowskij.com'
+  issuerRef:
+    name: letsencrypt-dns
+    kind: ClusterIssuer
+EOF
+kubectl apply -f /root/yaml/defaul-wildcard.yaml
   cat <<EOF > /root/yaml/pihole-config.yaml
 # pihole-pv.yaml
 apiVersion: v1
