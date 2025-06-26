@@ -1,0 +1,53 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: pihole
+spec:
+  selector:
+    app: pihole
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+    - name: dns-udp
+      port: 53
+      protocol: UDP
+      targetPort: 53
+    - name: dns-tcp
+      port: 53
+      protocol: TCP
+      targetPort: 53
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pihole-lb
+spec:
+  selector:
+    app: pihole
+  type: LoadBalancer
+  ports:
+  - name: dns-udp
+    port: 53
+    protocol: UDP
+    targetPort: 53
+  - name: dns-tcp
+    port: 53
+    protocol: TCP
+    targetPort: 53
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pihole-web
+spec:
+  ports:
+  - nodePort: 31126
+    port: 80
+    protocol: TCP
+    targetPort: 80
+  selector:
+    app: pihole
+  type: LoadBalancer
+

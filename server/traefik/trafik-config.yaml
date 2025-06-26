@@ -1,0 +1,35 @@
+apiVersion: helm.cattle.io/v1
+kind: HelmChart
+metadata:
+  name: traefik
+  namespace: kube-system
+spec:
+  chart: traefik
+  repo: https://helm.traefik.io/traefik
+  targetNamespace: kube-system
+  set:
+    additionalArguments[4]: "--log.level=DEBUG"
+    additionalArguments[5]: "--entrypoints.web.address=:80"
+    additionalArguments[6]: "--entrypoints.websecure.address=:443"
+  valuesContent: |-
+    api:
+      dashboard: true
+
+    entryPoints:
+      web:
+        address: ":80"
+        http:
+          redirections:
+            entryPoint:
+              to: websecure
+              scheme: https
+      websecure:
+        address: ":443"
+
+    providers:
+      kubernetesIngress:
+        enabled: true
+        publishedService:
+          enabled: true
+      kubernetesCRD:
+        enabled: true

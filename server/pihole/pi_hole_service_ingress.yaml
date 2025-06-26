@@ -1,0 +1,23 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: pihole-ingress
+  namespace: default
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+spec:
+  rules:
+  - host: pihole.DOMAIN
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: pihole
+            port:
+              number: 80
+  tls:
+  - hosts:
+    - pihole.DOMAIN
+    secretName: CERTNAME

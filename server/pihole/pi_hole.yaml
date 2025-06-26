@@ -1,0 +1,49 @@
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: CERTNAME
+  namespace: default
+spec:
+  secretName: CERTNAME
+  dnsNames:
+  - '*.DOMAIN'
+  issuerRef:
+    name: letsencrypt-dns
+    kind: ClusterIssuer
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pihole-pv
+spec:
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: /data/pihole
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pihole-dnsmasq-pvc
+  namespace: default
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pihole-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+---
