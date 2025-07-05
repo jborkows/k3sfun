@@ -34,3 +34,5 @@ bash pihole/init.sh
 echo "Graphana "
 bash graphana/init.sh
 bash graphana/power.sh
+bash filebrowser-externaldrive/init.sh
+bash mainpage/init.sh
