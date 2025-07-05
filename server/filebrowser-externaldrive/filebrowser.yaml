@@ -20,6 +20,8 @@ spec:
         volumeMounts:
         - name: files
           mountPath: /srv
+        - name: fd-db
+          mountPath: /database
         ports:
         - containerPort: 80
       volumes:
@@ -27,6 +29,10 @@ spec:
         hostPath:
           path: /mnt/external/drive
           type: Directory
+      - name: fd-db
+        hostPath:
+          path: /mnt/external/filebrowser-db
+          type: DirectoryOrCreate
 ---
 apiVersion: v1
 kind: Service
