@@ -24,10 +24,8 @@ spec:
           mountPath: /usr/share/nginx/html
       volumes:
       - name: site-content
-        hostPath:
-          # Change this path to where you store your static files on the node
-          path: /mnt/external/mainpage
-          type: Directory
+        configMap:
+          name: dashboard-links-site
 ---
 apiVersion: v1
 kind: Service
@@ -64,5 +62,4 @@ spec:
   tls:
   - hosts:
     - home.DOMAIN
-
 

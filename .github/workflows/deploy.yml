@@ -18,12 +18,10 @@ jobs:
     container:
       image: bitnami/kubectl:1.30
       options: --user 0
-      volumes:
-        - /etc/rancher/k3s:/etc/rancher/k3s:ro
-        - /mnt/external:/mnt/external
     env:
       DOMAIN_NAME: ${{ secrets.DOMAIN_NAME }}
-      KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+      KUBECONFIG_B64: ${{ secrets.KUBECONFIG_B64 }}
+      KUBECONFIG: ${{ github.workspace }}/.kubeconfig
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -36,28 +34,42 @@ jobs:
             echo "Missing required secret: DOMAIN_NAME" >&2
             exit 1
           fi
-          if [[ -z "${KUBECONFIG:-}" || ! -f "${KUBECONFIG}" ]]; then
-            echo "KUBECONFIG is not set or not readable at: ${KUBECONFIG:-<unset>}" >&2
+          if [[ -z "${KUBECONFIG_B64:-}" ]]; then
+            echo "Missing required secret: KUBECONFIG_B64" >&2
             exit 1
           fi
           echo "::add-mask::${DOMAIN_NAME}"
 
-      - name: Sync mainpage files (replace DOMAIN)
+      - name: Configure kubeconfig
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p /mnt/external/mainpage
-          sed \
-            -e "s/DOMAIN_NAME/${DOMAIN_NAME}/g" \
-            -e "s/DOMAIN/${DOMAIN_NAME}/g" \
-            "mainpage/index.html" > "/mnt/external/mainpage/index.html"
-          cp -a mainpage/*.css mainpage/*.js mainpage/*.svg /mnt/external/mainpage/
+          echo "${KUBECONFIG_B64}" | base64 -d > "${KUBECONFIG}"
+          chmod 600 "${KUBECONFIG}"
+          kubectl version --client=true
 
       - name: Ensure namespace exists
         shell: bash
         run: |
           set -euo pipefail
           kubectl get namespace applications >/dev/null 2>&1 || kubectl create namespace applications
+
+      - name: Update mainpage ConfigMap (replace DOMAIN)
+        shell: bash
+        run: |
+          set -euo pipefail
+          tmp_dir="$(mktemp -d)"
+          sed \
+            -e "s/DOMAIN_NAME/${DOMAIN_NAME}/g" \
+            -e "s/DOMAIN/${DOMAIN_NAME}/g" \
+            "mainpage/index.html" > "${tmp_dir}/index.html"
+          cp -a mainpage/*.css mainpage/*.js mainpage/*.svg "${tmp_dir}/"
+          kubectl -n applications create configmap dashboard-links-site \
+            --from-file="${tmp_dir}/index.html" \
+            --from-file="${tmp_dir}/style.css" \
+            --from-file="${tmp_dir}/script.js" \
+            --from-file="${tmp_dir}/mainpage.svg" \
+            --dry-run=client -o yaml | kubectl apply -f -
 
       - name: Deploy manifest (replace DOMAIN_NAME / DOMAIN)
         shell: bash
