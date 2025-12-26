@@ -17,7 +17,7 @@ jobs:
     runs-on: k3s-home-runner
     container:
       image: bitnami/kubectl:latest
-      options: --user 0
+      options: --user 0 --network host
     env:
       DOMAIN_NAME: ${{ secrets.DOMAIN_NAME }}
       KUBECONFIG_B64: ${{ secrets.KUBECONFIG_B64 }}
@@ -46,7 +46,7 @@ jobs:
           set -euo pipefail
           echo "${KUBECONFIG_B64}" | base64 -d > "${KUBECONFIG}"
           chmod 600 "${KUBECONFIG}"
-          kubectl version --client=true
+          kubectl get --raw='/readyz' >/dev/null
 
       - name: Ensure namespace exists
         shell: bash
