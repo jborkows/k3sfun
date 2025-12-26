@@ -28,7 +28,10 @@ spec:
             - name: BASE_URL
               value: "https://shoppinglist.DOMAIN"
             - name: AUTH_DISABLED
-              value: "1"
+              value: "0"
+          envFrom:
+            - secretRef:
+                name: shoppinglist-oidc
           volumeMounts:
             - name: data
               mountPath: /app/data
