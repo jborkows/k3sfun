@@ -1,0 +1,86 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shoppinglist
+  namespace: applications
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: shoppinglist
+  template:
+    metadata:
+      labels:
+        app: shoppinglist
+    spec:
+      imagePullSecrets:
+        - name: dockerhub-creds
+      containers:
+        - name: shoppinglist
+          image: docker.io/DOCKERHUB_USER/shopping:IMAGE_TAG
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          env:
+            - name: ADDR
+              value: ":8080"
+            - name: BASE_URL
+              value: "https://shoppinglist.DOMAIN"
+            - name: AUTH_DISABLED
+              value: "1"
+          volumeMounts:
+            - name: data
+              mountPath: /app/data
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: shoppinglist-data
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: shoppinglist-data
+  namespace: applications
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: shoppinglist
+  namespace: applications
+spec:
+  selector:
+    app: shoppinglist
+  ports:
+    - port: 80
+      targetPort: 8080
+      name: http
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: shoppinglist-ingress
+  namespace: applications
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+spec:
+  rules:
+    - host: shoppinglist.DOMAIN
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: shoppinglist
+                port:
+                  number: 80
+  tls:
+    - hosts:
+        - shoppinglist.DOMAIN

@@ -1,4 +1,4 @@
-name: Deploy mainpage
+name: Deploy shoppinglist
 
 on:
   push:
@@ -8,13 +8,72 @@ on:
   workflow_dispatch: {}
 
 concurrency:
-  group: deploy-${{ github.ref }}
+  group: deploy-shoppinglist-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  deploy:
-    name: Apply Kubernetes manifest
+  build:
+    name: Build and push image
     runs-on: k3s-home-runner
+    container:
+      image: docker:27-git
+      options: --user 0
+    services:
+      docker:
+        image: docker:27-dind
+        options: --privileged
+        env:
+          DOCKER_TLS_CERTDIR: ""
+    env:
+      DOCKER_HOST: tcp://docker:2375
+      DOCKER_TLS_CERTDIR: ""
+      DOCKERHUB_USER: ${{ secrets.DOCKERHUB_USER }}
+      DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
+      IMAGE_REPO: docker.io/${{ secrets.DOCKERHUB_USER }}/shopping
+      IMAGE_TAG: ${{ github.sha }}
+    steps:
+      - name: Validate inputs
+        shell: sh
+        run: |
+          set -eu
+          if [ -z "${DOCKERHUB_USER:-}" ]; then
+            echo "Missing required secret: DOCKERHUB_USER" >&2
+            exit 1
+          fi
+          if [ -z "${DOCKERHUB_PASSWORD:-}" ]; then
+            echo "Missing required secret: DOCKERHUB_PASSWORD" >&2
+            exit 1
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Docker login
+        shell: sh
+        run: |
+          set -eu
+          echo "${DOCKERHUB_PASSWORD}" | docker login -u "${DOCKERHUB_USER}" --password-stdin
+
+      - name: Build
+        shell: sh
+        run: |
+          set -eu
+          docker build \
+            -t "${IMAGE_REPO}:${IMAGE_TAG}" \
+            -t "${IMAGE_REPO}:latest" \
+            .
+
+      - name: Push
+        shell: sh
+        run: |
+          set -eu
+          docker push "${IMAGE_REPO}:${IMAGE_TAG}"
+          docker push "${IMAGE_REPO}:latest"
+
+  deploy:
+    name: Deploy to cluster
+    runs-on: k3s-home-runner
+    needs: [build]
     container:
       image: bitnami/kubectl:latest
       options: --user 0 --network host
@@ -22,6 +81,8 @@ jobs:
       DOMAIN_NAME: ${{ secrets.DOMAIN_NAME }}
       KUBECONFIG_B64: ${{ secrets.KUBECONFIG_B64 }}
       KUBECONFIG: ${{ github.workspace }}/.kubeconfig
+      DOCKERHUB_USER: ${{ secrets.DOCKERHUB_USER }}
+      IMAGE_TAG: ${{ github.sha }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -36,6 +97,10 @@ jobs:
           fi
           if [[ -z "${KUBECONFIG_B64:-}" ]]; then
             echo "Missing required secret: KUBECONFIG_B64" >&2
+            exit 1
+          fi
+          if [[ -z "${DOCKERHUB_USER:-}" ]]; then
+            echo "Missing required secret: DOCKERHUB_USER" >&2
             exit 1
           fi
           echo "::add-mask::${DOMAIN_NAME}"
@@ -54,29 +119,14 @@ jobs:
           set -euo pipefail
           kubectl get namespace applications >/dev/null 2>&1 || kubectl create namespace applications
 
-      - name: Update mainpage ConfigMap (replace DOMAIN)
+      - name: Deploy manifest (replace DOMAIN)
         shell: bash
         run: |
           set -euo pipefail
-          tmp_dir="$(mktemp -d)"
+          manifest_path="k8s/shoppinglist.yaml"
           sed \
             -e "s/DOMAIN_NAME/${DOMAIN_NAME}/g" \
             -e "s/DOMAIN/${DOMAIN_NAME}/g" \
-            "mainpage/index.html" > "${tmp_dir}/index.html"
-          cp -a mainpage/*.css mainpage/*.js mainpage/*.svg "${tmp_dir}/"
-          kubectl -n applications create configmap dashboard-links-site \
-            --from-file="${tmp_dir}/index.html" \
-            --from-file="${tmp_dir}/style.css" \
-            --from-file="${tmp_dir}/script.js" \
-            --from-file="${tmp_dir}/mainpage.svg" \
-            --dry-run=client -o yaml | kubectl apply -f -
-
-      - name: Deploy manifest (replace DOMAIN_NAME / DOMAIN)
-        shell: bash
-        run: |
-          set -euo pipefail
-          manifest_path="mainpage/mainpage.yml"
-          sed \
-            -e "s/DOMAIN_NAME/${DOMAIN_NAME}/g" \
-            -e "s/DOMAIN/${DOMAIN_NAME}/g" \
+            -e "s/DOCKERHUB_USER/${DOCKERHUB_USER}/g" \
+            -e "s/IMAGE_TAG/${IMAGE_TAG}/g" \
             "$manifest_path" | kubectl apply -f -

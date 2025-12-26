@@ -1,0 +1,216 @@
+package views
+
+import (
+	"shopping/internal/domain/products"
+	"strconv"
+)
+
+templ ProductsContent(data ProductsPageData) {
+	<div class="row">
+		<h1>Zapasy</h1>
+		<div class="spacer"></div>
+		<a class={ productsTabClass(!data.OnlyMissing) } href={ "/products" + productsListQS(false, data.NameQuery, data.SelectedGroupIDs, 1) }>Wszystko</a>
+		<a class={ productsTabClass(data.OnlyMissing) } href={ "/products" + productsListQS(true, data.NameQuery, data.SelectedGroupIDs, 1) }>Braki / niski stan</a>
+	</div>
+
+	<section class="card">
+		<h2>Dodaj produkt</h2>
+		<form hx-post={ "/products" + productsListQS(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, data.Page) } hx-target="#products-list" hx-swap="outerHTML">
+			<div class="form-row">
+				<input name="name" placeholder="np. marchewka" required />
+				<input class="num-input" type="number" step="0.1" min="0" name="quantity" value="0" />
+				<select name="unit">
+					@UnitOptions(products.UnitPiece)
+				</select>
+				<input class="num-input" type="number" step="0.1" min="0" name="min_quantity" value="0" />
+				<select name="group_id">
+					<option value="">(brak grupy)</option>
+					for _, g := range data.Groups {
+						<option value={ strconv.FormatInt(int64(g.ID), 10) }>{ g.Name }</option>
+					}
+				</select>
+				<button type="submit">Add</button>
+			</div>
+		</form>
+
+		<h2>Utwórz grupę</h2>
+		<form hx-post={ "/groups" + productsListQS(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, data.Page) } hx-swap="none">
+			<div class="form-row">
+				<input name="name" placeholder="np. warzywa" required />
+				<button type="submit">Utwórz</button>
+			</div>
+		</form>
+	</section>
+
+	@ProductsListContent(ProductsListData{
+		Groups:           data.Groups,
+		Products:         data.Products,
+		OnlyMissing:      data.OnlyMissing,
+		NameQuery:        data.NameQuery,
+		SelectedGroupIDs: data.SelectedGroupIDs,
+		Page:             data.Page,
+		TotalPages:       data.TotalPages,
+		Total:            data.Total,
+	})
+}
+
+templ ProductsList(data ProductsListData) {
+	@ProductsListContent(data)
+}
+
+templ ProductsListContent(data ProductsListData) {
+	<section class="card" id="products-list" sse-swap="products-list" hx-swap="outerHTML">
+		<div class="row">
+			<h2>{ productsTitle(data.OnlyMissing) }</h2>
+			<div class="spacer"></div>
+			<span class="muted">Wyniki: { strconv.FormatInt(data.Total, 10) }</span>
+		</div>
+
+		<form
+			id="products-filters"
+			class="filters"
+			method="get"
+			action="/products"
+			hx-get="/partials/products"
+			hx-target="#products-list"
+			hx-swap="outerHTML"
+			hx-trigger="submit, keyup changed delay:250ms from:#products-q"
+		>
+			<input type="hidden" name="missing" value={ boolToQuery(data.OnlyMissing) } />
+			<input type="hidden" name="page" value="1" />
+			<div class="form-row">
+				<input id="products-q" name="q" value={ data.NameQuery } placeholder="Szukaj po nazwie…" />
+
+				<details class="multiselect">
+					<summary>Grupy (<span class="ms-count">{ strconv.FormatInt(int64(len(data.SelectedGroupIDs)), 10) }</span>)</summary>
+					<div class="multiselect-popover" role="listbox" aria-label="Grupy">
+						<input class="ms-search" type="search" placeholder="Szukaj grup…" autocomplete="off" data-ms-filter="groups" />
+						for _, g := range data.Groups {
+							<label class="ms-option">
+								<input type="checkbox" name="group_id" value={ strconv.FormatInt(int64(g.ID), 10) } checked?={ groupSelected(data.SelectedGroupIDs, g.ID) } />
+								{ g.Name }
+							</label>
+						}
+					</div>
+				</details>
+
+				<button class="secondary" type="submit">Filtruj</button>
+			</div>
+		</form>
+
+		if data.TotalPages > 1 {
+			<div class="row pager">
+				if data.Page > 1 {
+					<a
+						class="button secondary"
+						href={ "/products" + productsListQS(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, maxInt64(1, data.Page-1)) }
+						hx-get={ "/partials/products" + productsListQS(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, maxInt64(1, data.Page-1)) }
+						hx-target="#products-list"
+						hx-swap="outerHTML"
+					>Poprzednia</a>
+				} else {
+					<span class="button secondary disabled">Poprzednia</span>
+				}
+				<span class="muted">Strona { strconv.FormatInt(data.Page, 10) } z { strconv.FormatInt(data.TotalPages, 10) }</span>
+				if data.Page < data.TotalPages {
+					<a
+						class="button secondary"
+						href={ "/products" + productsListQS(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, minInt64(data.TotalPages, data.Page+1)) }
+						hx-get={ "/partials/products" + productsListQS(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, minInt64(data.TotalPages, data.Page+1)) }
+						hx-target="#products-list"
+						hx-swap="outerHTML"
+					>Następna</a>
+				} else {
+					<span class="button secondary disabled">Następna</span>
+				}
+			</div>
+		}
+
+		<table class="table">
+			<thead>
+				<tr>
+					<th>Nazwa</th>
+					<th>Grupa</th>
+					<th class="num">Ilość</th>
+					<th class="num">Min</th>
+					<th>Brak</th>
+					<th>Aktualizacja</th>
+					<th></th>
+				</tr>
+			</thead>
+			<tbody>
+				for _, p := range data.Products {
+					<tr class={ productRowClass(p) }>
+						<td>
+							<div class="product-cell">
+								<img class="product-icon" width="48" height="48" src={ "/static/icons/" + productIconKey(p) + ".svg" } alt="" />
+								<span class="product-name">{ p.Name }</span>
+							</div>
+						</td>
+
+						<td>
+							<details class="multiselect singleselect">
+								<summary><span class="ss-current">{ productCurrentGroupLabel(p) }</span></summary>
+								<div class="multiselect-popover" role="listbox" aria-label="Grupa">
+									<input class="ms-search" type="search" placeholder="Szukaj grup…" autocomplete="off" data-ms-filter="groups" />
+
+									<label class="ms-option">
+										<input type="radio" name="group_id" value="" hx-post={ productGroupPostURL(p, productsListQS(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, data.Page)) } hx-target="#products-list" hx-swap="outerHTML" checked?={ p.GroupID == nil } />
+										(brak grupy)
+									</label>
+									for _, g := range data.Groups {
+										<label class="ms-option">
+											<input type="radio" name="group_id" value={ strconv.FormatInt(int64(g.ID), 10) } hx-post={ productGroupPostURL(p, productsListQS(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, data.Page)) } hx-target="#products-list" hx-swap="outerHTML" checked?={ p.GroupID != nil && *p.GroupID == g.ID } />
+											{ g.Name }
+										</label>
+									}
+								</div>
+							</details>
+						</td>
+
+						<td class="num">
+							<div class="form-row">
+								<form hx-post={ "/products/" + strconv.FormatInt(int64(p.ID), 10) + "/qty" + productsListQS(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, data.Page) } hx-target="#products-list" hx-swap="outerHTML" hx-trigger="change">
+									<input class="num-input" type="number" step="0.1" min="0" name="quantity" value={ formatQty(p.Quantity) } />
+								</form>
+								<span class="muted">{ string(p.Unit) }</span>
+							</div>
+						</td>
+
+						<td class="num">
+							<div class="form-row">
+								<form hx-post={ "/products/" + strconv.FormatInt(int64(p.ID), 10) + "/min" + productsListQS(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, data.Page) } hx-target="#products-list" hx-swap="outerHTML" hx-trigger="change">
+									<input class="num-input" type="number" step="0.1" min="0" name="min_quantity" value={ formatQty(p.MinQuantity) } />
+								</form>
+							</div>
+						</td>
+
+						<td>
+							<form hx-post={ "/products/" + strconv.FormatInt(int64(p.ID), 10) + "/missing" + productsListQS(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, data.Page) } hx-target="#products-list" hx-swap="outerHTML" hx-trigger="change">
+								<input type="checkbox" name="missing" checked?={ p.Missing } />
+							</form>
+						</td>
+
+						<td class="muted">{ p.UpdatedAt.Format("2006-01-02 15:04") }</td>
+
+						<td>
+							<form hx-post={ "/shopping-list/from-product/" + strconv.FormatInt(int64(p.ID), 10) } hx-swap="none">
+								<button type="submit">Na listę</button>
+							</form>
+						</td>
+					</tr>
+				}
+				if len(data.Products) == 0 {
+					<tr><td colspan="7" class="muted">Brak produktów.</td></tr>
+				}
+			</tbody>
+		</table>
+	</section>
+}
+
+templ UnitOptions(selected products.Unit) {
+	for _, u := range []products.Unit{products.UnitKG, products.UnitLiter, products.UnitPiece, products.UnitGram} {
+		<option value={ string(u) } selected?={ string(u) == normalizedUnit(selected) }>{ string(u) }</option>
+	}
+}
+

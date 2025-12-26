@@ -1,0 +1,88 @@
+package views
+
+import "shopping/internal/domain/products"
+
+templ ShoppingListCard(data ShoppingListData) {
+	@ShoppingListCardContent(data)
+}
+
+templ ShoppingListCardContent(data ShoppingListData) {
+	<section class="card" id="shopping-list" sse-swap="shopping-list" hx-swap="outerHTML">
+		<h2>Lista zakupów</h2>
+		<form hx-post="/shopping-list" hx-target="#shopping-list" hx-swap="outerHTML">
+			<div class="form-row">
+				<input
+					name="name"
+					placeholder="np. mleko"
+					required
+					autocomplete="off"
+					hx-get="/partials/product-suggestions"
+					hx-target="#product-suggestions"
+					hx-swap="innerHTML"
+					hx-trigger="keyup changed delay:200ms"
+				/>
+				<input class="num-input" type="number" step="0.1" min="0.1" name="quantity" value="1" required />
+				<select name="unit">
+					@UnitOptions(products.UnitPiece)
+				</select>
+				<button type="submit">Dodaj</button>
+			</div>
+			<div id="product-suggestions"></div>
+		</form>
+
+		if len(data.Items) == 0 {
+			<p class="muted">Brak produktów na liście. Użyj „Na listę” w zapasach albo dodaj ręcznie powyżej.</p>
+		} else {
+			<div class="sl-items">
+				for _, item := range data.Items {
+					<div class="sl-item">
+						<div class="sl-top">
+							<div class={ shoppingNameClass(item.Done) }>
+								{ item.Name }
+								if shoppingGroupLabel(item) != "" {
+									<span class="muted">({ shoppingGroupLabel(item) })</span>
+								}
+							</div>
+						</div>
+
+						<div class="sl-mid">
+							<img class="sl-icon" width="32" height="32" src={ shoppingIconSrc(item) } alt="" />
+
+							<form class="sl-qty" hx-patch={ "/shopping-list/items/" + shoppingItemID(item) } hx-target="#shopping-list" hx-swap="outerHTML" hx-trigger="change">
+								<input class="num-input" type="number" step="0.1" min="0.1" name="quantity" value={ formatQty(item.Quantity) } />
+								<select name="unit">
+									@UnitOptions(item.Unit)
+								</select>
+							</form>
+
+							<form class="sl-done-form" hx-patch={ "/shopping-list/items/" + shoppingItemID(item) } hx-target="#shopping-list" hx-swap="outerHTML">
+								<input type="hidden" name="done" value={ shoppingNextDone(item.Done) } />
+								<button class={ shoppingDoneBtnClass(item.Done) } type="submit" aria-label="Zrobione">
+									if item.Done {
+										✅
+									} else {
+										<span class="sl-done-empty" aria-hidden="true"></span>
+									}
+								</button>
+							</form>
+
+							<div class="sl-right">
+								if item.ProductID == nil {
+									<form hx-post={ "/shopping-list/items/" + shoppingItemID(item) + "/product" } hx-swap="none">
+										<button class="icon-btn" type="submit" aria-label="Dodaj do zapasów">
+											<img class="icon" src="/static/icons/plus.svg" alt="" />
+										</button>
+									</form>
+								}
+								<form class="sl-delete" hx-delete={ "/shopping-list/items/" + shoppingItemID(item) } hx-target="#shopping-list" hx-swap="outerHTML">
+									<button class="icon-btn secondary" type="submit" aria-label="Usuń">🗑️</button>
+								</form>
+							</div>
+						</div>
+					</div>
+				}
+			</div>
+		}
+	</section>
+}
+

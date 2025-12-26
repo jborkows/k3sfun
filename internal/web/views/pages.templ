@@ -1,0 +1,124 @@
+package views
+
+import (
+	"strconv"
+	"strings"
+	"time"
+)
+
+templ ProductsPage(data ProductsPageData) {
+	<!doctype html>
+	<html lang="en">
+		<head>
+			<meta charset="utf-8" />
+			<meta name="viewport" content="width=device-width, initial-scale=1" />
+			<title>{ data.Base.Title }</title>
+			<link rel="stylesheet" href={ "/static/app.css?v=" + data.Base.StaticVersion } />
+			<script src={ data.Base.HTMXSrc }></script>
+			<script src="https://unpkg.com/htmx.org@1.9.12/dist/ext/sse.js"></script>
+			<script src={ "/static/products.js?v=" + data.Base.StaticVersion }></script>
+		</head>
+		<body
+			hx-ext="sse"
+			sse-connect={ productsEventsQS(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, data.Page) }
+		>
+			<script src={ "/static/client_id.js?v=" + data.Base.StaticVersion }></script>
+			@Topbar(data.Base)
+			<main class="container">
+				@ProductsContent(data)
+			</main>
+			<footer class="container footer">
+				<span>© { strconv.Itoa(time.Now().Year()) }</span>
+			</footer>
+		</body>
+	</html>
+}
+
+templ AdminPage(data AdminPageData) {
+	<!doctype html>
+	<html lang="en">
+		<head>
+			<meta charset="utf-8" />
+			<meta name="viewport" content="width=device-width, initial-scale=1" />
+			<title>{ data.Base.Title }</title>
+			<link rel="stylesheet" href={ "/static/app.css?v=" + data.Base.StaticVersion } />
+			<script src={ data.Base.HTMXSrc }></script>
+			<script src="https://unpkg.com/htmx.org@1.9.12/dist/ext/sse.js"></script>
+		</head>
+		<body>
+			@Topbar(data.Base)
+			<main class="container">
+				@AdminContent()
+			</main>
+			<footer class="container footer">
+				<span>© { strconv.Itoa(time.Now().Year()) }</span>
+			</footer>
+		</body>
+	</html>
+}
+
+templ ShoppingListPage(data ShoppingListPageData) {
+	<!doctype html>
+	<html lang="en">
+		<head>
+			<meta charset="utf-8" />
+			<meta name="viewport" content="width=device-width, initial-scale=1" />
+			<title>{ data.Base.Title }</title>
+			<link rel="stylesheet" href={ "/static/app.css?v=" + data.Base.StaticVersion } />
+			<script src={ data.Base.HTMXSrc }></script>
+			<script src="https://unpkg.com/htmx.org@1.9.12/dist/ext/sse.js"></script>
+		</head>
+		<body
+			hx-ext="sse"
+			sse-connect="/events?topic=shopping-list"
+		>
+			<script src={ "/static/client_id.js?v=" + data.Base.StaticVersion }></script>
+			@Topbar(data.Base)
+			<main class="container">
+				<div class="row">
+					<h1>Lista zakupów</h1>
+					<div class="spacer"></div>
+				</div>
+				@ShoppingListCard(ShoppingListData{Items: data.Items})
+			</main>
+			<footer class="container footer">
+				<span>© { strconv.Itoa(time.Now().Year()) }</span>
+			</footer>
+		</body>
+	</html>
+}
+
+templ Topbar(base BaseData) {
+	<header class="topbar">
+		<div class="container topbar-row">
+			<div class="brand"><a href="/products">shopping</a></div>
+			<nav class="nav">
+				<a href="/products">Zapasy</a>
+				<a href="/shopping-list">Lista zakupów</a>
+				if base.IsAdmin {
+					<a href="/admin">Admin</a>
+				}
+			</nav>
+			<div class="spacer"></div>
+			if base.User != nil {
+				<div class="user">
+					<span class="user-name">
+						if strings.TrimSpace(base.User.Name) != "" {
+							{ base.User.Name }
+						} else {
+							{ base.User.Email }
+						}
+					</span>
+					<form method="post" action="/logout">
+						<button class="link" type="submit">Wyloguj</button>
+					</form>
+				</div>
+			} else {
+				<div class="user">
+					<a class="link" href="/login">Zaloguj</a>
+				</div>
+			}
+		</div>
+	</header>
+}
+

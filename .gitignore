@@ -1,1 +1,11 @@
-envfile
+.air.toml.tmp
+/.cache/
+/.gocache/
+/.gomodcache/
+/tmp/
+/bin/
+/data/
+*.db
+*.db-shm
+*.db-wal
+.env
