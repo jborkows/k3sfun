@@ -16,7 +16,7 @@ jobs:
     name: Apply Kubernetes manifest
     runs-on: k3s-home-runner
     container:
-      image: bitnami/kubectl:1.30
+      image: bitnami/kubectl:latest
       options: --user 0
     env:
       DOMAIN_NAME: ${{ secrets.DOMAIN_NAME }}
