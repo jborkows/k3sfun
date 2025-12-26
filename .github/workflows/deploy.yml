@@ -1,0 +1,55 @@
+name: Deploy mainpage
+
+on:
+  push:
+    branches: [master]
+    tags:
+      - "deploy*"
+  workflow_dispatch: {}
+
+jobs:
+  deploy:
+    name: Apply Kubernetes manifest
+    runs-on: self-hosted
+    env:
+      DOMAIN_NAME: ${{ secrets.DOMAIN_NAME }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "${DOMAIN_NAME:-}" ]]; then
+            echo "Missing required secret: DOMAIN_NAME" >&2
+            exit 1
+          fi
+          echo "::add-mask::${DOMAIN_NAME}"
+
+      - name: Sync mainpage files (replace DOMAIN)
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /mnt/external/mainpage
+          sed \
+            -e "s/DOMAIN_NAME/${DOMAIN_NAME}/g" \
+            -e "s/DOMAIN/${DOMAIN_NAME}/g" \
+            "mainpage/index.html" > "/mnt/external/mainpage/index.html"
+          cp -a mainpage/*.css mainpage/*.js mainpage/*.svg /mnt/external/mainpage/
+
+      - name: Ensure namespace exists
+        shell: bash
+        run: |
+          set -euo pipefail
+          kubectl get namespace applications >/dev/null 2>&1 || kubectl create namespace applications
+
+      - name: Deploy manifest (replace DOMAIN_NAME / DOMAIN)
+        shell: bash
+        run: |
+          set -euo pipefail
+          manifest_path="mainpage/mainpage.yml"
+          sed \
+            -e "s/DOMAIN_NAME/${DOMAIN_NAME}/g" \
+            -e "s/DOMAIN/${DOMAIN_NAME}/g" \
+            "$manifest_path" | kubectl apply -f -

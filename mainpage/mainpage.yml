@@ -1,0 +1,68 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: applications
+  name: dashboard-links
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dashboard-links
+  template:
+    metadata:
+      labels:
+        app: dashboard-links
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:stable-alpine
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: site-content
+          mountPath: /usr/share/nginx/html
+      volumes:
+      - name: site-content
+        hostPath:
+          # Change this path to where you store your static files on the node
+          path: /mnt/external/mainpage
+          type: Directory
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: applications
+  name: dashboard-links
+spec:
+  selector:
+    app: dashboard-links
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: mainpage-ingress
+  namespace: applications
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+spec:
+  rules:
+  - host: home.DOMAIN
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: dashboard-links
+            port:
+              number: 80
+  tls:
+  - hosts:
+    - home.DOMAIN
+
+
