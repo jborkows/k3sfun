@@ -7,10 +7,14 @@ on:
       - "deploy*"
   workflow_dispatch: {}
 
+concurrency:
+  group: deploy-mainpage-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   deploy:
     name: Apply Kubernetes manifest
-    runs-on: self-hosted
+    runs-on: k3s-home-runner 
     env:
       DOMAIN_NAME: ${{ secrets.DOMAIN_NAME }}
     steps:
