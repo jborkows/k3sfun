@@ -16,11 +16,11 @@ jobs:
     name: Build and push image
     runs-on: k3s-home-runner
     container:
-      image: docker:27-git
+      image: docker:git
       options: --user 0
     services:
       docker:
-        image: docker:27-dind
+        image: docker:dind
         options: --privileged
         env:
           DOCKER_TLS_CERTDIR: ""
