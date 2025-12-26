@@ -8,15 +8,22 @@ on:
   workflow_dispatch: {}
 
 concurrency:
-  group: deploy-mainpage-${{ github.ref }}
+  group: deploy-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   deploy:
     name: Apply Kubernetes manifest
-    runs-on: k3s-home-runner 
+    runs-on: k3s-home-runner
+    container:
+      image: bitnami/kubectl:1.30
+      options: --user 0
+      volumes:
+        - /etc/rancher/k3s:/etc/rancher/k3s:ro
+        - /mnt/external:/mnt/external
     env:
       DOMAIN_NAME: ${{ secrets.DOMAIN_NAME }}
+      KUBECONFIG: /etc/rancher/k3s/k3s.yaml
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -27,6 +34,10 @@ jobs:
           set -euo pipefail
           if [[ -z "${DOMAIN_NAME:-}" ]]; then
             echo "Missing required secret: DOMAIN_NAME" >&2
+            exit 1
+          fi
+          if [[ -z "${KUBECONFIG:-}" || ! -f "${KUBECONFIG}" ]]; then
+            echo "KUBECONFIG is not set or not readable at: ${KUBECONFIG:-<unset>}" >&2
             exit 1
           fi
           echo "::add-mask::${DOMAIN_NAME}"
