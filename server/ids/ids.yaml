@@ -1,0 +1,80 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  namespace: applications
+  name: tsidp-secret
+type: Opaque
+stringData:
+  ts-authkey: "TZ_TOKEN"
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: tsidp-pv
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: local-storage
+  hostPath:
+    path: /mnt/external/tsidp-data
+    type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  namespace: applications
+  name: tsidp-data-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-storage
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: applications
+  name: tsidp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tsidp
+  template:
+    metadata:
+      labels:
+        app: tsidp
+    spec:
+      securityContext:
+        fsGroup: 1000
+        runAsUser: 1000
+        runAsGroup: 1000
+      containers:
+      - name: tsidp
+        image: ghcr.io/tailscale/tsidp:latest
+        env:
+        - name: TAILSCALE_USE_WIP_CODE
+          value: "1"
+        - name: TS_STATE_DIR
+          value: "/data"
+        - name: TS_HOSTNAME
+          value: "idp"
+        - name: TSIDP_ENABLE_STS
+          value: "1"
+        - name: TS_AUTHKEY
+          valueFrom:
+            secretKeyRef:
+              name: tsidp-secret
+              key: ts-authkey
+        volumeMounts:
+        - name: tsidp-data
+          mountPath: /data
+      volumes:
+      - name: tsidp-data
+        persistentVolumeClaim:
+          claimName: tsidp-data-pvc
