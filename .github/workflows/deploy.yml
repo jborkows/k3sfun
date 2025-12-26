@@ -25,7 +25,7 @@ jobs:
         env:
           DOCKER_TLS_CERTDIR: ""
     env:
-      DOCKER_HOST: tcp://docker:2375
+      DOCKER_HOST: tcp://localhost:2375
       DOCKER_TLS_CERTDIR: ""
       DOCKERHUB_USER: ${{ secrets.DOCKERHUB_USER }}
       DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
@@ -47,6 +47,22 @@ jobs:
 
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Wait for Docker daemon
+        shell: sh
+        run: |
+          set -eu
+          i=0
+          until docker info >/dev/null 2>&1; do
+            i=$((i+1))
+            if [ "$i" -ge 60 ]; then
+              echo "Docker daemon did not become ready in time" >&2
+              docker version || true
+              exit 1
+            fi
+            sleep 1
+          done
+          docker version
 
       - name: Docker login
         shell: sh
