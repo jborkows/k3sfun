@@ -137,6 +137,11 @@ templ ProductsListContent(data ProductsListData) {
 								<span class="badge">{ productCurrentGroupLabel(p) }</span>
 								if p.Missing {
 									<span class="badge badge-warn">Brak</span>
+								} else if p.Quantity > 0 {
+									<form class="badge-form" hx-post={ "/products/" + strconv.FormatInt(int64(p.ID), 10) + "/missing" + productsListQS(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, data.Page) } hx-target="#products-list" hx-swap="outerHTML">
+										<input type="hidden" name="missing" value="1"/>
+										<button class="badge badge-action" type="submit">Brak</button>
+									</form>
 								}
 							</div>
 						</div>
@@ -165,16 +170,16 @@ templ ProductsListContent(data ProductsListData) {
 							</form>
 						</div>
 
+					if p.Quantity > 0 || !p.Missing {
 						<div class="product-control product-control-missing">
-							<form hx-post={ "/products/" + strconv.FormatInt(int64(p.ID), 10) + "/missing" + productsListQS(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, data.Page) } hx-target="#products-list" hx-swap="outerHTML" hx-trigger="change">
-								<label class="missing-toggle">
-									<input type="checkbox" name="missing" checked?={ p.Missing } />
-									<span>Brak</span>
-								</label>
+							<form hx-post={ "/products/" + strconv.FormatInt(int64(p.ID), 10) + "/missing" + productsListQS(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, data.Page) } hx-target="#products-list" hx-swap="outerHTML">
+								<input type="hidden" name="missing" value="1"/>
+								<button class="secondary" type="submit">Brak</button>
 							</form>
 						</div>
+					}
 
-						<div class="product-control product-control-group">
+					<div class="product-control product-control-group">
 							<details class="multiselect singleselect">
 								<summary><span class="ss-current">Zmień grupę</span></summary>
 								<div class="multiselect-popover" role="listbox" aria-label="Grupa">
