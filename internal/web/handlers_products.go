@@ -77,6 +77,35 @@ func (s *Server) fetchProductsListData(ctx context.Context, r *http.Request) (*p
 	}, nil
 }
 
+func (s *Server) handleProductsNewPage(w http.ResponseWriter, r *http.Request) {
+	user, _ := s.auth.CurrentUser(r)
+
+	ctx, cancel := context.WithTimeout(r.Context(), DefaultHandlerTimeout)
+	defer cancel()
+
+	groups, err := s.products.qry.ListGroups(ctx)
+	if err != nil {
+		s.writeDBError(w, err)
+		return
+	}
+
+	pageData := views.ProductsNewPageData{
+		Base: views.BaseData{
+			Title:         "Dodaj produkt / grupę",
+			User:          user,
+			HTMXSrc:       s.cfg.HTMXSrc,
+			StaticVersion: s.staticV,
+			IsAdmin:       s.isAdmin(user),
+		},
+		Groups: groups,
+	}
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	if err := views.ProductsNewPage(pageData).Render(r.Context(), w); err != nil {
+		http.Error(w, fmt.Sprintf("render: %v", err), http.StatusInternalServerError)
+	}
+}
+
 func (s *Server) handleProductsPage(w http.ResponseWriter, r *http.Request) {
 	user, _ := s.auth.CurrentUser(r)
 
@@ -178,6 +207,46 @@ func (s *Server) handleCreateProduct(w http.ResponseWriter, r *http.Request) {
 	}
 	s.events.Publish(eventProductsList, clientIDFromRequest(r))
 	s.handleProductsPartial(w, r)
+}
+
+func (s *Server) handleCreateProductAndRedirect(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, "bad form", http.StatusBadRequest)
+		return
+	}
+	name := r.FormValue("name")
+	groupID, ok := parseOptionalGroupID(r.FormValue("group_id"))
+	qty, err := parseFloat(r.FormValue("quantity"))
+	if err != nil {
+		http.Error(w, "Nieprawidłowa ilość.", http.StatusBadRequest)
+		return
+	}
+	minQty, err := parseFloat(r.FormValue("min_quantity"))
+	if err != nil {
+		http.Error(w, "Nieprawidłowa minimalna ilość.", http.StatusBadRequest)
+		return
+	}
+	unit := products.Unit(strings.TrimSpace(r.FormValue("unit")))
+
+	ctx, cancel := context.WithTimeout(r.Context(), DefaultHandlerTimeout)
+	defer cancel()
+
+	var gid *products.GroupID
+	if ok {
+		gid = &groupID
+	}
+	if _, err := s.products.svc.CreateProduct(ctx, products.NewProduct{
+		Name:        name,
+		GroupID:     gid,
+		Quantity:    qty,
+		MinQuantity: minQty,
+		Unit:        unit,
+	}); err != nil {
+		s.writeUserError(w, err)
+		return
+	}
+	s.events.Publish(eventProductsList, clientIDFromRequest(r))
+	http.Redirect(w, r, "/products", http.StatusSeeOther)
 }
 
 func (s *Server) handleSetQuantity(w http.ResponseWriter, r *http.Request) {
@@ -326,6 +395,22 @@ func (s *Server) handleCreateGroup(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("HX-Redirect", redirect)
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func (s *Server) handleCreateGroupAndRedirect(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, "bad form", http.StatusBadRequest)
+		return
+	}
+	name := r.FormValue("name")
+	ctx, cancel := context.WithTimeout(r.Context(), DefaultHandlerTimeout)
+	defer cancel()
+	if _, err := s.products.svc.CreateGroup(ctx, name); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	s.events.Publish(eventProductsList, clientIDFromRequest(r))
+	http.Redirect(w, r, "/products", http.StatusSeeOther)
 }
 
 func parsePathProductID(r *http.Request, param string) (products.ProductID, bool) {

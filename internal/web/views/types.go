@@ -59,3 +59,8 @@ type ShoppingListPageData struct {
 	Base  BaseData
 	Items []shoppinglist.Item
 }
+
+type ProductsNewPageData struct {
+	Base   BaseData
+	Groups []products.Group
+}
