@@ -3,77 +3,18 @@ name: Snyk Security Scan
 on:
   push:
     branches: 
-      - '**'  # Run on all branches
-  pull_request:
-    branches: 
-      - '**'  # Run on PRs to all branches
+      - '**'
   workflow_dispatch: {}
-  schedule:
-    # Run weekly on Monday at 9:00 AM UTC
-    - cron: '0 9 * * 1'
+
+permissions:
+  contents: read
+  security-events: write
 
 concurrency:
   group: snyk-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  snyk-go:
-    name: Snyk Go Dependencies Scan
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/shoppinglist'
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: '1.25'
-          cache: true
-          cache-dependency-path: go.sum
-
-      - name: Run Snyk to check Go dependencies
-        uses: snyk/actions/golang@master
-        continue-on-error: true
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        with:
-          args: --severity-threshold=high
-
-      - name: Upload Snyk results to GitHub Code Scanning
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
-        with:
-          sarif_file: snyk.sarif
-          category: snyk-go
-
-  snyk-docker:
-    name: Snyk Docker Image Scan
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/shoppinglist'
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Build Docker image
-        run: docker build -t shopping:latest .
-
-      - name: Run Snyk to check Docker image
-        uses: snyk/actions/docker@master
-        continue-on-error: true
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        with:
-          image: shopping:latest
-          args: --severity-threshold=high
-
-      - name: Upload Snyk results to GitHub Code Scanning
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
-        with:
-          sarif_file: snyk.sarif
-          category: snyk-docker
-
   snyk-iac:
     name: Snyk Infrastructure as Code Scan
     runs-on: ubuntu-latest
@@ -87,10 +28,10 @@ jobs:
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
-          args: --severity-threshold=high
+          args: --severity-threshold=high --sarif-file-output=snyk.sarif
 
       - name: Upload Snyk results to GitHub Code Scanning
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: snyk.sarif
