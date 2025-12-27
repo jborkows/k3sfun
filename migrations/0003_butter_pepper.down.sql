@@ -1,3 +1,6 @@
+-- Revert śmietana products to 'litr' unit
+UPDATE products SET quantity_unit = 'litr' WHERE name LIKE 'śmietana%' OR name LIKE 'śmietanka%';
+
 -- Remove products
 DELETE FROM products WHERE name IN (
   'masło', 'papryka', 'buraki',
@@ -10,6 +13,7 @@ DELETE FROM products WHERE name IN (
   'tymianek', 'tymianek suszony',
   'papryka mielona słodka', 'papryka mielona ostra', 'czosnek', 'imbir',
   'koperek', 'kolendra', 'natka',
+  'sos sojowy', 'ocet balsamiczny', 'ocet ryżowy', 'ocet spirytusowy',
   'olej rzepakowy', 'oliwa', 'olej sezamowy',
   'pieczarki białe', 'pieczarki brązowe',
   'gruszki'
@@ -21,7 +25,7 @@ DELETE FROM product_icon_rules WHERE match_substring IN (
   'oregano', 'sól', 'sol', 'pieprz', 'bazylia', 'tymianek', 'papryka mielona',
   'czosnek', 'imbir', 'burak', 'olej', 'oliwa',
   'pomidor', 'seler', 'pietruszka', 'sałata', 'dynia', 'jarmuż',
-  'szczypiorek', 'cebula', 'szalotka', 'koperek', 'kolendra', 'natka',
+  'szczypiorek', 'cebula czerwona', 'cebula', 'szalotka', 'koperek', 'kolendra', 'natka',
   'pieczark', 'gruszk'
 );
 

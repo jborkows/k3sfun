@@ -27,6 +27,7 @@ VALUES
   ('dynia', 'pumpkin', 100),
   ('jarmuż', 'kale', 100),
   ('szczypiorek', 'chive', 100),
+  ('cebula czerwona', 'onion-red', 110),
   ('cebula', 'onion', 100),
   ('szalotka', 'onion', 90),
   ('koperek', 'herb', 100),
@@ -78,7 +79,7 @@ VALUES
   ('jarmuż', 'kale', (SELECT id FROM groups WHERE name = 'warzywa'), 0, 'pęczek', 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
   ('szczypiorek', 'chive', (SELECT id FROM groups WHERE name = 'warzywa'), 0, 'pęczek', 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
   ('cebula', 'onion', (SELECT id FROM groups WHERE name = 'warzywa'), 0, 'kg', 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-  ('cebula czerwona', 'onion', (SELECT id FROM groups WHERE name = 'warzywa'), 0, 'kg', 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  ('cebula czerwona', 'onion-red', (SELECT id FROM groups WHERE name = 'warzywa'), 0, 'kg', 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
   ('szalotka', 'onion', (SELECT id FROM groups WHERE name = 'warzywa'), 0, 'sztuk', 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- Add spices to przyprawy group
@@ -107,7 +108,11 @@ VALUES
   ('imbir', 'ginger', (SELECT id FROM groups WHERE name = 'przyprawy'), 0, 'sztuk', 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
   ('koperek', 'herb', (SELECT id FROM groups WHERE name = 'przyprawy'), 0, 'pęczek', 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
   ('kolendra', 'herb', (SELECT id FROM groups WHERE name = 'przyprawy'), 0, 'pęczek', 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-  ('natka', 'herb', (SELECT id FROM groups WHERE name = 'przyprawy'), 0, 'pęczek', 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+  ('natka', 'herb', (SELECT id FROM groups WHERE name = 'przyprawy'), 0, 'pęczek', 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  ('sos sojowy', 'spice', (SELECT id FROM groups WHERE name = 'przyprawy'), 0, 'opakowanie', 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  ('ocet balsamiczny', 'spice', (SELECT id FROM groups WHERE name = 'przyprawy'), 0, 'litr', 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  ('ocet ryżowy', 'spice', (SELECT id FROM groups WHERE name = 'przyprawy'), 0, 'litr', 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  ('ocet spirytusowy', 'spice', (SELECT id FROM groups WHERE name = 'przyprawy'), 0, 'litr', 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- Add oils and mushrooms to spożywcze group
 INSERT OR IGNORE INTO products (
@@ -125,8 +130,8 @@ VALUES
   ('olej rzepakowy', 'oil', (SELECT id FROM groups WHERE name = 'spożywcze'), 0, 'litr', 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
   ('oliwa', 'oil', (SELECT id FROM groups WHERE name = 'spożywcze'), 0, 'litr', 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
   ('olej sezamowy', 'oil', (SELECT id FROM groups WHERE name = 'spożywcze'), 0, 'litr', 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-  ('pieczarki białe', 'mushroom', (SELECT id FROM groups WHERE name = 'spożywcze'), 0, 'kg', 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-  ('pieczarki brązowe', 'mushroom', (SELECT id FROM groups WHERE name = 'spożywcze'), 0, 'kg', 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+  ('pieczarki białe', 'mushroom', (SELECT id FROM groups WHERE name = 'spożywcze'), 0, 'gramy', 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  ('pieczarki brązowe', 'mushroom', (SELECT id FROM groups WHERE name = 'spożywcze'), 0, 'gramy', 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- Add gruszki to owoce group
 INSERT OR IGNORE INTO products (
@@ -142,3 +147,6 @@ INSERT OR IGNORE INTO products (
 )
 VALUES
   ('gruszki', 'pear', (SELECT id FROM groups WHERE name = 'owoce'), 0, 'sztuk', 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+-- Update śmietana products to use 'opakowanie' unit
+UPDATE products SET quantity_unit = 'opakowanie' WHERE name LIKE 'śmietana%' OR name LIKE 'śmietanka%';
