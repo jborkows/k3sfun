@@ -126,31 +126,57 @@ templ ProductsListContent(data ProductsListData) {
 			</div>
 		}
 
-		<table class="table">
-			<thead>
-				<tr>
-					<th>Nazwa</th>
-					<th>Grupa</th>
-					<th class="num">Ilość</th>
-					<th class="num">Min</th>
-					<th>Brak</th>
-					<th>Aktualizacja</th>
-					<th></th>
-				</tr>
-			</thead>
-			<tbody>
-				for _, p := range data.Products {
-					<tr class={ productRowClass(p) }>
-						<td>
-							<div class="product-cell">
-								<img class="product-icon" width="48" height="48" src={ "/static/icons/" + productIconKey(p) + ".svg" } alt="" />
-								<span class="product-name">{ p.Name }</span>
+		<div class="products-grid">
+			for _, p := range data.Products {
+				<div class={ "product-card " + productRowClass(p) }>
+					<div class="product-header">
+						<img class="product-icon" width="40" height="40" src={ "/static/icons/" + productIconKey(p) + ".svg" } alt="" />
+						<div class="product-meta">
+							<div class="product-name">{ p.Name }</div>
+							<div class="product-badges">
+								<span class="badge">{ productCurrentGroupLabel(p) }</span>
+								if p.Missing {
+									<span class="badge badge-warn">Brak</span>
+								}
 							</div>
-						</td>
+						</div>
+						<div class="product-cta">
+							<form hx-post={ "/shopping-list/from-product/" + strconv.FormatInt(int64(p.ID), 10) } hx-swap="none">
+								<button class="product-add" type="submit">Na listę</button>
+							</form>
+						</div>
+					</div>
 
-						<td>
+					<div class="product-controls">
+						<div class="product-control">
+							<span class="muted">Ilość</span>
+							<div class="row">
+								<form hx-post={ "/products/" + strconv.FormatInt(int64(p.ID), 10) + "/qty" + productsListQS(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, data.Page) } hx-target="#products-list" hx-swap="outerHTML" hx-trigger="change">
+									<input class="num-input" type="number" step="0.1" min="0" name="quantity" value={ formatQty(p.Quantity) } />
+								</form>
+								<span class="muted">{ string(p.Unit) }</span>
+							</div>
+						</div>
+
+						<div class="product-control">
+							<span class="muted">Min</span>
+							<form hx-post={ "/products/" + strconv.FormatInt(int64(p.ID), 10) + "/min" + productsListQS(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, data.Page) } hx-target="#products-list" hx-swap="outerHTML" hx-trigger="change">
+								<input class="num-input" type="number" step="0.1" min="0" name="min_quantity" value={ formatQty(p.MinQuantity) } />
+							</form>
+						</div>
+
+						<div class="product-control product-control-missing">
+							<form hx-post={ "/products/" + strconv.FormatInt(int64(p.ID), 10) + "/missing" + productsListQS(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, data.Page) } hx-target="#products-list" hx-swap="outerHTML" hx-trigger="change">
+								<label class="missing-toggle">
+									<input type="checkbox" name="missing" checked?={ p.Missing } />
+									<span>Brak</span>
+								</label>
+							</form>
+						</div>
+
+						<div class="product-control product-control-group">
 							<details class="multiselect singleselect">
-								<summary><span class="ss-current">{ productCurrentGroupLabel(p) }</span></summary>
+								<summary><span class="ss-current">Zmień grupę</span></summary>
 								<div class="multiselect-popover" role="listbox" aria-label="Grupa">
 									<input class="ms-search" type="search" placeholder="Szukaj grup…" autocomplete="off" data-ms-filter="groups" />
 
@@ -166,45 +192,15 @@ templ ProductsListContent(data ProductsListData) {
 									}
 								</div>
 							</details>
-						</td>
+						</div>
+					</div>
+				</div>
+			}
+		</div>
 
-						<td class="num">
-							<div class="form-row">
-								<form hx-post={ "/products/" + strconv.FormatInt(int64(p.ID), 10) + "/qty" + productsListQS(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, data.Page) } hx-target="#products-list" hx-swap="outerHTML" hx-trigger="change">
-									<input class="num-input" type="number" step="0.1" min="0" name="quantity" value={ formatQty(p.Quantity) } />
-								</form>
-								<span class="muted">{ string(p.Unit) }</span>
-							</div>
-						</td>
-
-						<td class="num">
-							<div class="form-row">
-								<form hx-post={ "/products/" + strconv.FormatInt(int64(p.ID), 10) + "/min" + productsListQS(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, data.Page) } hx-target="#products-list" hx-swap="outerHTML" hx-trigger="change">
-									<input class="num-input" type="number" step="0.1" min="0" name="min_quantity" value={ formatQty(p.MinQuantity) } />
-								</form>
-							</div>
-						</td>
-
-						<td>
-							<form hx-post={ "/products/" + strconv.FormatInt(int64(p.ID), 10) + "/missing" + productsListQS(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, data.Page) } hx-target="#products-list" hx-swap="outerHTML" hx-trigger="change">
-								<input type="checkbox" name="missing" checked?={ p.Missing } />
-							</form>
-						</td>
-
-						<td class="muted">{ p.UpdatedAt.Format("2006-01-02 15:04") }</td>
-
-						<td>
-							<form hx-post={ "/shopping-list/from-product/" + strconv.FormatInt(int64(p.ID), 10) } hx-swap="none">
-								<button type="submit">Na listę</button>
-							</form>
-						</td>
-					</tr>
-				}
-				if len(data.Products) == 0 {
-					<tr><td colspan="7" class="muted">Brak produktów.</td></tr>
-				}
-			</tbody>
-		</table>
+		if len(data.Products) == 0 {
+			<p class="muted">Brak produktów.</p>
+		}
 	</section>
 }
 
@@ -213,4 +209,3 @@ templ UnitOptions(selected products.Unit) {
 		<option value={ string(u) } selected?={ string(u) == normalizedUnit(selected) }>{ string(u) }</option>
 	}
 }
-
