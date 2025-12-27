@@ -103,13 +103,14 @@ data:
     }
 
   # Filebrowser admin settings - with login for user management
+  # Uses separate database to avoid SQLite lock conflicts
   settings-admin.json: |
     {
       "port": 8081,
       "baseURL": "",
       "address": "0.0.0.0",
       "log": "stdout",
-      "database": "/database/filebrowser.db",
+      "database": "/database/filebrowser-admin.db",
       "root": "/srv"
     }
 
