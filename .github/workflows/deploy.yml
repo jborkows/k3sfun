@@ -3,6 +3,9 @@ name: Deploy mainpage
 on:
   push:
     branches: [master]
+    paths:
+      - 'mainpage/**'
+      - '.github/workflows/deploy.yml'
     tags:
       - "deploy*"
   workflow_dispatch: {}

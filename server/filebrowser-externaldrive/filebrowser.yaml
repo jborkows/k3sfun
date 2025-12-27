@@ -34,7 +34,7 @@ data:
             server 127.0.0.1:8081;
         }
 
-        # Main filebrowser - OIDC protected, no internal auth
+        # Main filebrowser - OIDC protected only (no fallback since noauth)
         server {
             listen 8000;
 
@@ -44,24 +44,12 @@ data:
             }
 
             location / {
-                # Try oauth2-proxy first, fall back to direct on error
-                proxy_connect_timeout 2s;
+                # Always go through oauth2-proxy - no fallback since filebrowser uses noauth
+                proxy_connect_timeout 5s;
                 proxy_read_timeout 30s;
                 proxy_send_timeout 30s;
                 
                 proxy_pass http://oauth2_proxy;
-                proxy_set_header Host $host;
-                proxy_set_header X-Real-IP $remote_addr;
-                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-                proxy_set_header X-Forwarded-Proto $scheme;
-                
-                # If oauth2-proxy fails, try filebrowser directly
-                proxy_intercept_errors on;
-                error_page 502 503 504 = @fallback;
-            }
-
-            location @fallback {
-                proxy_pass http://filebrowser_direct;
                 proxy_set_header Host $host;
                 proxy_set_header X-Real-IP $remote_addr;
                 proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -88,22 +76,6 @@ data:
         }
     }
 
-  # Filebrowser settings - OIDC protected instance
-  # Uses proxy auth - trusts X-Forwarded-User header from oauth2-proxy
-  settings.json: |
-    {
-      "port": 8080,
-      "baseURL": "",
-      "address": "0.0.0.0",
-      "log": "stdout",
-      "database": "/database/filebrowser.db",
-      "root": "/srv",
-      "auth": {
-        "method": "proxy",
-        "header": "X-Forwarded-User"
-      }
-    }
-
   # Filebrowser admin settings - with login for user management
   # Uses separate database to avoid SQLite lock conflicts
   settings-admin.json: |
@@ -116,65 +88,6 @@ data:
       "root": "/srv"
     }
 
-  # Script for OIDC health monitoring
-  oidc-monitor.sh: |
-    #!/bin/sh
-    set -e
-    
-    OIDC_STATUS_FILE="/shared/oidc-status"
-    CHECK_INTERVAL="${CHECK_INTERVAL:-30}"
-    
-    echo "Starting OIDC health monitor..."
-    echo "OIDC Issuer: ${OIDC_ISSUER_URL:-not set}"
-    echo "Check interval: ${CHECK_INTERVAL}s"
-    
-    # Initialize status
-    echo "unknown" > "$OIDC_STATUS_FILE"
-    
-    check_oidc() {
-        if [ -z "$OIDC_ISSUER_URL" ]; then
-            echo "disabled"
-            return
-        fi
-        
-        DISCOVERY_URL="${OIDC_ISSUER_URL}/.well-known/openid-configuration"
-        if curl --silent --fail --max-time 5 "$DISCOVERY_URL" > /dev/null 2>&1; then
-            echo "available"
-        else
-            echo "unavailable"
-        fi
-    }
-    
-    check_oauth2_proxy() {
-        if curl --silent --fail --max-time 2 "http://127.0.0.1:4180/ping" > /dev/null 2>&1; then
-            echo "ready"
-        else
-            echo "not_ready"
-        fi
-    }
-    
-    while true; do
-        OIDC_STATUS=$(check_oidc)
-        PROXY_STATUS=$(check_oauth2_proxy)
-        TIMESTAMP=$(date -Iseconds)
-        
-        # Write status to shared file
-        cat > "$OIDC_STATUS_FILE" << EOF
-    oidc_provider: $OIDC_STATUS
-    oauth2_proxy: $PROXY_STATUS
-    last_check: $TIMESTAMP
-    EOF
-        
-        if [ "$OIDC_STATUS" = "available" ] && [ "$PROXY_STATUS" = "ready" ]; then
-            echo "[$TIMESTAMP] OIDC: OK, OAuth2-Proxy: OK - Authentication active"
-        elif [ "$OIDC_STATUS" = "disabled" ]; then
-            echo "[$TIMESTAMP] OIDC: Disabled - Running without authentication"
-        else
-            echo "[$TIMESTAMP] OIDC: $OIDC_STATUS, OAuth2-Proxy: $PROXY_STATUS - Fallback to direct access"
-        fi
-        
-        sleep "$CHECK_INTERVAL"
-    done
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -204,8 +117,6 @@ spec:
             - name: nginx-config
               mountPath: /etc/nginx/nginx.conf
               subPath: nginx.conf
-            - name: shared
-              mountPath: /shared
             - name: nginx-tmp
               mountPath: /tmp
           livenessProbe:
@@ -226,34 +137,6 @@ spec:
               memory: 16Mi
             limits:
               cpu: 50m
-              memory: 32Mi
-
-        # OIDC health monitor sidecar
-        - name: oidc-monitor
-          image: curlimages/curl:latest
-          command:
-            - /bin/sh
-            - /scripts/oidc-monitor.sh
-          env:
-            - name: OIDC_ISSUER_URL
-              valueFrom:
-                secretKeyRef:
-                  name: filebrowser-oidc
-                  key: OIDC_ISSUER_URL
-                  optional: true
-            - name: CHECK_INTERVAL
-              value: "60"
-          volumeMounts:
-            - name: nginx-config
-              mountPath: /scripts
-            - name: shared
-              mountPath: /shared
-          resources:
-            requests:
-              cpu: 5m
-              memory: 16Mi
-            limits:
-              cpu: 20m
               memory: 32Mi
 
         # OAuth2 Proxy for OIDC authentication - runs native binary directly
@@ -319,21 +202,21 @@ spec:
             limits:
               cpu: 100m
               memory: 64Mi
-          volumeMounts:
-            - name: shared
-              mountPath: /shared
 
-        # Main filebrowser container - OIDC protected, no internal auth
+        # Main filebrowser container - OIDC protected with noauth
         - name: filebrowser
           image: filebrowser/filebrowser
+          args:
+            - --address=0.0.0.0
+            - --port=8080
+            - --database=/database/filebrowser.db
+            - --root=/srv
+            - --noauth
           volumeMounts:
             - name: files
               mountPath: /srv
             - name: fd-db
               mountPath: /database
-            - name: filebrowser-settings
-              mountPath: /config/settings.json
-              subPath: settings.json
           ports:
             - containerPort: 8080
           livenessProbe:
@@ -396,20 +279,12 @@ spec:
           hostPath:
             path: /mnt/external/filebrowser-db
             type: DirectoryOrCreate
-        - name: shared
-          emptyDir: {}
         - name: nginx-config
           configMap:
             name: filebrowser-nginx-config
             defaultMode: 0755
         - name: nginx-tmp
           emptyDir: {}
-        - name: filebrowser-settings
-          configMap:
-            name: filebrowser-nginx-config
-            items:
-              - key: settings.json
-                path: settings.json
         - name: filebrowser-admin-settings
           configMap:
             name: filebrowser-nginx-config
