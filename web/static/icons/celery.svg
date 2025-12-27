@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <defs>
+    <linearGradient id="celery-grad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#a3e635"/>
+      <stop offset="1" stop-color="#65a30d"/>
+    </linearGradient>
+  </defs>
+  <!-- Celery stalks -->
+  <path d="M8 22c0-6 0.5-12 1-16 0.3-2 1-3 2-3" fill="none" stroke="url(#celery-grad)" stroke-width="3" stroke-linecap="round"/>
+  <path d="M12 22c0-5 0-10 0-14 0-2 0.5-3 1-4" fill="none" stroke="url(#celery-grad)" stroke-width="3" stroke-linecap="round"/>
+  <path d="M16 22c0-6-0.5-12-1-16-0.3-2-1-3-2-3" fill="none" stroke="url(#celery-grad)" stroke-width="3" stroke-linecap="round"/>
+  <!-- Leaves -->
+  <path d="M10 4c-2-1-3 0-3 2 1 0 2-1 3-2Z" fill="#22c55e"/>
+  <path d="M13 3c0-2 1-3 3-2-0.5 1-1.5 2-3 2Z" fill="#22c55e"/>
+  <path d="M14 5c2-0.5 3 0.5 3 2-1 0-2-1-3-2Z" fill="#22c55e"/>
+</svg>

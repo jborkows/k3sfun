@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <defs>
+    <linearGradient id="garlic-grad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#faf5ff"/>
+      <stop offset="1" stop-color="#e9d5ff"/>
+    </linearGradient>
+  </defs>
+  <!-- Stem -->
+  <path d="M12 3v4" stroke="#a3e635" stroke-width="2" stroke-linecap="round"/>
+  <!-- Garlic bulb - cloves -->
+  <path d="M12 7c-1.5 0-3 1-4 3-0.5 2 0 5 1.5 7 1 1.5 2 2 2.5 2s1.5-0.5 2.5-2c1.5-2 2-5 1.5-7-1-2-2.5-3-4-3Z" fill="url(#garlic-grad)" stroke="#c4b5fd" stroke-width="1.2"/>
+  <!-- Clove lines -->
+  <path d="M10 9c-0.5 2-0.5 5 0.5 7" stroke="#d8b4fe" stroke-width="1" fill="none" stroke-linecap="round"/>
+  <path d="M14 9c0.5 2 0.5 5-0.5 7" stroke="#d8b4fe" stroke-width="1" fill="none" stroke-linecap="round"/>
+  <path d="M12 8v9" stroke="#d8b4fe" stroke-width="1" fill="none" stroke-linecap="round"/>
+  <!-- Root wisps -->
+  <path d="M10 19c-0.3 0.5-0.5 1-0.3 1.5M12 19v1.5M14 19c0.3 0.5 0.5 1 0.3 1.5" stroke="#a8a29e" stroke-width="0.8" stroke-linecap="round"/>
+</svg>

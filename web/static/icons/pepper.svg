@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <defs>
+    <linearGradient id="pepper-body" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#57534e"/>
+      <stop offset="1" stop-color="#292524"/>
+    </linearGradient>
+  </defs>
+  <!-- Pepper mill body -->
+  <path d="M8 10h8v10a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2V10Z" fill="url(#pepper-body)" stroke="#1c1917" stroke-width="1.2"/>
+  <!-- Mill top -->
+  <path d="M9 6h6v4H9V6Z" fill="#78716c" stroke="#57534e" stroke-width="1"/>
+  <!-- Knob -->
+  <circle cx="12" cy="4" r="2" fill="#a8a29e" stroke="#78716c" stroke-width="1"/>
+  <!-- Grinder lines -->
+  <path d="M8 14h8M8 17h8" stroke="#44403c" stroke-width="0.8"/>
+  <!-- Peppercorns -->
+  <circle cx="10" cy="21" r="1" fill="#292524"/>
+  <circle cx="14" cy="21.5" r="0.8" fill="#292524"/>
+  <circle cx="12" cy="22" r="0.6" fill="#292524"/>
+</svg>

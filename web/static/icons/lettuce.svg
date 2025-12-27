@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <defs>
+    <linearGradient id="lettuce-outer" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#86efac"/>
+      <stop offset="1" stop-color="#22c55e"/>
+    </linearGradient>
+    <linearGradient id="lettuce-inner" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#dcfce7"/>
+      <stop offset="1" stop-color="#bbf7d0"/>
+    </linearGradient>
+  </defs>
+  <!-- Outer leaves -->
+  <path d="M4 14c-1-4 1-8 4-10 2-1 5-1 8 0 3 2 5 6 4 10-0.5 3-2 5-4 6-2 1-5 1-7 0-2-1-4-3-5-6Z" fill="url(#lettuce-outer)" stroke="#16a34a" stroke-width="1.2"/>
+  <!-- Inner leaves -->
+  <path d="M7 13c-0.5-3 1-5 3-6 1.5-0.5 3.5-0.5 5 0 2 1 3 3 2.5 6-0.3 2-1.5 3-3 4-1.5 0.5-3.5 0.5-5 0-1.5-1-2.5-2-2.5-4Z" fill="url(#lettuce-inner)" stroke="#4ade80" stroke-width="0.8"/>
+  <!-- Leaf veins -->
+  <path d="M9 10c1 2 2 4 3 6M15 10c-1 2-2 4-3 6M12 8v6" stroke="#22c55e" stroke-width="0.6" opacity="0.5" fill="none"/>
+</svg>

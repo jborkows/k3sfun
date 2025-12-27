@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <defs>
+    <linearGradient id="cap-grad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#d6d3d1"/>
+      <stop offset="1" stop-color="#a8a29e"/>
+    </linearGradient>
+    <linearGradient id="stem-grad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#faf5ff"/>
+      <stop offset="1" stop-color="#e7e5e4"/>
+    </linearGradient>
+  </defs>
+  <!-- Mushroom cap -->
+  <path d="M4 12c0-5 3.5-9 8-9s8 4 8 9c0 1-0.5 2-2 2H6c-1.5 0-2-1-2-2Z" fill="url(#cap-grad)" stroke="#78716c" stroke-width="1.2"/>
+  <!-- Cap spots/texture -->
+  <ellipse cx="8" cy="8" rx="1.5" ry="1" fill="#fafaf9" opacity="0.6"/>
+  <ellipse cx="14" cy="7" rx="1" ry="0.8" fill="#fafaf9" opacity="0.6"/>
+  <ellipse cx="16" cy="10" rx="1.2" ry="0.8" fill="#fafaf9" opacity="0.6"/>
+  <!-- Mushroom stem -->
+  <path d="M9 14h6v6c0 1-1 2-3 2s-3-1-3-2v-6Z" fill="url(#stem-grad)" stroke="#a8a29e" stroke-width="1"/>
+  <!-- Gills hint -->
+  <path d="M7 13.5h10" stroke="#78716c" stroke-width="0.5" opacity="0.5"/>
+</svg>

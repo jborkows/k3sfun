@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <defs>
+    <linearGradient id="pear-grad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#bef264"/>
+      <stop offset="1" stop-color="#84cc16"/>
+    </linearGradient>
+  </defs>
+  <!-- Stem -->
+  <path d="M12 2c0.5 0.5 1 1 0.5 2" stroke="#92400e" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+  <!-- Leaf -->
+  <path d="M13 3c1-1 2.5-0.5 3 0.5-0.5 1-2 1-3-0.5Z" fill="#22c55e" stroke="#16a34a" stroke-width="0.8"/>
+  <!-- Pear body -->
+  <path d="M12 5c-2 0-3 2-3 4 0 1 0.5 2 0.5 3-0.5 2-2.5 4-2.5 7 0 3 2 4 5 4s5-1 5-4c0-3-2-5-2.5-7 0-1 0.5-2 0.5-3 0-2-1-4-3-4Z" fill="url(#pear-grad)" stroke="#65a30d" stroke-width="1.2"/>
+  <!-- Highlight -->
+  <path d="M9 14c0.5 3 0.5 5 0 7" stroke="#d9f99d" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
+</svg>

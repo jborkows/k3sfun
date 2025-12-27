@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <defs>
+    <linearGradient id="oil-grad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fef08a"/>
+      <stop offset="1" stop-color="#eab308"/>
+    </linearGradient>
+    <linearGradient id="bottle-grad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ecfccb"/>
+      <stop offset="1" stop-color="#d9f99d"/>
+    </linearGradient>
+  </defs>
+  <!-- Bottle body -->
+  <path d="M8 10h8v10a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2V10Z" fill="url(#bottle-grad)" stroke="#84cc16" stroke-width="1.2"/>
+  <!-- Bottle neck -->
+  <path d="M10 6h4v4h-4V6Z" fill="url(#bottle-grad)" stroke="#84cc16" stroke-width="1"/>
+  <!-- Cap -->
+  <rect x="9" y="3" width="6" height="3" rx="1" fill="#78716c" stroke="#57534e" stroke-width="1"/>
+  <!-- Oil inside -->
+  <path d="M9 12h6v7a1.5 1.5 0 0 1-1.5 1.5h-3A1.5 1.5 0 0 1 9 19V12Z" fill="url(#oil-grad)" opacity="0.8"/>
+  <!-- Oil shine -->
+  <path d="M10 13v5" stroke="#fef9c3" stroke-width="1" stroke-linecap="round" opacity="0.6"/>
+  <!-- Label -->
+  <ellipse cx="12" cy="16" rx="2" ry="1" fill="#65a30d" opacity="0.3"/>
+</svg>
