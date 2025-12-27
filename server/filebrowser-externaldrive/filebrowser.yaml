@@ -124,43 +124,6 @@ data:
         
         sleep "$CHECK_INTERVAL"
     done
-
-  # Wrapper script for oauth2-proxy that checks if OIDC is configured
-  oauth2-proxy-wrapper.sh: |
-    #!/bin/sh
-    
-    echo "Checking OIDC configuration..."
-    
-    # Check if required OIDC variables are set
-    if [ -z "$OAUTH2_PROXY_CLIENT_ID" ] || [ -z "$OAUTH2_PROXY_CLIENT_SECRET" ] || [ -z "$OAUTH2_PROXY_OIDC_ISSUER_URL" ] || [ -z "$OAUTH2_PROXY_COOKIE_SECRET" ]; then
-        echo "OIDC not fully configured. Required variables:"
-        echo "  OAUTH2_PROXY_CLIENT_ID: ${OAUTH2_PROXY_CLIENT_ID:+set}"
-        echo "  OAUTH2_PROXY_CLIENT_SECRET: ${OAUTH2_PROXY_CLIENT_SECRET:+set}"
-        echo "  OAUTH2_PROXY_OIDC_ISSUER_URL: ${OAUTH2_PROXY_OIDC_ISSUER_URL:+set}"
-        echo "  OAUTH2_PROXY_COOKIE_SECRET: ${OAUTH2_PROXY_COOKIE_SECRET:+set}"
-        echo ""
-        echo "Running in standby mode (sleeping indefinitely)..."
-        echo "Nginx will fall back to direct filebrowser access."
-        
-        # Sleep forever - nginx will get 502 and fall back to filebrowser
-        while true; do
-            sleep 3600
-        done
-    fi
-    
-    echo "OIDC configured. Starting oauth2-proxy..."
-    exec /bin/oauth2-proxy "$@"
-
-  # Filebrowser config - mounted to /config/settings.json
-  settings.json: |
-    {
-      "port": 8080,
-      "baseURL": "",
-      "address": "0.0.0.0",
-      "log": "stdout",
-      "database": "/database/filebrowser.db",
-      "root": "/srv"
-    }
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -240,12 +203,9 @@ spec:
               cpu: 20m
               memory: 32Mi
 
-        # OAuth2 Proxy for OIDC authentication (with wrapper that handles missing config)
+        # OAuth2 Proxy for OIDC authentication - runs native binary directly
         - name: oauth2-proxy
           image: quay.io/oauth2-proxy/oauth2-proxy:v7.6.0
-          command:
-            - /bin/sh
-            - /scripts/oauth2-proxy-wrapper.sh
           args:
             - --http-address=0.0.0.0:4180
             - --upstream=http://127.0.0.1:8080
@@ -265,19 +225,16 @@ spec:
                 secretKeyRef:
                   name: filebrowser-oidc
                   key: OIDC_CLIENT_ID
-                  optional: true
             - name: OAUTH2_PROXY_CLIENT_SECRET
               valueFrom:
                 secretKeyRef:
                   name: filebrowser-oidc
                   key: OIDC_CLIENT_SECRET
-                  optional: true
             - name: OAUTH2_PROXY_OIDC_ISSUER_URL
               valueFrom:
                 secretKeyRef:
                   name: filebrowser-oidc
                   key: OIDC_ISSUER_URL
-                  optional: true
             - name: OAUTH2_PROXY_REDIRECT_URL
               value: "https://filebrowser.DOMAIN/oauth2/callback"
             - name: OAUTH2_PROXY_COOKIE_SECRET
@@ -285,9 +242,20 @@ spec:
                 secretKeyRef:
                   name: filebrowser-oidc
                   key: COOKIE_SECRET
-                  optional: true
           ports:
             - containerPort: 4180
+          livenessProbe:
+            httpGet:
+              path: /ping
+              port: 4180
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /ping
+              port: 4180
+            initialDelaySeconds: 5
+            periodSeconds: 5
           resources:
             requests:
               cpu: 10m
@@ -298,22 +266,35 @@ spec:
           volumeMounts:
             - name: shared
               mountPath: /shared
-            - name: nginx-config
-              mountPath: /scripts
 
-        # Main filebrowser container
+        # Main filebrowser container - use command line args instead of config file
         - name: filebrowser
           image: filebrowser/filebrowser
+          args:
+            - --address=0.0.0.0
+            - --port=8080
+            - --database=/database/filebrowser.db
+            - --root=/srv
           volumeMounts:
             - name: files
               mountPath: /srv
             - name: fd-db
               mountPath: /database
-            - name: filebrowser-config
-              mountPath: /config/settings.json
-              subPath: settings.json
           ports:
             - containerPort: 8080
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 5
           resources:
             requests:
               cpu: 50m
@@ -339,12 +320,6 @@ spec:
             defaultMode: 0755
         - name: nginx-tmp
           emptyDir: {}
-        - name: filebrowser-config
-          configMap:
-            name: filebrowser-nginx-config
-            items:
-              - key: settings.json
-                path: settings.json
 ---
 apiVersion: v1
 kind: Service
