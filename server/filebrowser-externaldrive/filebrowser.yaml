@@ -76,6 +76,17 @@ data:
         }
     }
 
+  # Filebrowser main settings - proxy auth using OIDC email header
+  settings.json: |
+    {
+      "port": 8080,
+      "baseURL": "",
+      "address": "0.0.0.0",
+      "log": "stdout",
+      "database": "/database/filebrowser.db",
+      "root": "/srv"
+    }
+
   # Filebrowser admin settings - with login for user management
   # Uses separate database to avoid SQLite lock conflicts
   settings-admin.json: |
@@ -104,6 +115,20 @@ spec:
       labels:
         app: filebrowser
     spec:
+      initContainers:
+        # Initialize filebrowser database with proxy auth
+        - name: filebrowser-init
+          image: filebrowser/filebrowser
+          command:
+            - /filebrowser
+            - config
+            - set
+            - --auth.method=proxy
+            - --auth.header=X-Forwarded-Email
+            - --database=/database/filebrowser.db
+          volumeMounts:
+            - name: fd-db
+              mountPath: /database
       containers:
         # Nginx proxy - entry point that handles failover
         - name: nginx-proxy
@@ -206,18 +231,14 @@ spec:
         # Main filebrowser container - OIDC protected with proxy auth
         - name: filebrowser
           image: filebrowser/filebrowser
-          args:
-            - --address=0.0.0.0
-            - --port=8080
-            - --database=/database/filebrowser.db
-            - --root=/srv
-            - --auth.method=proxy
-            - --auth.header=X-Forwarded-Email
           volumeMounts:
             - name: files
               mountPath: /srv
             - name: fd-db
               mountPath: /database
+            - name: filebrowser-settings
+              mountPath: /config/settings.json
+              subPath: settings.json
           ports:
             - containerPort: 8080
           livenessProbe:
@@ -286,6 +307,12 @@ spec:
             defaultMode: 0755
         - name: nginx-tmp
           emptyDir: {}
+        - name: filebrowser-settings
+          configMap:
+            name: filebrowser-nginx-config
+            items:
+              - key: settings.json
+                path: settings.json
         - name: filebrowser-admin-settings
           configMap:
             name: filebrowser-nginx-config
