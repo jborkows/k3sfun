@@ -1,0 +1,37 @@
+name: Cleanup old workflow runs
+
+on:
+  workflow_dispatch:
+    inputs:
+      days:
+        description: 'Delete runs older than N days'
+        required: false
+        default: '5'
+
+jobs:
+  cleanup:
+    name: Delete old workflow runs
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.CLEANUP_TOKEN }}
+    steps:
+      - name: Delete workflow runs older than ${{ inputs.days }} days
+        run: |
+          set -euo pipefail
+          
+          REPO="${{ github.repository }}"
+          DAYS="${{ inputs.days }}"
+          CUTOFF_DATE=$(date -d "${DAYS} days ago" -u +%Y-%m-%dT%H:%M:%SZ)
+          
+          echo "Deleting workflow runs older than ${DAYS} days (before ${CUTOFF_DATE})"
+          
+          # Get all workflow runs and delete old ones
+          gh run list --repo "${REPO}" --limit 500 --json databaseId,createdAt,status,name \
+            | jq -r --arg cutoff "${CUTOFF_DATE}" \
+              '.[] | select(.createdAt < $cutoff) | "\(.databaseId)\t\(.name)\t\(.createdAt)"' \
+            | while IFS=$'\t' read -r run_id name created_at; do
+                echo "Deleting run ${run_id}: ${name} (${created_at})"
+                gh run delete "${run_id}" --repo "${REPO}" || echo "Failed to delete ${run_id}"
+              done
+          
+          echo "Cleanup complete"
