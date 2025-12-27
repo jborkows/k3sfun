@@ -203,7 +203,7 @@ spec:
               cpu: 100m
               memory: 64Mi
 
-        # Main filebrowser container - OIDC protected with noauth
+        # Main filebrowser container - OIDC protected with proxy auth
         - name: filebrowser
           image: filebrowser/filebrowser
           args:
@@ -211,7 +211,8 @@ spec:
             - --port=8080
             - --database=/database/filebrowser.db
             - --root=/srv
-            - --noauth
+            - --auth.method=proxy
+            - --auth.header=X-Forwarded-Email
           volumeMounts:
             - name: files
               mountPath: /srv
