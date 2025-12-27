@@ -1,6 +1,9 @@
 name: Cleanup old workflow runs
 
 on:
+  schedule:
+    # Run every 3 days at 3:00 AM UTC
+    - cron: '0 3 */3 * *'
   workflow_dispatch:
     inputs:
       days:
