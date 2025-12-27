@@ -89,7 +89,7 @@ data:
     }
 
   # Filebrowser settings - OIDC protected instance
-  # Uses proxy auth - trusts X-Auth-Request-User header from oauth2-proxy
+  # Uses proxy auth - trusts X-Forwarded-User header from oauth2-proxy
   settings.json: |
     {
       "port": 8080,
@@ -100,7 +100,7 @@ data:
       "root": "/srv",
       "auth": {
         "method": "proxy",
-        "header": "X-Auth-Request-User"
+        "header": "X-Forwarded-User"
       }
     }
 
@@ -273,6 +273,8 @@ spec:
             - --skip-provider-button=true
             - --silence-ping-logging=true
             - --code-challenge-method=S256
+            - --pass-user-headers=true
+            - --set-authorization-header=true
           env:
             - name: OAUTH2_PROXY_CLIENT_ID
               valueFrom:
