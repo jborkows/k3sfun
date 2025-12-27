@@ -1,0 +1,92 @@
+name: Snyk Security Scan
+
+on:
+  push:
+    branches: 
+      - '**'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  security-events: write
+
+concurrency:
+  group: snyk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  snyk-go:
+    name: Snyk Go Dependencies Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
+          cache: true
+
+      - name: Run Snyk to check Go dependencies
+        uses: snyk/actions/golang@master
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=high --sarif-file-output=snyk-go.sarif
+
+      - name: Upload Snyk Go results to GitHub Code Scanning
+        uses: github/codeql-action/upload-sarif@v4
+        if: always()
+        with:
+          sarif_file: snyk-go.sarif
+          category: snyk-go
+
+  snyk-docker:
+    name: Snyk Docker Image Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t shopping:latest .
+
+      - name: Run Snyk to check Docker image
+        uses: snyk/actions/docker@master
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          image: shopping:latest
+          args: --severity-threshold=high --sarif-file-output=snyk-docker.sarif
+
+      - name: Upload Snyk Docker results to GitHub Code Scanning
+        uses: github/codeql-action/upload-sarif@v4
+        if: always()
+        with:
+          sarif_file: snyk-docker.sarif
+          category: snyk-docker
+
+  snyk-iac:
+    name: Snyk Infrastructure as Code Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run Snyk to check Kubernetes manifests
+        uses: snyk/actions/iac@master
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=high --sarif-file-output=snyk-iac.sarif
+
+      - name: Upload Snyk IaC results to GitHub Code Scanning
+        uses: github/codeql-action/upload-sarif@v4
+        if: always()
+        with:
+          sarif_file: snyk-iac.sarif
+          category: snyk-iac

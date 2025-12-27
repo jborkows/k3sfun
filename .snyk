@@ -1,0 +1,19 @@
+# Snyk (https://snyk.io) policy file
+
+# Specifies for which severities this policy should apply. Defaults to all severities.
+# version: v1.25.0
+
+# Language-specific vulnerability settings
+language-settings:
+  go:
+    version: 1.25.0
+
+# Ignore specific vulnerabilities (example - remove or modify as needed)
+# ignore:
+#   SNYK-GOLANG-EXAMPLE-123456:
+#     - '*':
+#         reason: 'Not applicable to our use case'
+#         expires: '2025-12-31T00:00:00.000Z'
+
+# Patch settings
+patch: {}
