@@ -1,25 +1,25 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="indyk">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" role="img" aria-label="indyk">
   <defs>
-    <linearGradient id="turkey-feathers" x1="12" y1="14" x2="52" y2="58" gradientUnits="userSpaceOnUse">
+    <linearGradient id="turkey-feathers" x1="4.5" y1="5.25" x2="19.5" y2="21.75" gradientUnits="userSpaceOnUse">
       <stop offset="0" stop-color="#b5885e"/>
       <stop offset="1" stop-color="#7b4d2f"/>
     </linearGradient>
-    <linearGradient id="turkey-body" x1="18" y1="22" x2="46" y2="54" gradientUnits="userSpaceOnUse">
+    <linearGradient id="turkey-body" x1="6.75" y1="8.25" x2="17.25" y2="20.25" gradientUnits="userSpaceOnUse">
       <stop offset="0" stop-color="#caa07a"/>
       <stop offset="1" stop-color="#8a5b3a"/>
     </linearGradient>
-    <linearGradient id="turkey-beak" x1="30" y1="20" x2="36" y2="28" gradientUnits="userSpaceOnUse">
+    <linearGradient id="turkey-beak" x1="11.25" y1="7.5" x2="13.5" y2="10.5" gradientUnits="userSpaceOnUse">
       <stop offset="0" stop-color="#ffcc66"/>
       <stop offset="1" stop-color="#e2a33e"/>
     </linearGradient>
   </defs>
-  <path d="M14 40c-2-14 8-26 20-26s22 12 20 26c-2 12-12 18-20 18S16 52 14 40z" fill="url(#turkey-feathers)" stroke="#2b2f3a" stroke-width="2"/>
-  <path d="M20 40c0-10 6-18 14-18s14 8 14 18c0 10-6 18-14 18S20 50 20 40z" fill="url(#turkey-body)" stroke="#2b2f3a" stroke-width="2"/>
-  <circle cx="28" cy="34" r="2.6" fill="#2b2f3a"/>
-  <circle cx="40" cy="34" r="2.6" fill="#2b2f3a"/>
-  <path d="M30 36l6 0" fill="none" stroke="#2b2f3a" stroke-width="2" stroke-linecap="round"/>
-  <path d="M32 36c2 2 2 4 0 6" fill="none" stroke="#d04a4a" stroke-width="3" stroke-linecap="round"/>
-  <path d="M31 27l6 3-6 3z" fill="url(#turkey-beak)" stroke="#2b2f3a" stroke-width="2" stroke-linejoin="round"/>
-  <path d="M24 22c-3-2-6-2-9 0" fill="none" stroke="#2b2f3a" stroke-width="2" stroke-linecap="round"/>
-  <path d="M49 22c-3-2-6-2-9 0" fill="none" stroke="#2b2f3a" stroke-width="2" stroke-linecap="round"/>
+  <path d="M5.25 15c-.75-5.25 3-9.75 7.5-9.75s8.25 4.5 7.5 9.75c-.75 4.5-4.5 6.75-7.5 6.75S6 19.5 5.25 15z" fill="url(#turkey-feathers)" stroke="#2b2f3a" stroke-width=".75"/>
+  <path d="M7.5 15c0-3.75 2.25-6.75 5.25-6.75s5.25 3 5.25 6.75-2.25 6.75-5.25 6.75S7.5 18.75 7.5 15z" fill="url(#turkey-body)" stroke="#2b2f3a" stroke-width=".75"/>
+  <circle cx="10.5" cy="12.75" r="1" fill="#2b2f3a"/>
+  <circle cx="15" cy="12.75" r="1" fill="#2b2f3a"/>
+  <path d="M11.25 13.5h2.25" fill="none" stroke="#2b2f3a" stroke-width=".75" stroke-linecap="round"/>
+  <path d="M12 13.5c.75.75.75 1.5 0 2.25" fill="none" stroke="#d04a4a" stroke-width="1.125" stroke-linecap="round"/>
+  <path d="M11.625 10.125l2.25 1.125-2.25 1.125z" fill="url(#turkey-beak)" stroke="#2b2f3a" stroke-width=".75" stroke-linejoin="round"/>
+  <path d="M9 8.25c-1.125-.75-2.25-.75-3.375 0" fill="none" stroke="#2b2f3a" stroke-width=".75" stroke-linecap="round"/>
+  <path d="M18.375 8.25c-1.125-.75-2.25-.75-3.375 0" fill="none" stroke="#2b2f3a" stroke-width=".75" stroke-linecap="round"/>
 </svg>

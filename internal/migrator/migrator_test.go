@@ -17,11 +17,32 @@ func TestUpEnsuresShoppingListDoneAt(t *testing.T) {
 	}
 	defer db.Close()
 
-	// Simulate an inconsistent DB: schema_migrations claims we're on v4, but the table is missing `done_at`.
+	// Simulate an inconsistent DB: schema_migrations claims we're on v1, but the table is missing `done_at`.
+	// We must create all tables from migration 0001 so subsequent migrations (0002+) can run.
 	_, err = db.Exec(`
 		CREATE TABLE schema_migrations (version uint64, dirty bool);
 		CREATE UNIQUE INDEX version_unique ON schema_migrations (version);
 		INSERT INTO schema_migrations(version, dirty) VALUES (1, 0);
+
+		CREATE TABLE groups (
+		  id INTEGER PRIMARY KEY AUTOINCREMENT,
+		  name TEXT NOT NULL UNIQUE
+		);
+		INSERT INTO groups(name) VALUES ('owoce');
+
+		CREATE TABLE products (
+		  id INTEGER PRIMARY KEY AUTOINCREMENT,
+		  name TEXT NOT NULL UNIQUE,
+		  group_id INTEGER NULL REFERENCES groups(id) ON DELETE SET NULL,
+		  icon_key TEXT NOT NULL DEFAULT 'cart',
+		  quantity_value REAL NOT NULL DEFAULT 0,
+		  quantity_unit TEXT NOT NULL DEFAULT 'sztuk',
+		  min_quantity_value REAL NOT NULL DEFAULT 0,
+		  missing INTEGER NOT NULL DEFAULT 0,
+		  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+		  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+		);
+
 		CREATE TABLE shopping_list_items (
 		  id INTEGER PRIMARY KEY AUTOINCREMENT,
 		  product_id INTEGER NULL,
@@ -30,6 +51,13 @@ func TestUpEnsuresShoppingListDoneAt(t *testing.T) {
 		  quantity_unit TEXT NOT NULL DEFAULT 'sztuk',
 		  done INTEGER NOT NULL DEFAULT 0,
 		  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+		);
+
+		CREATE TABLE product_icon_rules (
+		  id INTEGER PRIMARY KEY AUTOINCREMENT,
+		  match_substring TEXT NOT NULL,
+		  icon_key TEXT NOT NULL,
+		  priority INTEGER NOT NULL DEFAULT 0
 		);
 	`)
 	if err != nil {

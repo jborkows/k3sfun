@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <path d="M9 6h6l-.5 1H9.5L9 6Z" fill="#22c55e" stroke="#16a34a" stroke-width="0.6"/>
+  <!-- Berry drupelets -->
+  <circle cx="12" cy="9" r="1.8" fill="#be185d" stroke="#9d174d" stroke-width="0.6"/>
+  <circle cx="9.5" cy="10.5" r="1.6" fill="#db2777" stroke="#be185d" stroke-width="0.6"/>
+  <circle cx="14.5" cy="10.5" r="1.6" fill="#db2777" stroke="#be185d" stroke-width="0.6"/>
+  <circle cx="8.5" cy="13" r="1.5" fill="#ec4899" stroke="#db2777" stroke-width="0.6"/>
+  <circle cx="12" cy="12.5" r="1.7" fill="#db2777" stroke="#be185d" stroke-width="0.6"/>
+  <circle cx="15.5" cy="13" r="1.5" fill="#ec4899" stroke="#db2777" stroke-width="0.6"/>
+  <circle cx="9.5" cy="15.5" r="1.4" fill="#f472b6" stroke="#ec4899" stroke-width="0.6"/>
+  <circle cx="12" cy="15.8" r="1.5" fill="#ec4899" stroke="#db2777" stroke-width="0.6"/>
+  <circle cx="14.5" cy="15.5" r="1.4" fill="#f472b6" stroke="#ec4899" stroke-width="0.6"/>
+  <circle cx="12" cy="18.5" r="1.2" fill="#f9a8d4" stroke="#f472b6" stroke-width="0.6"/>
+</svg>

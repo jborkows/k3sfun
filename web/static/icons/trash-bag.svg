@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <!-- Trash bag body -->
+  <path d="M6 7c-.5 0-1 .5-.8 1l2 12c.1.6.6 1 1.2 1h7.2c.6 0 1.1-.4 1.2-1l2-12c.2-.5-.3-1-.8-1H6Z" fill="#1f2937" stroke="#374151" stroke-width="1.2" stroke-linejoin="round"/>
+  <!-- Bag tie/knot at top -->
+  <path d="M9 7V5.5c0-.8.7-1.5 1.5-1.5h3c.8 0 1.5.7 1.5 1.5V7" fill="none" stroke="#374151" stroke-width="1.4" stroke-linecap="round"/>
+  <ellipse cx="12" cy="4.5" rx="2.5" ry="1.2" fill="#4b5563"/>
+  <!-- Bag texture lines -->
+  <path d="M8 11c2 .5 4.5.5 8 0" fill="none" stroke="#4b5563" stroke-width="0.8" stroke-linecap="round" opacity="0.6"/>
+  <path d="M8.5 15c2.5.4 4.5.4 7 0" fill="none" stroke="#4b5563" stroke-width="0.8" stroke-linecap="round" opacity="0.6"/>
+</svg>
