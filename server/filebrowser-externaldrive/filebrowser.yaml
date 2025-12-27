@@ -118,14 +118,30 @@ spec:
       initContainers:
         # Initialize filebrowser database with proxy auth
         - name: filebrowser-init
-          image: filebrowser/filebrowser
+          image: alpine
           command:
-            - /filebrowser
-            - config
-            - set
-            - --auth.method=proxy
-            - --auth.header=X-Forwarded-Email
-            - --database=/database/filebrowser.db
+            - sh
+            - -c
+            - |
+              # Download filebrowser binary
+              wget -qO /tmp/filebrowser.tar.gz https://github.com/filebrowser/filebrowser/releases/download/v2.31.2/linux-amd64-filebrowser.tar.gz
+              tar -xzf /tmp/filebrowser.tar.gz -C /tmp
+              chmod +x /tmp/filebrowser
+              
+              # Initialize database if not exists
+              if [ ! -f /database/filebrowser.db ]; then
+                echo "Initializing new database..."
+                /tmp/filebrowser config init --database=/database/filebrowser.db
+              fi
+              
+              # Set proxy auth method
+              echo "Setting proxy auth method..."
+              /tmp/filebrowser config set \
+                --auth.method=proxy \
+                --auth.header=X-Forwarded-Email \
+                --database=/database/filebrowser.db
+              
+              echo "Init complete"
           volumeMounts:
             - name: fd-db
               mountPath: /database
