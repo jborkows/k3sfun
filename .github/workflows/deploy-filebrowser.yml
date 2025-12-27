@@ -1,0 +1,96 @@
+name: Deploy Filebrowser
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'server/filebrowser-externaldrive/**'
+      - '.github/workflows/deploy-filebrowser.yml'
+    tags:
+      - "filebrowser-*"
+  workflow_dispatch: {}
+
+concurrency:
+  group: deploy-filebrowser-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Deploy Filebrowser with OIDC
+    runs-on: k3s-home-runner
+    container:
+      image: bitnami/kubectl:latest
+      options: --user 0 --network host
+    env:
+      DOMAIN_NAME: ${{ secrets.DOMAIN_NAME }}
+      KUBECONFIG_B64: ${{ secrets.KUBECONFIG_B64 }}
+      KUBECONFIG: ${{ github.workspace }}/.kubeconfig
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "${DOMAIN_NAME:-}" ]]; then
+            echo "Missing required secret: DOMAIN_NAME" >&2
+            exit 1
+          fi
+          if [[ -z "${KUBECONFIG_B64:-}" ]]; then
+            echo "Missing required secret: KUBECONFIG_B64" >&2
+            exit 1
+          fi
+          echo "::add-mask::${DOMAIN_NAME}"
+
+      - name: Configure kubeconfig
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "${KUBECONFIG_B64}" | base64 -d > "${KUBECONFIG}"
+          chmod 600 "${KUBECONFIG}"
+          kubectl get --raw='/readyz' >/dev/null
+
+      - name: Ensure namespace exists
+        shell: bash
+        run: |
+          set -euo pipefail
+          kubectl get namespace applications >/dev/null 2>&1 || kubectl create namespace applications
+
+      - name: Check OIDC secret exists
+        shell: bash
+        run: |
+          set -euo pipefail
+          if kubectl get secret filebrowser-oidc -n applications >/dev/null 2>&1; then
+            echo "OIDC secret exists - authentication will be enabled"
+            echo "OIDC_ENABLED=true" >> $GITHUB_ENV
+          else
+            echo "::warning::OIDC secret 'filebrowser-oidc' not found in namespace 'applications'"
+            echo "::warning::Filebrowser will be deployed but oauth2-proxy sidecar may not function correctly"
+            echo "::warning::Create the secret manually using: kubectl create secret generic filebrowser-oidc ..."
+            echo "OIDC_ENABLED=false" >> $GITHUB_ENV
+          fi
+
+      - name: Deploy Filebrowser manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          manifest_path="server/filebrowser-externaldrive/filebrowser.yaml"
+          sed "s/DOMAIN/${DOMAIN_NAME}/g" "$manifest_path" | kubectl apply -f -
+
+      - name: Wait for deployment
+        shell: bash
+        run: |
+          set -euo pipefail
+          kubectl rollout status deployment/filebrowser -n applications --timeout=120s
+
+      - name: Deployment summary
+        shell: bash
+        run: |
+          echo "Filebrowser deployed successfully!"
+          echo "URL: https://filebrowser.${DOMAIN_NAME}"
+          if [[ "${OIDC_ENABLED}" == "true" ]]; then
+            echo "Authentication: OIDC enabled via oauth2-proxy"
+          else
+            echo "Authentication: OIDC NOT configured (secret missing)"
+          fi

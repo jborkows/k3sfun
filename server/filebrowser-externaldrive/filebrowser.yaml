@@ -1,4 +1,134 @@
 ---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: filebrowser-nginx-config
+  namespace: applications
+data:
+  nginx.conf: |
+    worker_processes 1;
+    error_log /dev/stderr warn;
+    pid /tmp/nginx.pid;
+
+    events {
+        worker_connections 256;
+    }
+
+    http {
+        access_log /dev/stdout;
+        client_body_temp_path /tmp/client_body;
+        proxy_temp_path /tmp/proxy;
+        fastcgi_temp_path /tmp/fastcgi;
+        uwsgi_temp_path /tmp/uwsgi;
+        scgi_temp_path /tmp/scgi;
+
+        upstream oauth2_proxy {
+            server 127.0.0.1:4180;
+        }
+
+        upstream filebrowser_direct {
+            server 127.0.0.1:8080;
+        }
+
+        server {
+            listen 8000;
+
+            location /healthz {
+                return 200 'OK';
+                add_header Content-Type text/plain;
+            }
+
+            location / {
+                # Check if OIDC is available by checking the status file
+                set $backend "oauth2_proxy";
+                
+                # Use Lua or error_page trick to check file
+                # If oauth2-proxy is not responding, fall back to direct
+                proxy_connect_timeout 2s;
+                proxy_read_timeout 30s;
+                proxy_send_timeout 30s;
+                
+                proxy_pass http://$backend;
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto $scheme;
+                
+                # If oauth2-proxy fails, try filebrowser directly
+                proxy_intercept_errors on;
+                error_page 502 503 504 = @fallback;
+            }
+
+            location @fallback {
+                proxy_pass http://filebrowser_direct;
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto $scheme;
+            }
+        }
+    }
+
+  # Script for OIDC health monitoring
+  oidc-monitor.sh: |
+    #!/bin/sh
+    set -e
+    
+    OIDC_STATUS_FILE="/shared/oidc-status"
+    CHECK_INTERVAL="${CHECK_INTERVAL:-30}"
+    
+    echo "Starting OIDC health monitor..."
+    echo "OIDC Issuer: ${OIDC_ISSUER_URL:-not set}"
+    echo "Check interval: ${CHECK_INTERVAL}s"
+    
+    # Initialize status
+    echo "unknown" > "$OIDC_STATUS_FILE"
+    
+    check_oidc() {
+        if [ -z "$OIDC_ISSUER_URL" ]; then
+            echo "disabled"
+            return
+        fi
+        
+        DISCOVERY_URL="${OIDC_ISSUER_URL}/.well-known/openid-configuration"
+        if curl --silent --fail --max-time 5 "$DISCOVERY_URL" > /dev/null 2>&1; then
+            echo "available"
+        else
+            echo "unavailable"
+        fi
+    }
+    
+    check_oauth2_proxy() {
+        if curl --silent --fail --max-time 2 "http://127.0.0.1:4180/ping" > /dev/null 2>&1; then
+            echo "ready"
+        else
+            echo "not_ready"
+        fi
+    }
+    
+    while true; do
+        OIDC_STATUS=$(check_oidc)
+        PROXY_STATUS=$(check_oauth2_proxy)
+        TIMESTAMP=$(date -Iseconds)
+        
+        # Write status to shared file
+        cat > "$OIDC_STATUS_FILE" << EOF
+    oidc_provider: $OIDC_STATUS
+    oauth2_proxy: $PROXY_STATUS
+    last_check: $TIMESTAMP
+    EOF
+        
+        if [ "$OIDC_STATUS" = "available" ] && [ "$PROXY_STATUS" = "ready" ]; then
+            echo "[$TIMESTAMP] OIDC: OK, OAuth2-Proxy: OK - Authentication active"
+        elif [ "$OIDC_STATUS" = "disabled" ]; then
+            echo "[$TIMESTAMP] OIDC: Disabled - Running without authentication"
+        else
+            echo "[$TIMESTAMP] OIDC: $OIDC_STATUS, OAuth2-Proxy: $PROXY_STATUS - Fallback to direct access"
+        fi
+        
+        sleep "$CHECK_INTERVAL"
+    done
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -15,24 +145,162 @@ spec:
         app: filebrowser
     spec:
       containers:
-      - name: filebrowser
-        image: filebrowser/filebrowser
-        volumeMounts:
-        - name: files
-          mountPath: /srv
-        - name: fd-db
-          mountPath: /database
-        ports:
-        - containerPort: 80
+        # Nginx proxy - entry point that handles failover
+        - name: nginx-proxy
+          image: nginx:alpine
+          ports:
+            - containerPort: 8000
+              name: http
+          volumeMounts:
+            - name: nginx-config
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
+            - name: shared
+              mountPath: /shared
+            - name: nginx-tmp
+              mountPath: /tmp
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8000
+            initialDelaySeconds: 2
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 50m
+              memory: 32Mi
+
+        # OIDC health monitor sidecar
+        - name: oidc-monitor
+          image: curlimages/curl:latest
+          command:
+            - /bin/sh
+            - /scripts/oidc-monitor.sh
+          env:
+            - name: OIDC_ISSUER_URL
+              valueFrom:
+                secretKeyRef:
+                  name: filebrowser-oidc
+                  key: OIDC_ISSUER_URL
+                  optional: true
+            - name: CHECK_INTERVAL
+              value: "600"
+          volumeMounts:
+            - name: nginx-config
+              mountPath: /scripts
+            - name: shared
+              mountPath: /shared
+          resources:
+            requests:
+              cpu: 5m
+              memory: 16Mi
+            limits:
+              cpu: 20m
+              memory: 32Mi
+
+        # OAuth2 Proxy for OIDC authentication
+        - name: oauth2-proxy
+          image: quay.io/oauth2-proxy/oauth2-proxy:v7.6.0
+          args:
+            - --http-address=0.0.0.0:4180
+            - --upstream=http://127.0.0.1:8080
+            - --provider=oidc
+            - --email-domain=*
+            - --cookie-secure=true
+            - --cookie-samesite=lax
+            - --cookie-refresh=1h
+            - --cookie-expire=24h
+            - --pass-access-token=true
+            - --set-xauthrequest=true
+            - --skip-provider-button=true
+            - --silence-ping-logging=true
+          env:
+            - name: OAUTH2_PROXY_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: filebrowser-oidc
+                  key: OIDC_CLIENT_ID
+                  optional: true
+            - name: OAUTH2_PROXY_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: filebrowser-oidc
+                  key: OIDC_CLIENT_SECRET
+                  optional: true
+            - name: OAUTH2_PROXY_OIDC_ISSUER_URL
+              valueFrom:
+                secretKeyRef:
+                  name: filebrowser-oidc
+                  key: OIDC_ISSUER_URL
+                  optional: true
+            - name: OAUTH2_PROXY_REDIRECT_URL
+              value: "https://filebrowser.DOMAIN/oauth2/callback"
+            - name: OAUTH2_PROXY_COOKIE_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: filebrowser-oidc
+                  key: COOKIE_SECRET
+                  optional: true
+          ports:
+            - containerPort: 4180
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
+          volumeMounts:
+            - name: shared
+              mountPath: /shared
+
+        # Main filebrowser container
+        - name: filebrowser
+          image: filebrowser/filebrowser
+          args:
+            - --address=127.0.0.1
+            - --port=8080
+          volumeMounts:
+            - name: files
+              mountPath: /srv
+            - name: fd-db
+              mountPath: /database
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+
       volumes:
-      - name: files
-        hostPath:
-          path: /mnt/external/drive
-          type: Directory
-      - name: fd-db
-        hostPath:
-          path: /mnt/external/filebrowser-db
-          type: DirectoryOrCreate
+        - name: files
+          hostPath:
+            path: /mnt/external/drive
+            type: Directory
+        - name: fd-db
+          hostPath:
+            path: /mnt/external/filebrowser-db
+            type: DirectoryOrCreate
+        - name: shared
+          emptyDir: {}
+        - name: nginx-config
+          configMap:
+            name: filebrowser-nginx-config
+            defaultMode: 0755
+        - name: nginx-tmp
+          emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
@@ -43,31 +311,29 @@ spec:
   selector:
     app: filebrowser
   ports:
-  - port: 80
-    targetPort: 80
-    name: http
+    - port: 80
+      targetPort: 8000
+      name: http
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: filebrowserr-ingress
+  name: filebrowser-ingress
   namespace: applications
   annotations:
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
 spec:
   rules:
-  - host: filebrowser.DOMAIN
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: filebrowser
-            port:
-              number: 80
+    - host: filebrowser.DOMAIN
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: filebrowser
+                port:
+                  number: 80
   tls:
-  - hosts:
-    - filebrowser.DOMAIN
-
-
+    - hosts:
+        - filebrowser.DOMAIN
