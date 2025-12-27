@@ -66,6 +66,7 @@ data:
     }
 
   # Filebrowser settings - override the default /config/settings.json
+  # Normal auth - OIDC protects access, filebrowser manages users/permissions
   settings.json: |
     {
       "port": 8080,
