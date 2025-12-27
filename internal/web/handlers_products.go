@@ -6,34 +6,45 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 
 	"shopping/internal/domain/products"
 	"shopping/internal/web/views"
 )
 
-func (s *Server) handleProductsPage(w http.ResponseWriter, r *http.Request) {
-	user, _ := s.auth.CurrentUser(r)
+// productsListData contains the shared data needed for both full page and partial renders.
+type productsListData struct {
+	Groups           []products.Group
+	Products         []products.Product
+	OnlyMissing      bool
+	NameQuery        string
+	SelectedGroupIDs []products.GroupID
+	Page             int64
+	TotalPages       int64
+	Total            int64
+}
+
+// fetchProductsListData fetches all data needed to render the products list.
+// This consolidates the duplicated logic from handleProductsPage and handleProductsPartial.
+func (s *Server) fetchProductsListData(ctx context.Context, r *http.Request) (*productsListData, error) {
 	onlyMissing, nameQuery, groupIDs, page := parseProductsListQuery(r)
 	perPage := products.MaxProductsPageSize
 
-	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
-	defer cancel()
-
 	groups, err := s.products.qry.ListGroups(ctx)
 	if err != nil {
-		s.writeDBError(w, err)
-		return
+		return nil, err
 	}
-	total, err := s.products.qry.CountProducts(ctx, products.ProductFilter{
+
+	filter := products.ProductFilter{
 		OnlyMissingOrLow: onlyMissing,
 		NameQuery:        nameQuery,
 		GroupIDs:         groupIDs,
-	})
-	if err != nil {
-		s.writeDBError(w, err)
-		return
 	}
+
+	total, err := s.products.qry.CountProducts(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+
 	totalPages := int64(1)
 	if total > 0 {
 		totalPages = (total + perPage - 1) / perPage
@@ -41,20 +52,44 @@ func (s *Server) handleProductsPage(w http.ResponseWriter, r *http.Request) {
 	if page > totalPages {
 		page = totalPages
 	}
+	if page < 1 {
+		page = 1
+	}
+
 	offset := (page - 1) * perPage
-	list, err := s.products.qry.ListProducts(ctx, products.ProductFilter{
-		OnlyMissingOrLow: onlyMissing,
+	filter.Limit = perPage
+	filter.Offset = offset
+
+	list, err := s.products.qry.ListProducts(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+
+	return &productsListData{
+		Groups:           groups,
+		Products:         list,
+		OnlyMissing:      onlyMissing,
 		NameQuery:        nameQuery,
-		GroupIDs:         groupIDs,
-		Limit:            perPage,
-		Offset:           offset,
-	})
+		SelectedGroupIDs: groupIDs,
+		Page:             page,
+		TotalPages:       totalPages,
+		Total:            total,
+	}, nil
+}
+
+func (s *Server) handleProductsPage(w http.ResponseWriter, r *http.Request) {
+	user, _ := s.auth.CurrentUser(r)
+
+	ctx, cancel := context.WithTimeout(r.Context(), DefaultHandlerTimeout)
+	defer cancel()
+
+	data, err := s.fetchProductsListData(ctx, r)
 	if err != nil {
 		s.writeDBError(w, err)
 		return
 	}
 
-	data := views.ProductsPageData{
+	pageData := views.ProductsPageData{
 		Base: views.BaseData{
 			Title:         "Zapasy",
 			User:          user,
@@ -62,75 +97,45 @@ func (s *Server) handleProductsPage(w http.ResponseWriter, r *http.Request) {
 			StaticVersion: s.staticV,
 			IsAdmin:       s.isAdmin(user),
 		},
-		Groups:           groups,
-		Products:         list,
-		OnlyMissing:      onlyMissing,
-		NameQuery:        nameQuery,
-		SelectedGroupIDs: groupIDs,
-		Page:             page,
-		TotalPages:       totalPages,
-		Total:            total,
+		Groups:           data.Groups,
+		Products:         data.Products,
+		OnlyMissing:      data.OnlyMissing,
+		NameQuery:        data.NameQuery,
+		SelectedGroupIDs: data.SelectedGroupIDs,
+		Page:             data.Page,
+		TotalPages:       data.TotalPages,
+		Total:            data.Total,
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if err := views.ProductsPage(data).Render(r.Context(), w); err != nil {
+	if err := views.ProductsPage(pageData).Render(r.Context(), w); err != nil {
 		http.Error(w, fmt.Sprintf("render: %v", err), http.StatusInternalServerError)
 	}
 }
 
 func (s *Server) handleProductsPartial(w http.ResponseWriter, r *http.Request) {
-	onlyMissing, nameQuery, groupIDs, page := parseProductsListQuery(r)
-	perPage := products.MaxProductsPageSize
-	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(r.Context(), DefaultHandlerTimeout)
 	defer cancel()
 
-	groups, err := s.products.qry.ListGroups(ctx)
-	if err != nil {
-		s.writeDBError(w, err)
-		return
-	}
-	total, err := s.products.qry.CountProducts(ctx, products.ProductFilter{
-		OnlyMissingOrLow: onlyMissing,
-		NameQuery:        nameQuery,
-		GroupIDs:         groupIDs,
-	})
-	if err != nil {
-		s.writeDBError(w, err)
-		return
-	}
-	totalPages := int64(1)
-	if total > 0 {
-		totalPages = (total + perPage - 1) / perPage
-	}
-	if page > totalPages {
-		page = totalPages
-	}
-	offset := (page - 1) * perPage
-	list, err := s.products.qry.ListProducts(ctx, products.ProductFilter{
-		OnlyMissingOrLow: onlyMissing,
-		NameQuery:        nameQuery,
-		GroupIDs:         groupIDs,
-		Limit:            perPage,
-		Offset:           offset,
-	})
+	data, err := s.fetchProductsListData(ctx, r)
 	if err != nil {
 		s.writeDBError(w, err)
 		return
 	}
 
-	data := views.ProductsListData{
-		Groups:           groups,
-		Products:         list,
-		OnlyMissing:      onlyMissing,
-		NameQuery:        nameQuery,
-		SelectedGroupIDs: groupIDs,
-		Page:             page,
-		TotalPages:       totalPages,
-		Total:            total,
+	listData := views.ProductsListData{
+		Groups:           data.Groups,
+		Products:         data.Products,
+		OnlyMissing:      data.OnlyMissing,
+		NameQuery:        data.NameQuery,
+		SelectedGroupIDs: data.SelectedGroupIDs,
+		Page:             data.Page,
+		TotalPages:       data.TotalPages,
+		Total:            data.Total,
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if err := views.ProductsList(data).Render(r.Context(), w); err != nil {
+	if err := views.ProductsList(listData).Render(r.Context(), w); err != nil {
 		http.Error(w, fmt.Sprintf("render: %v", err), http.StatusInternalServerError)
 	}
 }
@@ -154,7 +159,7 @@ func (s *Server) handleCreateProduct(w http.ResponseWriter, r *http.Request) {
 	}
 	unit := products.Unit(strings.TrimSpace(r.FormValue("unit")))
 
-	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(r.Context(), DefaultHandlerTimeout)
 	defer cancel()
 
 	var gid *products.GroupID
@@ -190,7 +195,7 @@ func (s *Server) handleSetQuantity(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Nieprawidłowa ilość.", http.StatusBadRequest)
 		return
 	}
-	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(r.Context(), DefaultHandlerTimeout)
 	defer cancel()
 	if err := s.products.svc.SetProductQuantity(ctx, id, qty); err != nil {
 		s.writeUserError(w, err)
@@ -215,7 +220,7 @@ func (s *Server) handleSetMin(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Nieprawidłowa minimalna ilość.", http.StatusBadRequest)
 		return
 	}
-	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(r.Context(), DefaultHandlerTimeout)
 	defer cancel()
 	if err := s.products.svc.SetProductMinQuantity(ctx, id, min); err != nil {
 		s.writeUserError(w, err)
@@ -236,7 +241,7 @@ func (s *Server) handleSetUnit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	unit := products.Unit(strings.TrimSpace(r.FormValue("unit")))
-	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(r.Context(), DefaultHandlerTimeout)
 	defer cancel()
 	if err := s.products.svc.SetProductUnit(ctx, id, unit); err != nil {
 		s.writeUserError(w, err)
@@ -258,7 +263,7 @@ func (s *Server) handleSetMissing(w http.ResponseWriter, r *http.Request) {
 	}
 	missing := r.FormValue("missing") == "on" || r.FormValue("missing") == "1" || r.FormValue("missing") == "true"
 
-	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(r.Context(), DefaultHandlerTimeout)
 	defer cancel()
 	if err := s.products.svc.SetProductMissing(ctx, id, missing); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -284,7 +289,7 @@ func (s *Server) handleSetGroup(w http.ResponseWriter, r *http.Request) {
 		gid = &groupID
 	}
 
-	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(r.Context(), DefaultHandlerTimeout)
 	defer cancel()
 	if err := s.products.svc.SetProductGroup(ctx, id, gid); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -308,7 +313,7 @@ func (s *Server) handleCreateGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	name := r.FormValue("name")
-	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(r.Context(), DefaultHandlerTimeout)
 	defer cancel()
 	if _, err := s.products.svc.CreateGroup(ctx, name); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)

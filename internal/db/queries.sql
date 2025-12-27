@@ -77,6 +77,11 @@ UPDATE products
 SET quantity_value = ?, updated_at = CURRENT_TIMESTAMP
 WHERE id = ?;
 
+-- name: AddProductQuantity :exec
+UPDATE products
+SET quantity_value = quantity_value + ?, missing = 0, updated_at = CURRENT_TIMESTAMP
+WHERE id = ?;
+
 -- name: SetProductMinQuantity :exec
 UPDATE products
 SET min_quantity_value = ?, updated_at = CURRENT_TIMESTAMP

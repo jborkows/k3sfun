@@ -15,7 +15,7 @@ templ ProductsPage(data ProductsPageData) {
 			<title>{ data.Base.Title }</title>
 			<link rel="stylesheet" href={ "/static/app.css?v=" + data.Base.StaticVersion } />
 			<script src={ data.Base.HTMXSrc }></script>
-			<script src="https://unpkg.com/htmx.org@1.9.12/dist/ext/sse.js"></script>
+			<script src={ data.Base.HTMXSSESrc() }></script>
 			<script src={ "/static/products.js?v=" + data.Base.StaticVersion }></script>
 		</head>
 		<body
@@ -43,7 +43,7 @@ templ AdminPage(data AdminPageData) {
 			<title>{ data.Base.Title }</title>
 			<link rel="stylesheet" href={ "/static/app.css?v=" + data.Base.StaticVersion } />
 			<script src={ data.Base.HTMXSrc }></script>
-			<script src="https://unpkg.com/htmx.org@1.9.12/dist/ext/sse.js"></script>
+			<script src={ data.Base.HTMXSSESrc() }></script>
 		</head>
 		<body>
 			@Topbar(data.Base)
@@ -66,7 +66,7 @@ templ ShoppingListPage(data ShoppingListPageData) {
 			<title>{ data.Base.Title }</title>
 			<link rel="stylesheet" href={ "/static/app.css?v=" + data.Base.StaticVersion } />
 			<script src={ data.Base.HTMXSrc }></script>
-			<script src="https://unpkg.com/htmx.org@1.9.12/dist/ext/sse.js"></script>
+			<script src={ data.Base.HTMXSSESrc() }></script>
 		</head>
 		<body
 			hx-ext="sse"

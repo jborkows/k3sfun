@@ -12,6 +12,22 @@ import (
 	"time"
 )
 
+const addProductQuantity = `-- name: AddProductQuantity :exec
+UPDATE products
+SET quantity_value = quantity_value + ?, missing = 0, updated_at = CURRENT_TIMESTAMP
+WHERE id = ?
+`
+
+type AddProductQuantityParams struct {
+	QuantityValue float64
+	ID            int64
+}
+
+func (q *Queries) AddProductQuantity(ctx context.Context, arg AddProductQuantityParams) error {
+	_, err := q.db.ExecContext(ctx, addProductQuantity, arg.QuantityValue, arg.ID)
+	return err
+}
+
 const addShoppingListItemByName = `-- name: AddShoppingListItemByName :exec
 INSERT OR IGNORE INTO shopping_list_items(product_id, name, quantity_value, quantity_unit, done)
 VALUES (NULL, ?, ?, ?, 0)

@@ -14,6 +14,16 @@ type BaseData struct {
 	IsAdmin       bool
 }
 
+// HTMXSSESrc returns the SSE extension URL derived from the main HTMX source.
+// For example, if HTMXSrc is "https://unpkg.com/htmx.org@1.9.12",
+// this returns "https://unpkg.com/htmx.org@1.9.12/dist/ext/sse.js".
+func (b BaseData) HTMXSSESrc() string {
+	if b.HTMXSrc == "" {
+		return "https://unpkg.com/htmx.org@1.9.12/dist/ext/sse.js"
+	}
+	return b.HTMXSrc + "/dist/ext/sse.js"
+}
+
 type ProductsPageData struct {
 	Base             BaseData
 	Groups           []products.Group

@@ -66,6 +66,8 @@ type oidcAuth struct {
 	stateCookieName string
 	nonceCookieName string
 	sessionCookie   string
+
+	stopCleanup chan struct{}
 }
 
 type session struct {
@@ -90,14 +92,53 @@ func newOIDC(cfg config.Config) (*oidcAuth, error) {
 		Scopes:       []string{oidc.ScopeOpenID, "profile", "email"},
 	}
 
-	return &oidcAuth{
+	auth := &oidcAuth{
 		oauth2Config:    oauth2Config,
 		verifier:        provider.Verifier(&oidc.Config{ClientID: cfg.OIDCClientID}),
 		sessions:        map[string]session{},
 		stateCookieName: "oidc_state",
 		nonceCookieName: "oidc_nonce",
 		sessionCookie:   "shopping_session",
-	}, nil
+		stopCleanup:     make(chan struct{}),
+	}
+
+	// Start background cleanup goroutine
+	go auth.cleanupExpiredSessions()
+
+	return auth, nil
+}
+
+// cleanupExpiredSessions periodically removes expired sessions to prevent memory leaks.
+func (a *oidcAuth) cleanupExpiredSessions() {
+	ticker := time.NewTicker(5 * time.Minute)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			a.removeExpired()
+		case <-a.stopCleanup:
+			return
+		}
+	}
+}
+
+// removeExpired removes all sessions that have passed their expiration time.
+func (a *oidcAuth) removeExpired() {
+	now := time.Now()
+	a.sessionsMu.Lock()
+	defer a.sessionsMu.Unlock()
+
+	for sid, sess := range a.sessions {
+		if now.After(sess.expiresAt) {
+			delete(a.sessions, sid)
+		}
+	}
+}
+
+// Close stops the background cleanup goroutine.
+func (a *oidcAuth) Close() {
+	close(a.stopCleanup)
 }
 
 func (a *oidcAuth) Middleware(next http.Handler) http.Handler {

@@ -20,9 +20,17 @@ import (
 	"shopping/internal/domain/shoppinglist"
 )
 
+// DBTX is the interface that both *sql.DB and *sql.Tx satisfy.
+type DBTX interface {
+	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
+	QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error)
+	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
+}
+
 type Repo struct {
-	db *sql.DB
-	q  *db.Queries
+	db   *sql.DB
+	dbtx DBTX
+	q    *db.Queries
 }
 
 func Open(dsn string) (*sql.DB, error) {
@@ -51,7 +59,35 @@ func Open(dsn string) (*sql.DB, error) {
 }
 
 func NewRepo(conn *sql.DB) *Repo {
-	return &Repo{db: conn, q: db.New(conn)}
+	return &Repo{db: conn, dbtx: conn, q: db.New(conn)}
+}
+
+// WithTx executes fn within a database transaction.
+// If fn returns an error, the transaction is rolled back; otherwise, it is committed.
+func (r *Repo) WithTx(ctx context.Context, fn func(*Repo) error) error {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if p := recover(); p != nil {
+			_ = tx.Rollback()
+			panic(p)
+		}
+	}()
+
+	txRepo := &Repo{
+		db:   r.db,
+		dbtx: tx,
+		q:    db.New(tx),
+	}
+
+	if err := fn(txRepo); err != nil {
+		_ = tx.Rollback()
+		return err
+	}
+
+	return tx.Commit()
 }
 
 func (r *Repo) ListGroups(ctx context.Context) ([]products.Group, error) {
@@ -181,9 +217,7 @@ func (r *Repo) CreateGroup(ctx context.Context, name string) (products.GroupID, 
 }
 
 func (r *Repo) CreateProduct(ctx context.Context, p products.NewProduct) (products.ProductID, error) {
-	if p.Name == "" {
-		return 0, errors.New("name required")
-	}
+	// Note: Name validation is handled by the domain Service layer
 	var gid any = nil
 	if p.GroupID != nil {
 		gid = int64(*p.GroupID)
@@ -204,12 +238,10 @@ func (r *Repo) SetProductQuantity(ctx context.Context, productID products.Produc
 }
 
 func (r *Repo) AddProductQuantity(ctx context.Context, productID products.ProductID, delta float64) error {
-	_, err := r.db.ExecContext(ctx, `
-		UPDATE products
-		SET quantity_value = quantity_value + ?, missing = 0, updated_at = CURRENT_TIMESTAMP
-		WHERE id = ?
-	`, delta, int64(productID))
-	return err
+	return r.q.AddProductQuantity(ctx, db.AddProductQuantityParams{
+		QuantityValue: delta,
+		ID:            int64(productID),
+	})
 }
 
 func (r *Repo) SetProductMinQuantity(ctx context.Context, productID products.ProductID, min float64) error {

@@ -2,12 +2,23 @@ package web
 
 import (
 	"net/http"
+	"time"
 
 	"shopping/internal/domain/admin"
 	"shopping/internal/domain/products"
 	"shopping/internal/domain/shoppinglist"
 	"shopping/internal/infrastructure/config"
 	"shopping/internal/infrastructure/oidc"
+)
+
+// Timeout constants for consistent request handling across all handlers.
+const (
+	// DefaultHandlerTimeout is the default timeout for HTTP handlers.
+	DefaultHandlerTimeout = 5 * time.Second
+	// ShortHandlerTimeout is used for quick operations.
+	ShortHandlerTimeout = 3 * time.Second
+	// LongHandlerTimeout is used for potentially slower operations.
+	LongHandlerTimeout = 10 * time.Second
 )
 
 type Server struct {
@@ -56,5 +67,9 @@ func (s *Server) Routes() http.Handler {
 	s.registerProductRoutes(mux, wrap)
 	s.registerAdminRoutes(mux, wrap)
 
-	return mux
+	// Apply middleware chain: OpenTelemetry tracing -> Request logging -> Router
+	return ChainMiddleware(mux,
+		OtelMiddleware("shopping"),
+		LoggingMiddleware,
+	)
 }

@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 
 	"shopping/internal/domain/products"
 	"shopping/internal/domain/shoppinglist"
@@ -16,7 +15,7 @@ import (
 func (s *Server) handleShoppingListPage(w http.ResponseWriter, r *http.Request) {
 	user, _ := s.auth.CurrentUser(r)
 
-	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(r.Context(), DefaultHandlerTimeout)
 	defer cancel()
 
 	items, err := s.shopping.svc.ListItems(ctx)
@@ -43,7 +42,7 @@ func (s *Server) handleShoppingListPage(w http.ResponseWriter, r *http.Request) 
 }
 
 func (s *Server) handleShoppingListPartial(w http.ResponseWriter, r *http.Request) {
-	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(r.Context(), DefaultHandlerTimeout)
 	defer cancel()
 
 	items, err := s.shopping.svc.ListItems(ctx)
@@ -71,7 +70,7 @@ func (s *Server) handleAddShoppingListByName(w http.ResponseWriter, r *http.Requ
 	}
 	unit := products.Unit(strings.TrimSpace(r.FormValue("unit")))
 
-	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(r.Context(), DefaultHandlerTimeout)
 	defer cancel()
 	if err := s.shopping.svc.AddItemByName(ctx, name, qty, unit); err != nil {
 		s.writeUserError(w, err)
@@ -87,7 +86,7 @@ func (s *Server) handleAddShoppingListFromProduct(w http.ResponseWriter, r *http
 		http.Error(w, "bad id", http.StatusBadRequest)
 		return
 	}
-	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(r.Context(), DefaultHandlerTimeout)
 	defer cancel()
 	if err := s.shopping.svc.AddItemByProductID(ctx, id); err != nil {
 		s.writeDBError(w, err)
@@ -123,7 +122,7 @@ func (s *Server) handleSetShoppingListDone(w http.ResponseWriter, r *http.Reques
 	qtyStr := strings.TrimSpace(r.FormValue("quantity"))
 	unit := products.Unit(strings.TrimSpace(r.FormValue("unit")))
 
-	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(r.Context(), DefaultHandlerTimeout)
 	defer cancel()
 	if qtyStr != "" || unit != "" {
 		qty, err := strconv.ParseFloat(qtyStr, 64)
@@ -159,7 +158,7 @@ func (s *Server) handleDeleteShoppingListItem(w http.ResponseWriter, r *http.Req
 		http.Error(w, "bad id", http.StatusBadRequest)
 		return
 	}
-	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(r.Context(), DefaultHandlerTimeout)
 	defer cancel()
 	if err := s.shopping.svc.Delete(ctx, shoppinglist.ItemID(id)); err != nil {
 		s.writeDBError(w, err)
@@ -176,7 +175,7 @@ func (s *Server) handleAddShoppingItemToSupplies(w http.ResponseWriter, r *http.
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(r.Context(), DefaultHandlerTimeout)
 	defer cancel()
 
 	item, err := s.shopping.svc.GetItem(ctx, shoppinglist.ItemID(id))
