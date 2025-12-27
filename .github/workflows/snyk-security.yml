@@ -20,6 +20,7 @@ jobs:
   snyk-go:
     name: Snyk Go Dependencies Scan
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/shoppinglist'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -27,8 +28,9 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version-file: '.worktrees/k3sfun-shoppinglist/go.mod'
-          cache: false
+          go-version: '1.25'
+          cache: true
+          cache-dependency-path: go.sum
 
       - name: Run Snyk to check Go dependencies
         uses: snyk/actions/golang@master
@@ -36,7 +38,7 @@ jobs:
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
-          args: --severity-threshold=high --file=.worktrees/k3sfun-shoppinglist/go.mod
+          args: --severity-threshold=high
 
       - name: Upload Snyk results to GitHub Code Scanning
         uses: github/codeql-action/upload-sarif@v3
@@ -48,14 +50,13 @@ jobs:
   snyk-docker:
     name: Snyk Docker Image Scan
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/shoppinglist'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Build Docker image
-        run: |
-          cd .worktrees/k3sfun-shoppinglist
-          docker build -t shopping:latest .
+        run: docker build -t shopping:latest .
 
       - name: Run Snyk to check Docker image
         uses: snyk/actions/docker@master
