@@ -141,6 +141,11 @@ spec:
                 --auth.header=X-Forwarded-Email \
                 --database=/database/filebrowser.db
               
+              # Fix permissions - filebrowser image runs as UID 1000
+              chown -R 1000:1000 /database
+              chmod 755 /database
+              chmod 644 /database/*.db 2>/dev/null || true
+              
               echo "Init complete"
           volumeMounts:
             - name: fd-db
