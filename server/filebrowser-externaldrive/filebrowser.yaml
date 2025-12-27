@@ -39,16 +39,12 @@ data:
             }
 
             location / {
-                # Check if OIDC is available by checking the status file
-                set $backend "oauth2_proxy";
-                
-                # Use Lua or error_page trick to check file
-                # If oauth2-proxy is not responding, fall back to direct
+                # Try oauth2-proxy first, fall back to direct on error
                 proxy_connect_timeout 2s;
                 proxy_read_timeout 30s;
                 proxy_send_timeout 30s;
                 
-                proxy_pass http://$backend;
+                proxy_pass http://oauth2_proxy;
                 proxy_set_header Host $host;
                 proxy_set_header X-Real-IP $remote_addr;
                 proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -128,6 +124,43 @@ data:
         
         sleep "$CHECK_INTERVAL"
     done
+
+  # Wrapper script for oauth2-proxy that checks if OIDC is configured
+  oauth2-proxy-wrapper.sh: |
+    #!/bin/sh
+    
+    echo "Checking OIDC configuration..."
+    
+    # Check if required OIDC variables are set
+    if [ -z "$OAUTH2_PROXY_CLIENT_ID" ] || [ -z "$OAUTH2_PROXY_CLIENT_SECRET" ] || [ -z "$OAUTH2_PROXY_OIDC_ISSUER_URL" ] || [ -z "$OAUTH2_PROXY_COOKIE_SECRET" ]; then
+        echo "OIDC not fully configured. Required variables:"
+        echo "  OAUTH2_PROXY_CLIENT_ID: ${OAUTH2_PROXY_CLIENT_ID:+set}"
+        echo "  OAUTH2_PROXY_CLIENT_SECRET: ${OAUTH2_PROXY_CLIENT_SECRET:+set}"
+        echo "  OAUTH2_PROXY_OIDC_ISSUER_URL: ${OAUTH2_PROXY_OIDC_ISSUER_URL:+set}"
+        echo "  OAUTH2_PROXY_COOKIE_SECRET: ${OAUTH2_PROXY_COOKIE_SECRET:+set}"
+        echo ""
+        echo "Running in standby mode (sleeping indefinitely)..."
+        echo "Nginx will fall back to direct filebrowser access."
+        
+        # Sleep forever - nginx will get 502 and fall back to filebrowser
+        while true; do
+            sleep 3600
+        done
+    fi
+    
+    echo "OIDC configured. Starting oauth2-proxy..."
+    exec /bin/oauth2-proxy "$@"
+
+  # Filebrowser config - mounted to /config/settings.json
+  settings.json: |
+    {
+      "port": 8080,
+      "baseURL": "",
+      "address": "0.0.0.0",
+      "log": "stdout",
+      "database": "/database/filebrowser.db",
+      "root": "/srv"
+    }
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -193,7 +226,7 @@ spec:
                   key: OIDC_ISSUER_URL
                   optional: true
             - name: CHECK_INTERVAL
-              value: "600"
+              value: "60"
           volumeMounts:
             - name: nginx-config
               mountPath: /scripts
@@ -207,9 +240,12 @@ spec:
               cpu: 20m
               memory: 32Mi
 
-        # OAuth2 Proxy for OIDC authentication
+        # OAuth2 Proxy for OIDC authentication (with wrapper that handles missing config)
         - name: oauth2-proxy
           image: quay.io/oauth2-proxy/oauth2-proxy:v7.6.0
+          command:
+            - /bin/sh
+            - /scripts/oauth2-proxy-wrapper.sh
           args:
             - --http-address=0.0.0.0:4180
             - --upstream=http://127.0.0.1:8080
@@ -262,18 +298,20 @@ spec:
           volumeMounts:
             - name: shared
               mountPath: /shared
+            - name: nginx-config
+              mountPath: /scripts
 
         # Main filebrowser container
         - name: filebrowser
           image: filebrowser/filebrowser
-          args:
-            - --address=127.0.0.1
-            - --port=8080
           volumeMounts:
             - name: files
               mountPath: /srv
             - name: fd-db
               mountPath: /database
+            - name: filebrowser-config
+              mountPath: /config/settings.json
+              subPath: settings.json
           ports:
             - containerPort: 8080
           resources:
@@ -301,6 +339,12 @@ spec:
             defaultMode: 0755
         - name: nginx-tmp
           emptyDir: {}
+        - name: filebrowser-config
+          configMap:
+            name: filebrowser-nginx-config
+            items:
+              - key: settings.json
+                path: settings.json
 ---
 apiVersion: v1
 kind: Service
