@@ -88,7 +88,8 @@ data:
         }
     }
 
-  # Filebrowser settings - OIDC protected instance (no internal auth)
+  # Filebrowser settings - OIDC protected instance
+  # Uses proxy auth - trusts X-Auth-Request-User header from oauth2-proxy
   settings.json: |
     {
       "port": 8080,
@@ -98,7 +99,8 @@ data:
       "database": "/database/filebrowser.db",
       "root": "/srv",
       "auth": {
-        "method": "noauth"
+        "method": "proxy",
+        "header": "X-Auth-Request-User"
       }
     }
 
