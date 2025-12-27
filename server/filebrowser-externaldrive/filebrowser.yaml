@@ -30,6 +30,11 @@ data:
             server 127.0.0.1:8080;
         }
 
+        upstream filebrowser_admin {
+            server 127.0.0.1:8081;
+        }
+
+        # Main filebrowser - OIDC protected, no internal auth
         server {
             listen 8000;
 
@@ -63,13 +68,44 @@ data:
                 proxy_set_header X-Forwarded-Proto $scheme;
             }
         }
+
+        # Admin filebrowser - direct access with filebrowser's own auth
+        server {
+            listen 8001;
+
+            location /healthz {
+                return 200 'OK';
+                add_header Content-Type text/plain;
+            }
+
+            location / {
+                proxy_pass http://filebrowser_admin;
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto $scheme;
+            }
+        }
     }
 
-  # Filebrowser settings - override the default /config/settings.json
-  # Normal auth - OIDC protects access, filebrowser manages users/permissions
+  # Filebrowser settings - OIDC protected instance (no internal auth)
   settings.json: |
     {
       "port": 8080,
+      "baseURL": "",
+      "address": "0.0.0.0",
+      "log": "stdout",
+      "database": "/database/filebrowser.db",
+      "root": "/srv",
+      "auth": {
+        "method": "noauth"
+      }
+    }
+
+  # Filebrowser admin settings - with login for user management
+  settings-admin.json: |
+    {
+      "port": 8081,
       "baseURL": "",
       "address": "0.0.0.0",
       "log": "stdout",
@@ -159,6 +195,8 @@ spec:
           ports:
             - containerPort: 8000
               name: http
+            - containerPort: 8001
+              name: admin
           volumeMounts:
             - name: nginx-config
               mountPath: /etc/nginx/nginx.conf
@@ -280,7 +318,7 @@ spec:
             - name: shared
               mountPath: /shared
 
-        # Main filebrowser container - mount config to override defaults
+        # Main filebrowser container - OIDC protected, no internal auth
         - name: filebrowser
           image: filebrowser/filebrowser
           volumeMounts:
@@ -312,6 +350,38 @@ spec:
               cpu: 500m
               memory: 256Mi
 
+        # Admin filebrowser container - with internal login for user management
+        - name: filebrowser-admin
+          image: filebrowser/filebrowser
+          volumeMounts:
+            - name: files
+              mountPath: /srv
+            - name: fd-db
+              mountPath: /database
+            - name: filebrowser-admin-settings
+              mountPath: /config/settings.json
+              subPath: settings-admin.json
+          ports:
+            - containerPort: 8081
+          livenessProbe:
+            tcpSocket:
+              port: 8081
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            tcpSocket:
+              port: 8081
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 25m
+              memory: 32Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+
       volumes:
         - name: files
           hostPath:
@@ -335,6 +405,12 @@ spec:
             items:
               - key: settings.json
                 path: settings.json
+        - name: filebrowser-admin-settings
+          configMap:
+            name: filebrowser-nginx-config
+            items:
+              - key: settings-admin.json
+                path: settings-admin.json
 ---
 apiVersion: v1
 kind: Service
@@ -347,6 +423,19 @@ spec:
   ports:
     - port: 80
       targetPort: 8000
+      name: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: filebrowser-admin
+  namespace: applications
+spec:
+  selector:
+    app: filebrowser
+  ports:
+    - port: 80
+      targetPort: 8001
       name: http
 ---
 apiVersion: networking.k8s.io/v1
@@ -371,3 +460,26 @@ spec:
   tls:
     - hosts:
         - filebrowser.DOMAIN
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: filebrowser-admin-ingress
+  namespace: applications
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+spec:
+  rules:
+    - host: filebrowser-admin.DOMAIN
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: filebrowser-admin
+                port:
+                  number: 80
+  tls:
+    - hosts:
+        - filebrowser-admin.DOMAIN
