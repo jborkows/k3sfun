@@ -1,4 +1,4 @@
-.PHONY: build run dev test fmt migrate-up migrate-down clean gen sqlc templ sqlc-check docker
+.PHONY: build run dev test fmt migrate-up migrate-down clean gen sqlc templ sqlc-check docker deploy
 
 APP_NAME := shopping
 BIN_DIR := bin
@@ -78,3 +78,18 @@ migrate-up:
 
 migrate-down:
 	migrate -path ./migrations -database "sqlite3://data/shopping.db" down 1
+
+deploy:
+	@if [ -n "$$(git status --porcelain)" ]; then \
+		echo "Error: Working directory has uncommitted changes"; \
+		exit 1; \
+	fi
+	@if [ -n "$$(git log @{u}..HEAD 2>/dev/null)" ]; then \
+		echo "Error: There are unpushed commits"; \
+		exit 1; \
+	fi
+	@DEPLOY_TAG="deploy_$$(date +%Y%m%d_%H%M%S)"; \
+	echo "Creating tag: $$DEPLOY_TAG"; \
+	git tag "$$DEPLOY_TAG" && \
+	git push origin "$$DEPLOY_TAG" && \
+	echo "Successfully pushed tag: $$DEPLOY_TAG"
