@@ -70,34 +70,6 @@ templ ProductsListContent(data ProductsListData) {
 			</div>
 		</form>
 
-		if data.TotalPages > 1 {
-			<div class="row pager">
-				if data.Page > 1 {
-					<a
-						class="button secondary"
-						href={ "/products" + productsListQS(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, maxInt64(1, data.Page-1)) }
-						hx-get={ "/partials/products" + productsListQS(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, maxInt64(1, data.Page-1)) }
-						hx-target="#products-list"
-						hx-swap="outerHTML"
-					>Poprzednia</a>
-				} else {
-					<span class="button secondary disabled">Poprzednia</span>
-				}
-				<span class="muted">Strona { strconv.FormatInt(data.Page, 10) } z { strconv.FormatInt(data.TotalPages, 10) }</span>
-				if data.Page < data.TotalPages {
-					<a
-						class="button secondary"
-						href={ "/products" + productsListQS(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, minInt64(data.TotalPages, data.Page+1)) }
-						hx-get={ "/partials/products" + productsListQS(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, minInt64(data.TotalPages, data.Page+1)) }
-						hx-target="#products-list"
-						hx-swap="outerHTML"
-					>Następna</a>
-				} else {
-					<span class="button secondary disabled">Następna</span>
-				}
-			</div>
-		}
-
 		<div class="products-grid">
 			for _, p := range data.Products {
 				<div class={ "product-card " + productRowClass(p) }>
@@ -177,6 +149,34 @@ templ ProductsListContent(data ProductsListData) {
 
 		if len(data.Products) == 0 {
 			<p class="muted">Brak produktów.</p>
+		}
+
+		if data.TotalPages > 1 {
+			<div class="row pager">
+				if data.Page > 1 {
+					<a
+						class="button secondary"
+						href={ "/products" + productsListQS(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, maxInt64(1, data.Page-1)) }
+						hx-get={ "/partials/products" + productsListQS(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, maxInt64(1, data.Page-1)) }
+						hx-target="#products-list"
+						hx-swap="outerHTML"
+					>Poprzednia</a>
+				} else {
+					<span class="button secondary disabled">Poprzednia</span>
+				}
+				<span class="muted">Strona { strconv.FormatInt(data.Page, 10) } z { strconv.FormatInt(data.TotalPages, 10) }</span>
+				if data.Page < data.TotalPages {
+					<a
+						class="button secondary"
+						href={ "/products" + productsListQS(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, minInt64(data.TotalPages, data.Page+1)) }
+						hx-get={ "/partials/products" + productsListQS(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, minInt64(data.TotalPages, data.Page+1)) }
+						hx-target="#products-list"
+						hx-swap="outerHTML"
+					>Następna</a>
+				} else {
+					<span class="button secondary disabled">Następna</span>
+				}
+			</div>
 		}
 	</section>
 }
