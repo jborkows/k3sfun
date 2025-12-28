@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Bottle body - traditional soy sauce bottle shape -->
+  <path d="M22 28 L22 52 C22 56 26 58 32 58 C38 58 42 56 42 52 L42 28 Z" fill="#1a1a1a" stroke="#333"/>
+  <!-- Bottle neck - narrower -->
+  <path d="M28 16 L28 28 L36 28 L36 16 Z" fill="#1a1a1a" stroke="#333"/>
+  <!-- Bottle cap - red traditional cap -->
+  <rect x="26" y="8" width="12" height="8" rx="2" fill="#c62828" stroke="#333"/>
+  <!-- Liquid level - dark soy sauce -->
+  <path d="M23 32 L41 32 L41 52 C41 55 38 57 32 57 C26 57 23 55 23 52 Z" fill="#0d0d0d" opacity="0.9"/>
+  <!-- Label -->
+  <rect x="25" y="38" width="14" height="10" rx="1" fill="#f5e6c8" stroke="#8b4513" stroke-width="1"/>
+  <!-- Asian-style label decoration -->
+  <line x1="32" y1="40" x2="32" y2="46" stroke="#c62828" stroke-width="2"/>
+  <line x1="29" y1="43" x2="35" y2="43" stroke="#c62828" stroke-width="1"/>
+</svg>

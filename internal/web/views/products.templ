@@ -51,7 +51,7 @@ templ ProductsListContent(data ProductsListData) {
 			<input type="hidden" name="missing" value={ boolToQuery(data.OnlyMissing) } />
 			<input type="hidden" name="page" value="1" />
 			<div class="form-row">
-				<input id="products-q" name="q" value={ data.NameQuery } placeholder="Szukaj po nazwie…" />
+				<input id="products-q" name="q" value={ data.NameQuery } placeholder="Szukaj po nazwie…" autocomplete="off" />
 
 				<details class="multiselect">
 					<summary>Grupy (<span class="ms-count">{ strconv.FormatInt(int64(len(data.SelectedGroupIDs)), 10) }</span>)</summary>

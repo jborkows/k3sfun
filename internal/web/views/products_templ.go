@@ -227,7 +227,7 @@ func ProductsListContent(data ProductsListData) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "\" placeholder=\"Szukaj po nazwie…\"> <details class=\"multiselect\"><summary>Grupy (<span class=\"ms-count\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "\" placeholder=\"Szukaj po nazwie…\" autocomplete=\"off\"> <details class=\"multiselect\"><summary>Grupy (<span class=\"ms-count\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

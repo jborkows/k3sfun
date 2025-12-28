@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Bottle body -->
+  <path d="M20 24 L20 52 C20 56 24 58 32 58 C40 58 44 56 44 52 L44 24 Z" fill="#f5e6d3" stroke="#333"/>
+  <!-- Bottle neck -->
+  <path d="M26 12 L26 24 L38 24 L38 12 Z" fill="#f5e6d3" stroke="#333"/>
+  <!-- Bottle cap -->
+  <rect x="24" y="6" width="16" height="6" rx="1" fill="#8b4513" stroke="#333"/>
+  <!-- Liquid level -->
+  <path d="M21 30 L43 30 L43 52 C43 55 40 57 32 57 C24 57 21 55 21 52 Z" fill="#c9a227" opacity="0.6"/>
+  <!-- Label -->
+  <rect x="24" y="36" width="16" height="12" rx="1" fill="#fff" stroke="#999" stroke-width="1"/>
+  <!-- Label text lines -->
+  <line x1="26" y1="40" x2="38" y2="40" stroke="#999" stroke-width="1"/>
+  <line x1="28" y1="44" x2="36" y2="44" stroke="#999" stroke-width="1"/>
+</svg>

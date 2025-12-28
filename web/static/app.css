@@ -154,6 +154,7 @@ button.secondary:hover { background: rgba(255,255,255,0.06); }
 .sl-mid { margin-top: 10px; display: flex; align-items: center; gap: 10px; padding-right: 40px; }
 .sl-icon { width: 32px; height: 32px; flex: 0 0 32px; }
 .sl-qty { margin: 0; display: flex; align-items: center; gap: 8px; }
+.unit-fixed { color: var(--muted); font-size: 14px; padding: 10px 12px; }
 .sl-done-form { margin: 0; }
 .sl-done { font-size: 18px; line-height: 1; }
 .sl-done-off { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.10); }
