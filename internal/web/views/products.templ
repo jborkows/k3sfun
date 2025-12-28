@@ -182,7 +182,7 @@ templ ProductsListContent(data ProductsListData) {
 }
 
 templ UnitOptions(selected products.Unit) {
-	for _, u := range []products.Unit{products.UnitKG, products.UnitLiter, products.UnitPiece, products.UnitGram} {
+	for _, u := range []products.Unit{products.UnitKG, products.UnitLiter, products.UnitPiece, products.UnitGram, products.UnitPackage, products.UnitBunch, products.UnitBulb} {
 		<option value={ string(u) } selected?={ string(u) == normalizedUnit(selected) }>{ string(u) }</option>
 	}
 }

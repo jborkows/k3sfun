@@ -24,7 +24,7 @@ func NormalizeProductName(name string) (string, error) {
 func NormalizeUnit(u Unit) (Unit, error) {
 	u = Unit(strings.TrimSpace(string(u)))
 	switch u {
-	case UnitKG, UnitLiter, UnitPiece, UnitGram:
+	case UnitKG, UnitLiter, UnitPiece, UnitGram, UnitPackage, UnitBunch, UnitBulb:
 		return u, nil
 	default:
 		return "", ErrInvalidUnit

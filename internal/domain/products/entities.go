@@ -24,10 +24,13 @@ func (q Quantity) String() string {
 }
 
 const (
-	UnitKG    Unit = "kg"
-	UnitLiter Unit = "litr"
-	UnitPiece Unit = "sztuk"
-	UnitGram  Unit = "gramy"
+	UnitKG      Unit = "kg"
+	UnitLiter   Unit = "litr"
+	UnitPiece   Unit = "sztuk"
+	UnitGram    Unit = "gramy"
+	UnitPackage Unit = "opakowanie"
+	UnitBunch   Unit = "pęczek"
+	UnitBulb    Unit = "główki"
 )
 
 const MaxProductsPageSize int64 = 30
