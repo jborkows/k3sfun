@@ -186,3 +186,9 @@ templ UnitOptions(selected products.Unit) {
 		<option value={ string(u) } selected?={ string(u) == normalizedUnit(selected) }>{ string(u) }</option>
 	}
 }
+
+templ DynamicUnitOptions(units []products.Unit, selected products.Unit) {
+	for _, u := range units {
+		<option value={ string(u) } selected?={ string(u) == normalizedUnit(selected) }>{ string(u) }</option>
+	}
+}

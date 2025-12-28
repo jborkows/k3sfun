@@ -23,7 +23,7 @@ templ ShoppingListCardContent(data ShoppingListData) {
 				/>
 				<input class="num-input" type="number" step="0.1" min="0.1" name="quantity" value="1" required />
 				<select name="unit">
-					@UnitOptions(products.UnitPiece)
+					@DynamicUnitOptions(data.Units, products.UnitPiece)
 				</select>
 				<button type="submit">Dodaj</button>
 			</div>
@@ -49,13 +49,13 @@ templ ShoppingListCardContent(data ShoppingListData) {
 							<img class="sl-icon" width="32" height="32" src={ shoppingIconSrc(item) } alt="" />
 
 							<form class="sl-qty" hx-patch={ "/shopping-list/items/" + shoppingItemID(item) } hx-target="#shopping-list" hx-swap="outerHTML" hx-trigger="change">
-								<input class="num-input" type="number" step="0.1" min="0.1" name="quantity" value={ formatQty(item.Quantity) } />
+								<input class="num-input" type="number" step={ shoppingItemStep(item) } min={ shoppingItemMin(item) } name="quantity" value={ formatQty(item.Quantity) } />
 								if item.ProductID != nil {
 									<input type="hidden" name="unit" value={ string(item.Unit) } />
 									<span class="unit-fixed">{ string(item.Unit) }</span>
 								} else {
 									<select name="unit">
-										@UnitOptions(item.Unit)
+										@DynamicUnitOptions(data.Units, item.Unit)
 									</select>
 								}
 							</form>

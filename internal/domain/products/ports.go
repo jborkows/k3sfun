@@ -8,4 +8,5 @@ type Queries interface {
 	ListProducts(ctx context.Context, filter ProductFilter) ([]Product, error)
 	SuggestProductsByName(ctx context.Context, query string, limit int64) ([]Product, error)
 	CountProducts(ctx context.Context, filter ProductFilter) (int64, error)
+	ListUnits(ctx context.Context) ([]Unit, error)
 }

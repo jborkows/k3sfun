@@ -290,6 +290,18 @@ func (r *Repo) ResolveIconKeyForName(ctx context.Context, name string) (string, 
 	return iconKey, true, nil
 }
 
+func (r *Repo) ListUnits(ctx context.Context) ([]products.Unit, error) {
+	rows, err := r.q.ListUnits(ctx)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]products.Unit, 0, len(rows))
+	for _, u := range rows {
+		out = append(out, products.Unit(u))
+	}
+	return out, nil
+}
+
 func (r *Repo) OptimizeDB(ctx context.Context) error {
 	_, err := r.db.ExecContext(ctx, "PRAGMA optimize")
 	return err
@@ -308,15 +320,16 @@ func (r *Repo) ListItems(ctx context.Context) ([]shoppinglist.Item, error) {
 			pid = &v
 		}
 		out = append(out, shoppinglist.Item{
-			ID:        shoppinglist.ItemID(item.ID),
-			Name:      item.Name,
-			ProductID: pid,
-			IconKey:   item.IconKey,
-			GroupName: item.GroupName,
-			Quantity:  products.Quantity(item.QuantityValue),
-			Unit:      products.Unit(item.QuantityUnit),
-			Done:      item.Done != 0,
-			CreatedAt: item.CreatedAt,
+			ID:          shoppinglist.ItemID(item.ID),
+			Name:        item.Name,
+			ProductID:   pid,
+			IconKey:     item.IconKey,
+			GroupName:   item.GroupName,
+			Quantity:    products.Quantity(item.QuantityValue),
+			Unit:        products.Unit(item.QuantityUnit),
+			Done:        item.Done != 0,
+			IntegerOnly: item.IntegerOnly != 0,
+			CreatedAt:   item.CreatedAt,
 		})
 	}
 	return out, nil
@@ -333,15 +346,16 @@ func (r *Repo) GetItem(ctx context.Context, id shoppinglist.ItemID) (shoppinglis
 		pid = &v
 	}
 	return shoppinglist.Item{
-		ID:        shoppinglist.ItemID(row.ID),
-		Name:      row.Name,
-		ProductID: pid,
-		IconKey:   row.IconKey,
-		GroupName: row.GroupName,
-		Quantity:  products.Quantity(row.QuantityValue),
-		Unit:      products.Unit(row.QuantityUnit),
-		Done:      row.Done != 0,
-		CreatedAt: row.CreatedAt,
+		ID:          shoppinglist.ItemID(row.ID),
+		Name:        row.Name,
+		ProductID:   pid,
+		IconKey:     row.IconKey,
+		GroupName:   row.GroupName,
+		Quantity:    products.Quantity(row.QuantityValue),
+		Unit:        products.Unit(row.QuantityUnit),
+		Done:        row.Done != 0,
+		IntegerOnly: row.IntegerOnly != 0,
+		CreatedAt:   row.CreatedAt,
 	}, nil
 }
 

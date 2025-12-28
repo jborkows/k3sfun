@@ -120,6 +120,7 @@ SELECT
   sli.quantity_value,
   sli.quantity_unit,
   sli.done,
+  COALESCE(p.integer_only, 0) AS integer_only,
   sli.created_at
 FROM shopping_list_items sli
 LEFT JOIN products p ON p.id = sli.product_id
@@ -136,6 +137,7 @@ SELECT
   sli.quantity_value,
   sli.quantity_unit,
   sli.done,
+  COALESCE(p.integer_only, 0) AS integer_only,
   sli.created_at
 FROM shopping_list_items sli
 LEFT JOIN products p ON p.id = sli.product_id
@@ -202,3 +204,8 @@ FROM product_icon_rules
 WHERE lower(?) LIKE '%' || lower(match_substring) || '%'
 ORDER BY priority DESC, id DESC
 LIMIT 1;
+
+-- name: ListUnits :many
+SELECT name
+FROM units
+ORDER BY display_order, name;

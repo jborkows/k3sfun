@@ -53,11 +53,13 @@ type AdminPageData struct {
 
 type ShoppingListData struct {
 	Items []shoppinglist.Item
+	Units []products.Unit
 }
 
 type ShoppingListPageData struct {
 	Base  BaseData
 	Items []shoppinglist.Item
+	Units []products.Unit
 }
 
 type ProductsNewPageData struct {

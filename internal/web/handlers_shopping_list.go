@@ -33,6 +33,7 @@ func (s *Server) handleShoppingListPage(w http.ResponseWriter, r *http.Request) 
 			IsAdmin:       s.isAdmin(user),
 		},
 		Items: items,
+		Units: s.units,
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -52,7 +53,7 @@ func (s *Server) handleShoppingListPartial(w http.ResponseWriter, r *http.Reques
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if err := views.ShoppingListCard(views.ShoppingListData{Items: items}).Render(r.Context(), w); err != nil {
+	if err := views.ShoppingListCard(views.ShoppingListData{Items: items, Units: s.units}).Render(r.Context(), w); err != nil {
 		http.Error(w, fmt.Sprintf("render: %v", err), http.StatusInternalServerError)
 	}
 }

@@ -56,12 +56,18 @@ func main() {
 	var shoppingRepo shoppinglist.Repository = repo
 	shoppingService := shoppinglist.NewService(shoppingRepo, productsService)
 
+	// Load units once at startup
+	units, err := productsQueries.ListUnits(context.Background())
+	if err != nil {
+		log.Fatalf("load units: %v", err)
+	}
+
 	authenticator, err := oidc.New(cfg)
 	if err != nil {
 		log.Fatalf("auth: %v", err)
 	}
 
-	srv := web.NewServer(cfg, productsQueries, productsService, shoppingService, adminMaintenance, authenticator, staticVersion)
+	srv := web.NewServer(cfg, productsQueries, productsService, shoppingService, adminMaintenance, authenticator, staticVersion, units)
 
 	httpServer := &http.Server{
 		Addr:              cfg.Addr,

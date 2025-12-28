@@ -46,6 +46,12 @@ type ShoppingListItem struct {
 	DoneAt        interface{}
 }
 
+type Unit struct {
+	ID           int64
+	Name         string
+	DisplayOrder int64
+}
+
 type VGroup struct {
 	ID   int64
 	Name string

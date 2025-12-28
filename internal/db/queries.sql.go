@@ -196,6 +196,7 @@ SELECT
   sli.quantity_value,
   sli.quantity_unit,
   sli.done,
+  COALESCE(p.integer_only, 0) AS integer_only,
   sli.created_at
 FROM shopping_list_items sli
 LEFT JOIN products p ON p.id = sli.product_id
@@ -212,6 +213,7 @@ type GetShoppingListItemRow struct {
 	QuantityValue float64
 	QuantityUnit  string
 	Done          int64
+	IntegerOnly   int64
 	CreatedAt     time.Time
 }
 
@@ -227,6 +229,7 @@ func (q *Queries) GetShoppingListItem(ctx context.Context, id int64) (GetShoppin
 		&i.QuantityValue,
 		&i.QuantityUnit,
 		&i.Done,
+		&i.IntegerOnly,
 		&i.CreatedAt,
 	)
 	return i, err
@@ -477,6 +480,7 @@ SELECT
   sli.quantity_value,
   sli.quantity_unit,
   sli.done,
+  COALESCE(p.integer_only, 0) AS integer_only,
   sli.created_at
 FROM shopping_list_items sli
 LEFT JOIN products p ON p.id = sli.product_id
@@ -493,6 +497,7 @@ type ListShoppingListItemsRow struct {
 	QuantityValue float64
 	QuantityUnit  string
 	Done          int64
+	IntegerOnly   int64
 	CreatedAt     time.Time
 }
 
@@ -514,11 +519,41 @@ func (q *Queries) ListShoppingListItems(ctx context.Context) ([]ListShoppingList
 			&i.QuantityValue,
 			&i.QuantityUnit,
 			&i.Done,
+			&i.IntegerOnly,
 			&i.CreatedAt,
 		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listUnits = `-- name: ListUnits :many
+SELECT name
+FROM units
+ORDER BY display_order, name
+`
+
+func (q *Queries) ListUnits(ctx context.Context) ([]string, error) {
+	rows, err := q.db.QueryContext(ctx, listUnits)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []string
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err != nil {
+			return nil, err
+		}
+		items = append(items, name)
 	}
 	if err := rows.Close(); err != nil {
 		return nil, err

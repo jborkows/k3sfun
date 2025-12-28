@@ -29,14 +29,19 @@ func TestNormalizeProductName(t *testing.T) {
 }
 
 func TestNormalizeUnit(t *testing.T) {
-	ok := []Unit{UnitKG, UnitLiter, UnitPiece, UnitGram}
+	// Any non-empty unit should be valid (units are defined in DB)
+	ok := []Unit{UnitKG, UnitLiter, UnitPiece, UnitGram, "opakowanie", "pęczek", "główki"}
 	for _, u := range ok {
 		if _, err := NormalizeUnit(u); err != nil {
 			t.Fatalf("unexpected error for %q: %v", u, err)
 		}
 	}
-	if _, err := NormalizeUnit("bad"); err == nil {
-		t.Fatalf("expected error")
+	// Empty unit should fail
+	if _, err := NormalizeUnit(""); err == nil {
+		t.Fatalf("expected error for empty unit")
+	}
+	if _, err := NormalizeUnit("   "); err == nil {
+		t.Fatalf("expected error for whitespace-only unit")
 	}
 }
 

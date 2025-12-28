@@ -29,9 +29,10 @@ type Server struct {
 	admin    adminComponent
 	events   *eventHub
 	staticV  string
+	units    []products.Unit // cached units loaded at startup
 }
 
-func NewServer(cfg config.Config, qry products.Queries, svc *products.Service, shoppingSvc *shoppinglist.Service, adminMaintenance admin.Maintenance, authenticator oidc.Authenticator, staticVersion string) *Server {
+func NewServer(cfg config.Config, qry products.Queries, svc *products.Service, shoppingSvc *shoppinglist.Service, adminMaintenance admin.Maintenance, authenticator oidc.Authenticator, staticVersion string, units []products.Unit) *Server {
 	return &Server{
 		cfg:  cfg,
 		auth: authenticator,
@@ -47,6 +48,7 @@ func NewServer(cfg config.Config, qry products.Queries, svc *products.Service, s
 		},
 		events:  newEventHub(),
 		staticV: staticVersion,
+		units:   units,
 	}
 }
 

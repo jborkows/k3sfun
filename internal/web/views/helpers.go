@@ -167,3 +167,22 @@ func quantityStep(integerOnly bool) string {
 	}
 	return "0.1"
 }
+
+// shoppingItemStep returns the HTML step attribute for shopping list item quantity input.
+func shoppingItemStep(item shoppinglist.Item) string {
+	return quantityStep(item.IntegerOnly)
+}
+
+// shoppingItemMin returns the HTML min attribute for shopping list item quantity input.
+func shoppingItemMin(item shoppinglist.Item) string {
+	return quantityMin(item.IntegerOnly)
+}
+
+// quantityMin returns the HTML min attribute value for quantity inputs.
+// Returns "1" for integer-only products, "0.1" otherwise.
+func quantityMin(integerOnly bool) string {
+	if integerOnly {
+		return "1"
+	}
+	return "0.1"
+}
