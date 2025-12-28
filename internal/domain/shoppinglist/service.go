@@ -28,7 +28,7 @@ func (s *Service) GetItem(ctx context.Context, id ItemID) (Item, error) {
 	return s.repo.GetItem(ctx, id)
 }
 
-func (s *Service) AddItemByName(ctx context.Context, name string, qty float64, unit products.Unit) error {
+func (s *Service) AddItemByName(ctx context.Context, name string, qty products.Quantity, unit products.Unit) error {
 	normalized, err := NormalizeItemName(name)
 	if err != nil {
 		return err
@@ -106,7 +106,7 @@ func (s *Service) SetDone(ctx context.Context, id ItemID, done bool) error {
 	return s.repo.SetDone(ctx, id, done)
 }
 
-func (s *Service) SetQuantity(ctx context.Context, id ItemID, qty float64, unit products.Unit) error {
+func (s *Service) SetQuantity(ctx context.Context, id ItemID, qty products.Quantity, unit products.Unit) error {
 	if qty <= 0 {
 		return ErrQuantityMustBePositive
 	}

@@ -8,9 +8,9 @@ type Repository interface {
 	CreateGroup(ctx context.Context, name string) (GroupID, error)
 	CreateProduct(ctx context.Context, p NewProduct) (ProductID, error)
 
-	SetProductQuantity(ctx context.Context, productID ProductID, qty float64) error
-	AddProductQuantity(ctx context.Context, productID ProductID, delta float64) error
-	SetProductMinQuantity(ctx context.Context, productID ProductID, min float64) error
+	SetProductQuantity(ctx context.Context, productID ProductID, qty Quantity) error
+	AddProductQuantity(ctx context.Context, productID ProductID, delta Quantity) error
+	SetProductMinQuantity(ctx context.Context, productID ProductID, min Quantity) error
 	SetProductMissing(ctx context.Context, productID ProductID, missing bool) error
 	SetProductGroup(ctx context.Context, productID ProductID, groupID *GroupID) error
 	SetProductUnit(ctx context.Context, productID ProductID, unit Unit) error

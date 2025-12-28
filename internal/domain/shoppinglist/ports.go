@@ -11,11 +11,11 @@ type Repository interface {
 	ListItems(ctx context.Context) ([]Item, error)
 	GetItem(ctx context.Context, id ItemID) (Item, error)
 
-	AddItemByName(ctx context.Context, name string, qty float64, unit products.Unit) error
+	AddItemByName(ctx context.Context, name string, qty products.Quantity, unit products.Unit) error
 	AddItemByProductID(ctx context.Context, productID int64) error
 
 	SetDone(ctx context.Context, id ItemID, done bool) error
-	SetQuantity(ctx context.Context, id ItemID, qty float64, unit products.Unit) error
+	SetQuantity(ctx context.Context, id ItemID, qty products.Quantity, unit products.Unit) error
 	Delete(ctx context.Context, id ItemID) error
 
 	CleanupDoneBefore(ctx context.Context, cutoff time.Time) error

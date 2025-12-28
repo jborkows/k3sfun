@@ -31,15 +31,15 @@ func NormalizeUnit(u Unit) (Unit, error) {
 	}
 }
 
-// IsInteger returns true if the float value represents a whole number.
-func IsInteger(v float64) bool {
-	return v == math.Trunc(v)
+// IsInteger returns true if the quantity represents a whole number.
+func (q Quantity) IsInteger() bool {
+	return float64(q) == math.Trunc(float64(q))
 }
 
 // ValidateQuantityForIntegerOnly validates that the quantity is an integer
 // if integerOnly is true. Returns an error if validation fails.
-func ValidateQuantityForIntegerOnly(qty float64, integerOnly bool) error {
-	if integerOnly && !IsInteger(qty) {
+func ValidateQuantityForIntegerOnly(qty Quantity, integerOnly bool) error {
+	if integerOnly && !qty.IsInteger() {
 		return ErrQuantityMustBeInteger
 	}
 	return nil

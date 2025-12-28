@@ -176,12 +176,12 @@ func (s *Server) handleCreateProduct(w http.ResponseWriter, r *http.Request) {
 	}
 	name := r.FormValue("name")
 	groupID, ok := parseOptionalGroupID(r.FormValue("group_id"))
-	qty, err := parseFloat(r.FormValue("quantity"))
+	qty, err := parseQuantity(r.FormValue("quantity"))
 	if err != nil {
 		http.Error(w, "Nieprawidłowa ilość.", http.StatusBadRequest)
 		return
 	}
-	minQty, err := parseFloat(r.FormValue("min_quantity"))
+	minQty, err := parseQuantity(r.FormValue("min_quantity"))
 	if err != nil {
 		http.Error(w, "Nieprawidłowa minimalna ilość.", http.StatusBadRequest)
 		return
@@ -216,12 +216,12 @@ func (s *Server) handleCreateProductAndRedirect(w http.ResponseWriter, r *http.R
 	}
 	name := r.FormValue("name")
 	groupID, ok := parseOptionalGroupID(r.FormValue("group_id"))
-	qty, err := parseFloat(r.FormValue("quantity"))
+	qty, err := parseQuantity(r.FormValue("quantity"))
 	if err != nil {
 		http.Error(w, "Nieprawidłowa ilość.", http.StatusBadRequest)
 		return
 	}
-	minQty, err := parseFloat(r.FormValue("min_quantity"))
+	minQty, err := parseQuantity(r.FormValue("min_quantity"))
 	if err != nil {
 		http.Error(w, "Nieprawidłowa minimalna ilość.", http.StatusBadRequest)
 		return
@@ -259,7 +259,7 @@ func (s *Server) handleSetQuantity(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "bad form", http.StatusBadRequest)
 		return
 	}
-	qty, err := parseFloat(r.FormValue("quantity"))
+	qty, err := parseQuantity(r.FormValue("quantity"))
 	if err != nil {
 		http.Error(w, "Nieprawidłowa ilość.", http.StatusBadRequest)
 		return
@@ -284,7 +284,7 @@ func (s *Server) handleSetMin(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "bad form", http.StatusBadRequest)
 		return
 	}
-	min, err := parseFloat(r.FormValue("min_quantity"))
+	min, err := parseQuantity(r.FormValue("min_quantity"))
 	if err != nil {
 		http.Error(w, "Nieprawidłowa minimalna ilość.", http.StatusBadRequest)
 		return
@@ -368,12 +368,13 @@ func (s *Server) handleSetGroup(w http.ResponseWriter, r *http.Request) {
 	s.handleProductsPartial(w, r)
 }
 
-func parseFloat(v string) (float64, error) {
+func parseQuantity(v string) (products.Quantity, error) {
 	v = strings.TrimSpace(v)
 	if v == "" {
 		return 0, nil
 	}
-	return strconv.ParseFloat(v, 64)
+	f, err := strconv.ParseFloat(v, 64)
+	return products.Quantity(f), err
 }
 
 func (s *Server) handleCreateGroup(w http.ResponseWriter, r *http.Request) {

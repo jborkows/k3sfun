@@ -46,8 +46,8 @@ func productsEventsQS(onlyMissing bool, nameQuery string, groupIDs []products.Gr
 	return eventsQS
 }
 
-func formatQty(v float64) string {
-	return strconv.FormatFloat(v, 'f', -1, 64)
+func formatQty(v products.Quantity) string {
+	return v.String()
 }
 
 func minInt64(a, b int64) int64 {

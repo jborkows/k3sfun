@@ -155,9 +155,9 @@ func (r *Repo) ListProducts(ctx context.Context, filter products.ProductFilter) 
 			IconKey:     p.IconKey,
 			GroupID:     gid,
 			GroupName:   groupName,
-			Quantity:    p.QuantityValue,
+			Quantity:    products.Quantity(p.QuantityValue),
 			Unit:        products.Unit(p.QuantityUnit),
-			MinQuantity: p.MinQuantityValue,
+			MinQuantity: products.Quantity(p.MinQuantityValue),
 			Missing:     p.Missing != 0,
 			IntegerOnly: p.IntegerOnly != 0,
 			UpdatedAt:   p.UpdatedAt,
@@ -228,27 +228,27 @@ func (r *Repo) CreateProduct(ctx context.Context, p products.NewProduct) (produc
 		Name:             p.Name,
 		IconKey:          p.IconKey,
 		GroupID:          gid,
-		QuantityValue:    p.Quantity,
+		QuantityValue:    p.Quantity.Float64(),
 		QuantityUnit:     string(p.Unit),
-		MinQuantityValue: p.MinQuantity,
+		MinQuantityValue: p.MinQuantity.Float64(),
 		IntegerOnly:      0,
 	})
 	return products.ProductID(id), err
 }
 
-func (r *Repo) SetProductQuantity(ctx context.Context, productID products.ProductID, qty float64) error {
-	return r.q.SetProductQuantity(ctx, db.SetProductQuantityParams{QuantityValue: qty, ID: int64(productID)})
+func (r *Repo) SetProductQuantity(ctx context.Context, productID products.ProductID, qty products.Quantity) error {
+	return r.q.SetProductQuantity(ctx, db.SetProductQuantityParams{QuantityValue: qty.Float64(), ID: int64(productID)})
 }
 
-func (r *Repo) AddProductQuantity(ctx context.Context, productID products.ProductID, delta float64) error {
+func (r *Repo) AddProductQuantity(ctx context.Context, productID products.ProductID, delta products.Quantity) error {
 	return r.q.AddProductQuantity(ctx, db.AddProductQuantityParams{
-		QuantityValue: delta,
+		QuantityValue: delta.Float64(),
 		ID:            int64(productID),
 	})
 }
 
-func (r *Repo) SetProductMinQuantity(ctx context.Context, productID products.ProductID, min float64) error {
-	return r.q.SetProductMinQuantity(ctx, db.SetProductMinQuantityParams{MinQuantityValue: min, ID: int64(productID)})
+func (r *Repo) SetProductMinQuantity(ctx context.Context, productID products.ProductID, min products.Quantity) error {
+	return r.q.SetProductMinQuantity(ctx, db.SetProductMinQuantityParams{MinQuantityValue: min.Float64(), ID: int64(productID)})
 }
 
 func (r *Repo) SetProductMissing(ctx context.Context, productID products.ProductID, missing bool) error {
@@ -313,7 +313,7 @@ func (r *Repo) ListItems(ctx context.Context) ([]shoppinglist.Item, error) {
 			ProductID: pid,
 			IconKey:   item.IconKey,
 			GroupName: item.GroupName,
-			Quantity:  item.QuantityValue,
+			Quantity:  products.Quantity(item.QuantityValue),
 			Unit:      products.Unit(item.QuantityUnit),
 			Done:      item.Done != 0,
 			CreatedAt: item.CreatedAt,
@@ -338,17 +338,17 @@ func (r *Repo) GetItem(ctx context.Context, id shoppinglist.ItemID) (shoppinglis
 		ProductID: pid,
 		IconKey:   row.IconKey,
 		GroupName: row.GroupName,
-		Quantity:  row.QuantityValue,
+		Quantity:  products.Quantity(row.QuantityValue),
 		Unit:      products.Unit(row.QuantityUnit),
 		Done:      row.Done != 0,
 		CreatedAt: row.CreatedAt,
 	}, nil
 }
 
-func (r *Repo) AddItemByName(ctx context.Context, name string, qty float64, unit products.Unit) error {
+func (r *Repo) AddItemByName(ctx context.Context, name string, qty products.Quantity, unit products.Unit) error {
 	return r.q.AddShoppingListItemByName(ctx, db.AddShoppingListItemByNameParams{
 		Name:          name,
-		QuantityValue: qty,
+		QuantityValue: qty.Float64(),
 		QuantityUnit:  string(unit),
 	})
 }
@@ -365,8 +365,8 @@ func (r *Repo) SetDone(ctx context.Context, id shoppinglist.ItemID, done bool) e
 	return r.q.SetShoppingListItemDone(ctx, db.SetShoppingListItemDoneParams{Done: v, Column2: v, ID: int64(id)})
 }
 
-func (r *Repo) SetQuantity(ctx context.Context, id shoppinglist.ItemID, qty float64, unit products.Unit) error {
-	return r.q.SetShoppingListItemQuantity(ctx, db.SetShoppingListItemQuantityParams{QuantityValue: qty, QuantityUnit: string(unit), ID: int64(id)})
+func (r *Repo) SetQuantity(ctx context.Context, id shoppinglist.ItemID, qty products.Quantity, unit products.Unit) error {
+	return r.q.SetShoppingListItemQuantity(ctx, db.SetShoppingListItemQuantityParams{QuantityValue: qty.Float64(), QuantityUnit: string(unit), ID: int64(id)})
 }
 
 func (r *Repo) CleanupDoneBefore(ctx context.Context, cutoff time.Time) error {

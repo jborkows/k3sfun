@@ -63,7 +63,7 @@ func (s *Server) handleAddShoppingListByName(w http.ResponseWriter, r *http.Requ
 		return
 	}
 	name := strings.TrimSpace(r.FormValue("name"))
-	qty, err := strconv.ParseFloat(strings.TrimSpace(r.FormValue("quantity")), 64)
+	qty, err := parseQuantity(r.FormValue("quantity"))
 	if err != nil {
 		http.Error(w, "Nieprawidłowa ilość.", http.StatusBadRequest)
 		return
@@ -125,7 +125,7 @@ func (s *Server) handleSetShoppingListDone(w http.ResponseWriter, r *http.Reques
 	ctx, cancel := context.WithTimeout(r.Context(), DefaultHandlerTimeout)
 	defer cancel()
 	if qtyStr != "" || unit != "" {
-		qty, err := strconv.ParseFloat(qtyStr, 64)
+		qty, err := parseQuantity(qtyStr)
 		if err != nil {
 			http.Error(w, "Nieprawidłowa ilość.", http.StatusBadRequest)
 			return

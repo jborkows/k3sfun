@@ -40,9 +40,9 @@ func TestNormalizeUnit(t *testing.T) {
 	}
 }
 
-func TestIsInteger(t *testing.T) {
+func TestQuantityIsInteger(t *testing.T) {
 	tests := []struct {
-		value    float64
+		value    Quantity
 		expected bool
 	}{
 		{0, true},
@@ -57,38 +57,57 @@ func TestIsInteger(t *testing.T) {
 		{0.1, false},
 	}
 	for _, tc := range tests {
-		got := IsInteger(tc.value)
+		got := tc.value.IsInteger()
 		if got != tc.expected {
-			t.Errorf("IsInteger(%v) = %v, want %v", tc.value, got, tc.expected)
+			t.Errorf("Quantity(%v).IsInteger() = %v, want %v", tc.value, got, tc.expected)
 		}
 	}
 }
 
 func TestValidateQuantityForIntegerOnly(t *testing.T) {
 	// When integerOnly is false, any value should be valid
-	if err := ValidateQuantityForIntegerOnly(1.5, false); err != nil {
+	if err := ValidateQuantityForIntegerOnly(Quantity(1.5), false); err != nil {
 		t.Errorf("expected no error for non-integer-only product, got %v", err)
 	}
-	if err := ValidateQuantityForIntegerOnly(1, false); err != nil {
+	if err := ValidateQuantityForIntegerOnly(Quantity(1), false); err != nil {
 		t.Errorf("expected no error for integer value on non-integer-only product, got %v", err)
 	}
 
 	// When integerOnly is true, only integers should be valid
-	if err := ValidateQuantityForIntegerOnly(1, true); err != nil {
+	if err := ValidateQuantityForIntegerOnly(Quantity(1), true); err != nil {
 		t.Errorf("expected no error for integer value on integer-only product, got %v", err)
 	}
-	if err := ValidateQuantityForIntegerOnly(10.0, true); err != nil {
+	if err := ValidateQuantityForIntegerOnly(Quantity(10.0), true); err != nil {
 		t.Errorf("expected no error for 10.0 on integer-only product, got %v", err)
 	}
-	if err := ValidateQuantityForIntegerOnly(0, true); err != nil {
+	if err := ValidateQuantityForIntegerOnly(Quantity(0), true); err != nil {
 		t.Errorf("expected no error for 0 on integer-only product, got %v", err)
 	}
 
 	// Non-integer values should fail for integer-only products
-	if err := ValidateQuantityForIntegerOnly(1.5, true); err == nil {
+	if err := ValidateQuantityForIntegerOnly(Quantity(1.5), true); err == nil {
 		t.Errorf("expected error for 1.5 on integer-only product")
 	}
-	if err := ValidateQuantityForIntegerOnly(0.1, true); err == nil {
+	if err := ValidateQuantityForIntegerOnly(Quantity(0.1), true); err == nil {
 		t.Errorf("expected error for 0.1 on integer-only product")
+	}
+}
+
+func TestQuantityString(t *testing.T) {
+	tests := []struct {
+		value    Quantity
+		expected string
+	}{
+		{0, "0"},
+		{1, "1"},
+		{1.5, "1.5"},
+		{10.0, "10"},
+		{0.123, "0.123"},
+	}
+	for _, tc := range tests {
+		got := tc.value.String()
+		if got != tc.expected {
+			t.Errorf("Quantity(%v).String() = %q, want %q", tc.value, got, tc.expected)
+		}
 	}
 }

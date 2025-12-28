@@ -52,7 +52,7 @@ func (s *Service) CreateProduct(ctx context.Context, p NewProduct) (ProductID, e
 	return s.repo.CreateProduct(ctx, p)
 }
 
-func (s *Service) SetProductQuantity(ctx context.Context, productID ProductID, qty float64) error {
+func (s *Service) SetProductQuantity(ctx context.Context, productID ProductID, qty Quantity) error {
 	if qty < 0 {
 		return ErrQuantityMustBeNonNegative
 	}
@@ -66,7 +66,7 @@ func (s *Service) SetProductQuantity(ctx context.Context, productID ProductID, q
 	return s.repo.SetProductQuantity(ctx, productID, qty)
 }
 
-func (s *Service) AddProductQuantity(ctx context.Context, productID ProductID, delta float64) error {
+func (s *Service) AddProductQuantity(ctx context.Context, productID ProductID, delta Quantity) error {
 	if delta < 0 {
 		return ErrQuantityMustBeNonNegative
 	}
@@ -80,7 +80,7 @@ func (s *Service) AddProductQuantity(ctx context.Context, productID ProductID, d
 	return s.repo.AddProductQuantity(ctx, productID, delta)
 }
 
-func (s *Service) SetProductMinQuantity(ctx context.Context, productID ProductID, min float64) error {
+func (s *Service) SetProductMinQuantity(ctx context.Context, productID ProductID, min Quantity) error {
 	if min < 0 {
 		return ErrMinQuantityMustBeNonNegative
 	}
@@ -98,7 +98,7 @@ func (s *Service) SetProductMinQuantity(ctx context.Context, productID ProductID
 // When marking as missing (true), it also zeros out the quantity.
 func (s *Service) SetProductMissing(ctx context.Context, productID ProductID, missing bool) error {
 	if missing {
-		if err := s.repo.SetProductQuantity(ctx, productID, 0); err != nil {
+		if err := s.repo.SetProductQuantity(ctx, productID, Quantity(0)); err != nil {
 			return err
 		}
 	}

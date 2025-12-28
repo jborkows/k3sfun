@@ -1,10 +1,27 @@
 package products
 
-import "time"
+import (
+	"strconv"
+	"time"
+)
 
 type ProductID int64
 type GroupID int64
 type Unit string
+
+// Quantity represents a product quantity value.
+// It wraps float64 to provide type safety and domain-specific methods.
+type Quantity float64
+
+// Float64 returns the underlying float64 value.
+func (q Quantity) Float64() float64 {
+	return float64(q)
+}
+
+// String returns the quantity formatted as a string.
+func (q Quantity) String() string {
+	return strconv.FormatFloat(float64(q), 'f', -1, 64)
+}
 
 const (
 	UnitKG    Unit = "kg"
@@ -26,9 +43,9 @@ type Product struct {
 	IconKey     string
 	GroupID     *GroupID
 	GroupName   string
-	Quantity    float64
+	Quantity    Quantity
 	Unit        Unit
-	MinQuantity float64
+	MinQuantity Quantity
 	Missing     bool
 	IntegerOnly bool
 	UpdatedAt   time.Time
@@ -46,7 +63,7 @@ type NewProduct struct {
 	Name        string
 	IconKey     string
 	GroupID     *GroupID
-	Quantity    float64
+	Quantity    Quantity
 	Unit        Unit
-	MinQuantity float64
+	MinQuantity Quantity
 }
