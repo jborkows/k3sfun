@@ -47,12 +47,21 @@ func (s *Service) CreateProduct(ctx context.Context, p NewProduct) (ProductID, e
 	if p.MinQuantity < 0 {
 		return 0, ErrMinQuantityMustBeNonNegative
 	}
+	// Note: New products default to integer_only=false in DB, so no integer validation needed here.
+	// integer_only is configured at DB level only.
 	return s.repo.CreateProduct(ctx, p)
 }
 
 func (s *Service) SetProductQuantity(ctx context.Context, productID ProductID, qty float64) error {
 	if qty < 0 {
 		return ErrQuantityMustBeNonNegative
+	}
+	integerOnly, err := s.repo.GetProductIntegerOnly(ctx, productID)
+	if err != nil {
+		return err
+	}
+	if err := ValidateQuantityForIntegerOnly(qty, integerOnly); err != nil {
+		return err
 	}
 	return s.repo.SetProductQuantity(ctx, productID, qty)
 }
@@ -61,12 +70,26 @@ func (s *Service) AddProductQuantity(ctx context.Context, productID ProductID, d
 	if delta < 0 {
 		return ErrQuantityMustBeNonNegative
 	}
+	integerOnly, err := s.repo.GetProductIntegerOnly(ctx, productID)
+	if err != nil {
+		return err
+	}
+	if err := ValidateQuantityForIntegerOnly(delta, integerOnly); err != nil {
+		return err
+	}
 	return s.repo.AddProductQuantity(ctx, productID, delta)
 }
 
 func (s *Service) SetProductMinQuantity(ctx context.Context, productID ProductID, min float64) error {
 	if min < 0 {
 		return ErrMinQuantityMustBeNonNegative
+	}
+	integerOnly, err := s.repo.GetProductIntegerOnly(ctx, productID)
+	if err != nil {
+		return err
+	}
+	if err := ValidateQuantityForIntegerOnly(min, integerOnly); err != nil {
+		return err
 	}
 	return s.repo.SetProductMinQuantity(ctx, productID, min)
 }

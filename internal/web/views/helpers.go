@@ -158,3 +158,12 @@ func normalizedUnit(u products.Unit) string {
 	}
 	return v
 }
+
+// quantityStep returns the HTML step attribute value for quantity inputs.
+// Returns "1" for integer-only products, "0.1" otherwise.
+func quantityStep(integerOnly bool) string {
+	if integerOnly {
+		return "1"
+	}
+	return "0.1"
+}

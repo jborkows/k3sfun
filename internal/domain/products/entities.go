@@ -30,6 +30,7 @@ type Product struct {
 	Unit        Unit
 	MinQuantity float64
 	Missing     bool
+	IntegerOnly bool
 	UpdatedAt   time.Time
 }
 

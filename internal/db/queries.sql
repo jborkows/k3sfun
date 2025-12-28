@@ -18,6 +18,7 @@ SELECT
   p.quantity_unit,
   p.min_quantity_value,
   p.missing,
+  p.integer_only,
   p.updated_at
 FROM v_products p
 ORDER BY p.name;
@@ -33,6 +34,7 @@ SELECT
   p.quantity_unit,
   p.min_quantity_value,
   p.missing,
+  p.integer_only,
   p.updated_at
 FROM v_products p
 WHERE p.missing = 1 OR p.quantity_value <= p.min_quantity_value
@@ -49,6 +51,7 @@ SELECT
   p.quantity_unit,
   p.min_quantity_value,
   p.missing,
+  p.integer_only,
   p.updated_at
 FROM v_products p
 WHERE
@@ -68,8 +71,8 @@ WHERE
   AND (? = 0 OR p.group_id IN (sqlc.slice('group_ids')));
 
 -- name: CreateProduct :one
-INSERT INTO products(name, icon_key, group_id, quantity_value, quantity_unit, min_quantity_value, missing, created_at, updated_at)
-VALUES (?, ?, ?, ?, ?, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+INSERT INTO products(name, icon_key, group_id, quantity_value, quantity_unit, min_quantity_value, missing, integer_only, created_at, updated_at)
+VALUES (?, ?, ?, ?, ?, ?, 0, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 RETURNING id;
 
 -- name: SetProductQuantity :exec
@@ -100,6 +103,11 @@ WHERE id = ?;
 -- name: SetProductGroup :exec
 UPDATE products
 SET group_id = ?, updated_at = CURRENT_TIMESTAMP
+WHERE id = ?;
+
+-- name: GetProductIntegerOnly :one
+SELECT integer_only
+FROM products
 WHERE id = ?;
 
 -- name: ListShoppingListItems :many

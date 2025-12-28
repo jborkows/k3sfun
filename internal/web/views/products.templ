@@ -129,7 +129,7 @@ templ ProductsListContent(data ProductsListData) {
 							<span class="muted">Ilość</span>
 							<div class="row">
 								<form hx-post={ "/products/" + strconv.FormatInt(int64(p.ID), 10) + "/qty" + productsListQS(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, data.Page) } hx-target="#products-list" hx-swap="outerHTML" hx-trigger="change">
-									<input class="num-input" type="number" step="0.1" min="0" name="quantity" value={ formatQty(p.Quantity) } />
+									<input class="num-input" type="number" step={ quantityStep(p.IntegerOnly) } min="0" name="quantity" value={ formatQty(p.Quantity) } />
 								</form>
 								<span class="muted">{ string(p.Unit) }</span>
 							</div>
@@ -138,7 +138,7 @@ templ ProductsListContent(data ProductsListData) {
 						<div class="product-control">
 							<span class="muted">Min</span>
 							<form hx-post={ "/products/" + strconv.FormatInt(int64(p.ID), 10) + "/min" + productsListQS(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, data.Page) } hx-target="#products-list" hx-swap="outerHTML" hx-trigger="change">
-								<input class="num-input" type="number" step="0.1" min="0" name="min_quantity" value={ formatQty(p.MinQuantity) } />
+								<input class="num-input" type="number" step={ quantityStep(p.IntegerOnly) } min="0" name="min_quantity" value={ formatQty(p.MinQuantity) } />
 							</form>
 						</div>
 

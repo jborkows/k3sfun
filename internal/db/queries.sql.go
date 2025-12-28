@@ -119,8 +119,8 @@ func (q *Queries) CreateGroup(ctx context.Context, name string) (int64, error) {
 }
 
 const createProduct = `-- name: CreateProduct :one
-INSERT INTO products(name, icon_key, group_id, quantity_value, quantity_unit, min_quantity_value, missing, created_at, updated_at)
-VALUES (?, ?, ?, ?, ?, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+INSERT INTO products(name, icon_key, group_id, quantity_value, quantity_unit, min_quantity_value, missing, integer_only, created_at, updated_at)
+VALUES (?, ?, ?, ?, ?, ?, 0, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 RETURNING id
 `
 
@@ -131,6 +131,7 @@ type CreateProductParams struct {
 	QuantityValue    float64
 	QuantityUnit     string
 	MinQuantityValue float64
+	IntegerOnly      int64
 }
 
 func (q *Queries) CreateProduct(ctx context.Context, arg CreateProductParams) (int64, error) {
@@ -141,6 +142,7 @@ func (q *Queries) CreateProduct(ctx context.Context, arg CreateProductParams) (i
 		arg.QuantityValue,
 		arg.QuantityUnit,
 		arg.MinQuantityValue,
+		arg.IntegerOnly,
 	)
 	var id int64
 	err := row.Scan(&id)
@@ -169,6 +171,19 @@ func (q *Queries) FindProductIDByName(ctx context.Context, lower string) (int64,
 	var id int64
 	err := row.Scan(&id)
 	return id, err
+}
+
+const getProductIntegerOnly = `-- name: GetProductIntegerOnly :one
+SELECT integer_only
+FROM products
+WHERE id = ?
+`
+
+func (q *Queries) GetProductIntegerOnly(ctx context.Context, id int64) (int64, error) {
+	row := q.db.QueryRowContext(ctx, getProductIntegerOnly, id)
+	var integer_only int64
+	err := row.Scan(&integer_only)
+	return integer_only, err
 }
 
 const getShoppingListItem = `-- name: GetShoppingListItem :one
@@ -274,6 +289,7 @@ SELECT
   p.quantity_unit,
   p.min_quantity_value,
   p.missing,
+  p.integer_only,
   p.updated_at
 FROM v_products p
 ORDER BY p.name
@@ -298,6 +314,7 @@ func (q *Queries) ListProductsAll(ctx context.Context) ([]VProduct, error) {
 			&i.QuantityUnit,
 			&i.MinQuantityValue,
 			&i.Missing,
+			&i.IntegerOnly,
 			&i.UpdatedAt,
 		); err != nil {
 			return nil, err
@@ -324,6 +341,7 @@ SELECT
   p.quantity_unit,
   p.min_quantity_value,
   p.missing,
+  p.integer_only,
   p.updated_at
 FROM v_products p
 WHERE
@@ -380,6 +398,7 @@ func (q *Queries) ListProductsFiltered(ctx context.Context, arg ListProductsFilt
 			&i.QuantityUnit,
 			&i.MinQuantityValue,
 			&i.Missing,
+			&i.IntegerOnly,
 			&i.UpdatedAt,
 		); err != nil {
 			return nil, err
@@ -406,6 +425,7 @@ SELECT
   p.quantity_unit,
   p.min_quantity_value,
   p.missing,
+  p.integer_only,
   p.updated_at
 FROM v_products p
 WHERE p.missing = 1 OR p.quantity_value <= p.min_quantity_value
@@ -431,6 +451,7 @@ func (q *Queries) ListProductsMissingOrLow(ctx context.Context) ([]VProduct, err
 			&i.QuantityUnit,
 			&i.MinQuantityValue,
 			&i.Missing,
+			&i.IntegerOnly,
 			&i.UpdatedAt,
 		); err != nil {
 			return nil, err

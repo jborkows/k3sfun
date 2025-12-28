@@ -7,4 +7,5 @@ var (
 	ErrInvalidUnit                  = errors.New("invalid unit")
 	ErrQuantityMustBeNonNegative    = errors.New("quantity must be >= 0")
 	ErrMinQuantityMustBeNonNegative = errors.New("min quantity must be >= 0")
+	ErrQuantityMustBeInteger        = errors.New("quantity must be an integer for this product")
 )

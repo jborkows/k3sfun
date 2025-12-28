@@ -14,6 +14,9 @@ type Repository interface {
 	SetProductMissing(ctx context.Context, productID ProductID, missing bool) error
 	SetProductGroup(ctx context.Context, productID ProductID, groupID *GroupID) error
 	SetProductUnit(ctx context.Context, productID ProductID, unit Unit) error
+	// GetProductIntegerOnly returns whether the product requires integer quantities.
+	// This is a DB-level configuration, not editable from frontend.
+	GetProductIntegerOnly(ctx context.Context, productID ProductID) (bool, error)
 
 	ResolveIconKeyForName(ctx context.Context, name string) (string, bool, error)
 }

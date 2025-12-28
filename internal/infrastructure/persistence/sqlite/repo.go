@@ -159,6 +159,7 @@ func (r *Repo) ListProducts(ctx context.Context, filter products.ProductFilter) 
 			Unit:        products.Unit(p.QuantityUnit),
 			MinQuantity: p.MinQuantityValue,
 			Missing:     p.Missing != 0,
+			IntegerOnly: p.IntegerOnly != 0,
 			UpdatedAt:   p.UpdatedAt,
 		})
 	}
@@ -222,6 +223,7 @@ func (r *Repo) CreateProduct(ctx context.Context, p products.NewProduct) (produc
 	if p.GroupID != nil {
 		gid = int64(*p.GroupID)
 	}
+	// integer_only defaults to 0 (false) - it's configured at DB level only
 	id, err := r.q.CreateProduct(ctx, db.CreateProductParams{
 		Name:             p.Name,
 		IconKey:          p.IconKey,
@@ -229,6 +231,7 @@ func (r *Repo) CreateProduct(ctx context.Context, p products.NewProduct) (produc
 		QuantityValue:    p.Quantity,
 		QuantityUnit:     string(p.Unit),
 		MinQuantityValue: p.MinQuantity,
+		IntegerOnly:      0,
 	})
 	return products.ProductID(id), err
 }
@@ -266,6 +269,14 @@ func (r *Repo) SetProductGroup(ctx context.Context, productID products.ProductID
 
 func (r *Repo) SetProductUnit(ctx context.Context, productID products.ProductID, unit products.Unit) error {
 	return r.q.SetProductUnit(ctx, db.SetProductUnitParams{QuantityUnit: string(unit), ID: int64(productID)})
+}
+
+func (r *Repo) GetProductIntegerOnly(ctx context.Context, productID products.ProductID) (bool, error) {
+	v, err := r.q.GetProductIntegerOnly(ctx, int64(productID))
+	if err != nil {
+		return false, err
+	}
+	return v != 0, nil
 }
 
 func (r *Repo) ResolveIconKeyForName(ctx context.Context, name string) (string, bool, error) {
