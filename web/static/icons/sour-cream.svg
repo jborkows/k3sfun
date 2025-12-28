@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Container/cup -->
+  <path d="M16 20 L48 20 L44 52 C44 54 42 56 40 56 L24 56 C22 56 20 54 20 52 Z" fill="#f5f5f5" stroke="#333"/>
+  <!-- Lid -->
+  <rect x="14" y="14" width="36" height="6" rx="2" fill="#4a90d9" stroke="#333"/>
+  <!-- Lid rim -->
+  <path d="M14 17 L50 17" stroke="#3a7bc8"/>
+  <!-- Cream swirl on top (visible through transparent lid idea, or decorative) -->
+  <ellipse cx="32" cy="28" rx="10" ry="4" fill="#fff" stroke="#ddd"/>
+  <path d="M26 28 Q32 24 38 28" stroke="#eee" fill="none"/>
+  <!-- Label line -->
+  <line x1="22" y1="38" x2="42" y2="38" stroke="#4a90d9" stroke-width="1.5"/>
+  <line x1="26" y1="42" x2="38" y2="42" stroke="#4a90d9" stroke-width="1"/>
+</svg>

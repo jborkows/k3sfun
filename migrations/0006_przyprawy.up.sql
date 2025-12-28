@@ -1,6 +1,22 @@
 -- Add przyprawy (spices) group if it doesn't exist
 INSERT OR IGNORE INTO groups(name) VALUES ('przyprawy');
 
+-- Add icon rules for spices/herbs
+INSERT OR IGNORE INTO product_icon_rules(match_substring, icon_key, priority) VALUES
+  ('oregano', 'herb', 100),
+  ('bazylia', 'herb', 100),
+  ('tymianek', 'herb', 100),
+  ('koperek', 'herb', 100),
+  ('kolendra', 'herb', 100),
+  ('natka', 'herb', 100),
+  ('pieprz', 'pepper', 100),
+  ('papryka', 'spice', 90),
+  ('czosnek', 'garlic', 100),
+  ('imbir', 'ginger', 100),
+  ('sól', 'salt', 100),
+  ('ocet', 'spice', 80),
+  ('sos sojowy', 'spice', 100);
+
 -- Add spice/herb products
 INSERT OR IGNORE INTO products (
   name,
