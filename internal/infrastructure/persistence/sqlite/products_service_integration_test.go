@@ -65,10 +65,31 @@ func setupCleanDB(t *testing.T, db *sql.DB) {
 	}
 }
 
-// assertProductCount checks that ListProducts returns expected number of products.
-func assertProductCount(t *testing.T, r *Repo, ctx context.Context, filter products.ProductFilter, expected int) []products.Product {
+// testEnv holds service and queries interfaces for integration tests.
+type testEnv struct {
+	svc     *products.Service
+	queries products.Queries
+}
+
+// setupTestEnv creates a clean test environment with service and queries.
+func setupTestEnv(t *testing.T) (testEnv, context.Context) {
 	t.Helper()
-	list, err := r.ListProducts(ctx, filter)
+	db := openTestDB(t)
+	setupCleanDB(t, db)
+
+	repo := NewRepo(db)
+	svc := products.NewService(repo)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	t.Cleanup(cancel)
+
+	return testEnv{svc: svc, queries: repo}, ctx
+}
+
+// assertProductCount checks that ListProducts returns expected number of products.
+func assertProductCount(t *testing.T, queries products.Queries, ctx context.Context, filter products.ProductFilter, expected int) []products.Product {
+	t.Helper()
+	list, err := queries.ListProducts(ctx, filter)
 	if err != nil {
 		t.Fatalf("ListProducts: %v", err)
 	}
@@ -89,21 +110,10 @@ func assertProductInList(t *testing.T, list []products.Product, name string) {
 	t.Errorf("expected product %q in list, not found", name)
 }
 
-// assertProductNotInList checks that a product with given ID is not in the list.
-func assertProductNotInList(t *testing.T, list []products.Product, id products.ProductID) {
-	t.Helper()
-	for _, p := range list {
-		if p.ID == id {
-			t.Errorf("product ID=%d should not be in list", id)
-			return
-		}
-	}
-}
-
 // assertProductMissing checks that a product is in the missing/low list and has Missing=true.
-func assertProductMissing(t *testing.T, r *Repo, ctx context.Context, id products.ProductID) {
+func assertProductMissing(t *testing.T, queries products.Queries, ctx context.Context, id products.ProductID) {
 	t.Helper()
-	list, err := r.ListProducts(ctx, products.ProductFilter{OnlyMissingOrLow: true, Limit: 100})
+	list, err := queries.ListProducts(ctx, products.ProductFilter{OnlyMissingOrLow: true, Limit: 100})
 	if err != nil {
 		t.Fatalf("ListProducts: %v", err)
 	}
@@ -119,9 +129,9 @@ func assertProductMissing(t *testing.T, r *Repo, ctx context.Context, id product
 }
 
 // assertProductNotMissing checks that a product is not in the missing/low list.
-func assertProductNotMissing(t *testing.T, r *Repo, ctx context.Context, id products.ProductID) {
+func assertProductNotMissing(t *testing.T, queries products.Queries, ctx context.Context, id products.ProductID) {
 	t.Helper()
-	list, err := r.ListProducts(ctx, products.ProductFilter{OnlyMissingOrLow: true, Limit: 100})
+	list, err := queries.ListProducts(ctx, products.ProductFilter{OnlyMissingOrLow: true, Limit: 100})
 	if err != nil {
 		t.Fatalf("ListProducts: %v", err)
 	}
@@ -155,46 +165,41 @@ func assertNoOverlap(t *testing.T, list1, list2 []products.Product) {
 	}
 }
 
-// mustCreateGroup creates a group and fails the test on error.
-func mustCreateGroup(t *testing.T, r *Repo, ctx context.Context, name string) products.GroupID {
+// mustCreateGroup creates a group via service and fails the test on error.
+func mustCreateGroup(t *testing.T, svc *products.Service, ctx context.Context, name string) products.GroupID {
 	t.Helper()
-	id, err := r.CreateGroup(ctx, name)
+	id, err := svc.CreateGroup(ctx, name)
 	if err != nil {
 		t.Fatalf("CreateGroup(%s): %v", name, err)
 	}
 	return id
 }
 
-// mustCreateProduct creates a product and fails the test on error.
-func mustCreateProduct(t *testing.T, r *Repo, ctx context.Context, p products.NewProduct) products.ProductID {
+// mustCreateProduct creates a product via service and fails the test on error.
+func mustCreateProduct(t *testing.T, svc *products.Service, ctx context.Context, p products.NewProduct) products.ProductID {
 	t.Helper()
-	id, err := r.CreateProduct(ctx, p)
+	id, err := svc.CreateProduct(ctx, p)
 	if err != nil {
 		t.Fatalf("CreateProduct(%s): %v", p.Name, err)
 	}
 	return id
 }
 
-// mustSetQuantity sets product quantity and fails the test on error.
-func mustSetQuantity(t *testing.T, r *Repo, ctx context.Context, id products.ProductID, qty products.Quantity) {
+// mustSetQuantity sets product quantity via service and fails the test on error.
+func mustSetQuantity(t *testing.T, svc *products.Service, ctx context.Context, id products.ProductID, qty products.Quantity) {
 	t.Helper()
-	if err := r.SetProductQuantity(ctx, id, qty); err != nil {
+	if err := svc.SetProductQuantity(ctx, id, qty); err != nil {
 		t.Fatalf("SetProductQuantity(%d, %v): %v", id, qty, err)
 	}
 }
 
-func TestRepo_ListProducts_FilteringAndPaging(t *testing.T) {
-	db := openTestDB(t)
-	setupCleanDB(t, db)
-
-	r := NewRepo(db)
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
+func TestProductsService_ListProducts_FilteringAndPaging(t *testing.T) {
+	env, ctx := setupTestEnv(t)
 
 	// Create test groups with synthetic names
-	groupAID := mustCreateGroup(t, r, ctx, "test-group-a")
-	groupBID := mustCreateGroup(t, r, ctx, "test-group-b")
-	groupCID := mustCreateGroup(t, r, ctx, "test-group-c")
+	groupAID := mustCreateGroup(t, env.svc, ctx, "test-group-a")
+	groupBID := mustCreateGroup(t, env.svc, ctx, "test-group-b")
+	groupCID := mustCreateGroup(t, env.svc, ctx, "test-group-c")
 
 	// Create test products with synthetic names (not real product names)
 	testProducts := []products.NewProduct{
@@ -206,15 +211,15 @@ func TestRepo_ListProducts_FilteringAndPaging(t *testing.T) {
 	}
 
 	for _, p := range testProducts {
-		mustCreateProduct(t, r, ctx, p)
+		mustCreateProduct(t, env.svc, ctx, p)
 	}
 
 	t.Run("empty filter returns all products", func(t *testing.T) {
-		assertProductCount(t, r, ctx, products.ProductFilter{Limit: products.MaxProductsPageSize}, len(testProducts))
+		assertProductCount(t, env.queries, ctx, products.ProductFilter{Limit: products.MaxProductsPageSize}, len(testProducts))
 	})
 
 	t.Run("filter by single group", func(t *testing.T) {
-		list := assertProductCount(t, r, ctx, products.ProductFilter{
+		list := assertProductCount(t, env.queries, ctx, products.ProductFilter{
 			GroupIDs: []products.GroupID{groupAID},
 			Limit:    products.MaxProductsPageSize,
 		}, 2)
@@ -222,14 +227,14 @@ func TestRepo_ListProducts_FilteringAndPaging(t *testing.T) {
 	})
 
 	t.Run("filter by multiple groups", func(t *testing.T) {
-		assertProductCount(t, r, ctx, products.ProductFilter{
+		assertProductCount(t, env.queries, ctx, products.ProductFilter{
 			GroupIDs: []products.GroupID{groupAID, groupBID},
 			Limit:    products.MaxProductsPageSize,
 		}, 3)
 	})
 
 	t.Run("filter by name query", func(t *testing.T) {
-		list := assertProductCount(t, r, ctx, products.ProductFilter{
+		list := assertProductCount(t, env.queries, ctx, products.ProductFilter{
 			NameQuery: "alpha",
 			Limit:     products.MaxProductsPageSize,
 		}, 1)
@@ -237,7 +242,7 @@ func TestRepo_ListProducts_FilteringAndPaging(t *testing.T) {
 	})
 
 	t.Run("filter by name with Polish diacritics", func(t *testing.T) {
-		list := assertProductCount(t, r, ctx, products.ProductFilter{
+		list := assertProductCount(t, env.queries, ctx, products.ProductFilter{
 			NameQuery: "Śmie",
 			Limit:     products.MaxProductsPageSize,
 		}, 1)
@@ -245,7 +250,7 @@ func TestRepo_ListProducts_FilteringAndPaging(t *testing.T) {
 	})
 
 	t.Run("filter by name and group combined", func(t *testing.T) {
-		list := assertProductCount(t, r, ctx, products.ProductFilter{
+		list := assertProductCount(t, env.queries, ctx, products.ProductFilter{
 			NameQuery: "delta",
 			GroupIDs:  []products.GroupID{groupCID},
 			Limit:     products.MaxProductsPageSize,
@@ -255,14 +260,14 @@ func TestRepo_ListProducts_FilteringAndPaging(t *testing.T) {
 
 	t.Run("filter missing or low quantity", func(t *testing.T) {
 		// gamma and śmietanka have quantity=0
-		assertProductCount(t, r, ctx, products.ProductFilter{
+		assertProductCount(t, env.queries, ctx, products.ProductFilter{
 			OnlyMissingOrLow: true,
 			Limit:            products.MaxProductsPageSize,
 		}, 2)
 	})
 
 	t.Run("count products with filter", func(t *testing.T) {
-		count, err := r.CountProducts(ctx, products.ProductFilter{GroupIDs: []products.GroupID{groupAID}})
+		count, err := env.queries.CountProducts(ctx, products.ProductFilter{GroupIDs: []products.GroupID{groupAID}})
 		if err != nil {
 			t.Fatalf("CountProducts: %v", err)
 		}
@@ -272,55 +277,100 @@ func TestRepo_ListProducts_FilteringAndPaging(t *testing.T) {
 	})
 
 	t.Run("pagination offset", func(t *testing.T) {
-		first := assertProductCount(t, r, ctx, products.ProductFilter{Limit: 2, Offset: 0}, 2)
-		second := assertProductCount(t, r, ctx, products.ProductFilter{Limit: 2, Offset: 2}, 2)
+		first := assertProductCount(t, env.queries, ctx, products.ProductFilter{Limit: 2, Offset: 0}, 2)
+		second := assertProductCount(t, env.queries, ctx, products.ProductFilter{Limit: 2, Offset: 2}, 2)
 		assertNoOverlap(t, first, second)
 	})
 
 	t.Run("limit is clamped to MaxProductsPageSize", func(t *testing.T) {
-		_, err := r.ListProducts(ctx, products.ProductFilter{Limit: 9999, Offset: 0})
+		_, err := env.queries.ListProducts(ctx, products.ProductFilter{Limit: 9999, Offset: 0})
 		if err != nil {
 			t.Fatalf("ListProducts (limit clamp): %v", err)
 		}
 	})
 }
 
-func TestRepo_SetProductQuantity_SyncsMissingFlag(t *testing.T) {
-	db := openTestDB(t)
-	setupCleanDB(t, db)
-
-	r := NewRepo(db)
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
+func TestProductsService_SetQuantity_SyncsMissingFlag(t *testing.T) {
+	env, ctx := setupTestEnv(t)
 
 	// Create a product with quantity > 0
-	id := mustCreateProduct(t, r, ctx, products.NewProduct{
+	id := mustCreateProduct(t, env.svc, ctx, products.NewProduct{
 		Name:     "test-qty-sync",
 		IconKey:  "cart",
 		Quantity: 5,
 		Unit:     products.UnitPiece,
 	})
 
-	// Set quantity to 0 - should set missing flag
-	mustSetQuantity(t, r, ctx, id, 0)
-	assertProductMissing(t, r, ctx, id)
+	// Set quantity to 0 via service - should set missing flag
+	mustSetQuantity(t, env.svc, ctx, id, 0)
+	assertProductMissing(t, env.queries, ctx, id)
 
-	// Set quantity > 0 - should clear missing flag
-	mustSetQuantity(t, r, ctx, id, 5)
-	assertProductNotMissing(t, r, ctx, id)
+	// Set quantity > 0 via service - should clear missing flag
+	mustSetQuantity(t, env.svc, ctx, id, 5)
+	assertProductNotMissing(t, env.queries, ctx, id)
 
 	// Set quantity back to 0 - should set missing flag again
-	mustSetQuantity(t, r, ctx, id, 0)
-	assertProductMissing(t, r, ctx, id)
+	mustSetQuantity(t, env.svc, ctx, id, 0)
+	assertProductMissing(t, env.queries, ctx, id)
 }
 
-func TestRepo_SuggestProductsByName_PolishDiacritics(t *testing.T) {
-	db := openTestDB(t)
-	setupCleanDB(t, db)
+func TestProductsService_SetQuantity_RejectsNegativeValue(t *testing.T) {
+	env, ctx := setupTestEnv(t)
 
-	r := NewRepo(db)
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
+	id := mustCreateProduct(t, env.svc, ctx, products.NewProduct{
+		Name:     "test-validation",
+		IconKey:  "cart",
+		Quantity: 5,
+		Unit:     products.UnitPiece,
+	})
+
+	// Negative quantity should fail
+	err := env.svc.SetProductQuantity(ctx, id, -1)
+	if err == nil {
+		t.Error("expected error for negative quantity, got nil")
+	}
+}
+
+func TestProductsService_CreateProduct_Validation(t *testing.T) {
+	env, ctx := setupTestEnv(t)
+
+	t.Run("empty name is rejected", func(t *testing.T) {
+		_, err := env.svc.CreateProduct(ctx, products.NewProduct{
+			Name: "",
+			Unit: products.UnitPiece,
+		})
+		if err == nil {
+			t.Error("expected error for empty name, got nil")
+		}
+	})
+
+	t.Run("negative quantity is rejected", func(t *testing.T) {
+		_, err := env.svc.CreateProduct(ctx, products.NewProduct{
+			Name:     "test-negative",
+			Quantity: -1,
+			Unit:     products.UnitPiece,
+		})
+		if err == nil {
+			t.Error("expected error for negative quantity, got nil")
+		}
+	})
+
+	t.Run("default icon is assigned when not specified", func(t *testing.T) {
+		id := mustCreateProduct(t, env.svc, ctx, products.NewProduct{
+			Name: "test-no-icon",
+			Unit: products.UnitPiece,
+		})
+		list, _ := env.queries.ListProducts(ctx, products.ProductFilter{Limit: 100})
+		for _, p := range list {
+			if p.ID == id && p.IconKey != "cart" {
+				t.Errorf("expected default icon 'cart', got %q", p.IconKey)
+			}
+		}
+	})
+}
+
+func TestProductsService_SuggestByName_PolishDiacritics(t *testing.T) {
+	env, ctx := setupTestEnv(t)
 
 	// Create products with Polish characters (synthetic test names)
 	testProducts := []products.NewProduct{
@@ -330,7 +380,7 @@ func TestRepo_SuggestProductsByName_PolishDiacritics(t *testing.T) {
 	}
 
 	for _, p := range testProducts {
-		mustCreateProduct(t, r, ctx, p)
+		mustCreateProduct(t, env.svc, ctx, p)
 	}
 
 	tests := []struct {
@@ -348,7 +398,7 @@ func TestRepo_SuggestProductsByName_PolishDiacritics(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.query, func(t *testing.T) {
-			suggestions, err := r.SuggestProductsByName(ctx, tc.query, 10)
+			suggestions, err := env.queries.SuggestProductsByName(ctx, tc.query, 10)
 			if err != nil {
 				t.Fatalf("SuggestProductsByName(%q): %v", tc.query, err)
 			}
