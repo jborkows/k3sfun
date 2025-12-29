@@ -90,15 +90,16 @@ func TestRepo_ListProducts_FilteringAndPaging_NoNamedArgError(t *testing.T) {
 	if len(all) == 0 {
 		t.Fatalf("expected seeded products to exist")
 	}
+	// Check for "marchewka" which should be in the first page of results alphabetically
 	seedFound := false
 	for _, p := range all {
-		if p.Name == "mąka razowa" {
+		if p.Name == "marchewka" {
 			seedFound = true
 			break
 		}
 	}
 	if !seedFound {
-		t.Fatalf("expected to find seeded product %q in unfiltered list", "mąka razowa")
+		t.Fatalf("expected to find seeded product %q in unfiltered list", "marchewka")
 	}
 
 	byGroups, err := r.ListProducts(ctx, products.ProductFilter{

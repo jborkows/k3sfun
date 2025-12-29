@@ -20,6 +20,16 @@ import (
 	"shopping/internal/domain/shoppinglist"
 )
 
+// toLowerPolish converts a string to lowercase, handling Polish diacritics.
+// SQLite's lower() doesn't handle non-ASCII characters properly.
+func toLowerPolish(s string) string {
+	replacer := strings.NewReplacer(
+		"Ą", "ą", "Ć", "ć", "Ę", "ę", "Ł", "ł", "Ń", "ń",
+		"Ó", "ó", "Ś", "ś", "Ź", "ź", "Ż", "ż",
+	)
+	return strings.ToLower(replacer.Replace(s))
+}
+
 // DBTX is the interface that both *sql.DB and *sql.Tx satisfy.
 type DBTX interface {
 	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
@@ -117,7 +127,7 @@ func (r *Repo) ListProducts(ctx context.Context, filter products.ProductFilter) 
 		onlyMissingOrLow = 1
 	}
 
-	name := strings.TrimSpace(filter.NameQuery)
+	name := toLowerPolish(strings.TrimSpace(filter.NameQuery))
 
 	groupIDsCount := int64(len(filter.GroupIDs))
 	groupIDs := make([]interface{}, 0, len(filter.GroupIDs))
@@ -171,7 +181,7 @@ func (r *Repo) SuggestProductsByName(ctx context.Context, query string, limit in
 		limit = 8
 	}
 	rows, err := r.q.SuggestProductsByName(ctx, db.SuggestProductsByNameParams{
-		LOWER: query,
+		LOWER: toLowerPolish(query),
 		Limit: limit,
 	})
 	if err != nil {
@@ -195,7 +205,7 @@ func (r *Repo) CountProducts(ctx context.Context, filter products.ProductFilter)
 		onlyMissingOrLow = 1
 	}
 
-	name := strings.TrimSpace(filter.NameQuery)
+	name := toLowerPolish(strings.TrimSpace(filter.NameQuery))
 
 	groupIDsCount := int64(len(filter.GroupIDs))
 	groupIDs := make([]interface{}, 0, len(filter.GroupIDs))
