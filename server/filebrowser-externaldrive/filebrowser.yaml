@@ -22,6 +22,11 @@ data:
         uwsgi_temp_path /tmp/uwsgi;
         scgi_temp_path /tmp/scgi;
 
+        # Allow large file uploads (10GB)
+        client_max_body_size 10G;
+        proxy_request_buffering off;
+        client_body_buffer_size 512k;
+
         upstream oauth2_proxy {
             server 127.0.0.1:4180;
         }
@@ -374,6 +379,10 @@ metadata:
   namespace: applications
   annotations:
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    # Allow large file uploads (10GB)
+    traefik.ingress.kubernetes.io/buffering: |
+      maxRequestBodyBytes: 10737418240
+      memRequestBodyBytes: 10485760
 spec:
   rules:
     - host: filebrowser.DOMAIN
@@ -397,6 +406,10 @@ metadata:
   namespace: applications
   annotations:
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    # Allow large file uploads (10GB)
+    traefik.ingress.kubernetes.io/buffering: |
+      maxRequestBodyBytes: 10737418240
+      memRequestBodyBytes: 10485760
 spec:
   rules:
     - host: filebrowser-admin.DOMAIN
