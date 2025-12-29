@@ -237,7 +237,12 @@ func (r *Repo) CreateProduct(ctx context.Context, p products.NewProduct) (produc
 }
 
 func (r *Repo) SetProductQuantity(ctx context.Context, productID products.ProductID, qty products.Quantity) error {
-	return r.q.SetProductQuantity(ctx, db.SetProductQuantityParams{QuantityValue: qty.Float64(), ID: int64(productID)})
+	qtyVal := qty.Float64()
+	return r.q.SetProductQuantity(ctx, db.SetProductQuantityParams{
+		QuantityValue: qtyVal,
+		Column2:       qtyVal, // Used in CASE to determine missing flag
+		ID:            int64(productID),
+	})
 }
 
 func (r *Repo) AddProductQuantity(ctx context.Context, productID products.ProductID, delta products.Quantity) error {

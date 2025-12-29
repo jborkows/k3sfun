@@ -76,8 +76,11 @@ VALUES (?, ?, ?, ?, ?, ?, 0, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 RETURNING id;
 
 -- name: SetProductQuantity :exec
+-- Automatically sync missing flag: quantity > 0 means not missing, quantity = 0 means missing
 UPDATE products
-SET quantity_value = ?, updated_at = CURRENT_TIMESTAMP
+SET quantity_value = ?,
+    missing = CASE WHEN ? > 0 THEN 0 ELSE 1 END,
+    updated_at = CURRENT_TIMESTAMP
 WHERE id = ?;
 
 -- name: AddProductQuantity :exec

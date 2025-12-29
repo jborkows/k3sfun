@@ -1,0 +1,2 @@
+-- No rollback possible for datafix - the previous state is unknown
+-- This is intentionally empty as we cannot restore the original missing values

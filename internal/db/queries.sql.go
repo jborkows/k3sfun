@@ -629,17 +629,21 @@ func (q *Queries) SetProductMissing(ctx context.Context, arg SetProductMissingPa
 
 const setProductQuantity = `-- name: SetProductQuantity :exec
 UPDATE products
-SET quantity_value = ?, updated_at = CURRENT_TIMESTAMP
+SET quantity_value = ?,
+    missing = CASE WHEN ? > 0 THEN 0 ELSE 1 END,
+    updated_at = CURRENT_TIMESTAMP
 WHERE id = ?
 `
 
 type SetProductQuantityParams struct {
 	QuantityValue float64
+	Column2       interface{}
 	ID            int64
 }
 
+// Automatically sync missing flag: quantity > 0 means not missing, quantity = 0 means missing
 func (q *Queries) SetProductQuantity(ctx context.Context, arg SetProductQuantityParams) error {
-	_, err := q.db.ExecContext(ctx, setProductQuantity, arg.QuantityValue, arg.ID)
+	_, err := q.db.ExecContext(ctx, setProductQuantity, arg.QuantityValue, arg.Column2, arg.ID)
 	return err
 }
 
