@@ -39,15 +39,147 @@ func setupCleanDB(t *testing.T, db *sql.DB) {
 		t.Fatalf("migrator.Up: %v", err)
 	}
 
-	// Truncate seeded data to start fresh
+	// Truncate seeded data to start fresh - get table names from sqlite_master
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	tables := []string{"shopping_list_items", "products", "groups", "product_icon_rules"}
+	rows, err := db.QueryContext(ctx, "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE 'schema_migrations'")
+	if err != nil {
+		t.Fatalf("query tables: %v", err)
+	}
+	defer rows.Close()
+
+	var tables []string
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err != nil {
+			t.Fatalf("scan table name: %v", err)
+		}
+		tables = append(tables, name)
+	}
+
 	for _, table := range tables {
-		if _, err := db.ExecContext(ctx, fmt.Sprintf("DELETE FROM %s", table)); err != nil {
+		if _, err := db.ExecContext(ctx, fmt.Sprintf("DELETE FROM %q", table)); err != nil {
 			t.Fatalf("truncate %s: %v", table, err)
 		}
+	}
+}
+
+// assertProductCount checks that ListProducts returns expected number of products.
+func assertProductCount(t *testing.T, r *Repo, ctx context.Context, filter products.ProductFilter, expected int) []products.Product {
+	t.Helper()
+	list, err := r.ListProducts(ctx, filter)
+	if err != nil {
+		t.Fatalf("ListProducts: %v", err)
+	}
+	if len(list) != expected {
+		t.Errorf("expected %d products, got %d", expected, len(list))
+	}
+	return list
+}
+
+// assertProductInList checks that a product with given name exists in the list.
+func assertProductInList(t *testing.T, list []products.Product, name string) {
+	t.Helper()
+	for _, p := range list {
+		if p.Name == name {
+			return
+		}
+	}
+	t.Errorf("expected product %q in list, not found", name)
+}
+
+// assertProductNotInList checks that a product with given ID is not in the list.
+func assertProductNotInList(t *testing.T, list []products.Product, id products.ProductID) {
+	t.Helper()
+	for _, p := range list {
+		if p.ID == id {
+			t.Errorf("product ID=%d should not be in list", id)
+			return
+		}
+	}
+}
+
+// assertProductMissing checks that a product is in the missing/low list and has Missing=true.
+func assertProductMissing(t *testing.T, r *Repo, ctx context.Context, id products.ProductID) {
+	t.Helper()
+	list, err := r.ListProducts(ctx, products.ProductFilter{OnlyMissingOrLow: true, Limit: 100})
+	if err != nil {
+		t.Fatalf("ListProducts: %v", err)
+	}
+	for _, p := range list {
+		if p.ID == id {
+			if !p.Missing {
+				t.Errorf("product ID=%d should have Missing=true", id)
+			}
+			return
+		}
+	}
+	t.Errorf("product ID=%d should appear in missing/low list", id)
+}
+
+// assertProductNotMissing checks that a product is not in the missing/low list.
+func assertProductNotMissing(t *testing.T, r *Repo, ctx context.Context, id products.ProductID) {
+	t.Helper()
+	list, err := r.ListProducts(ctx, products.ProductFilter{OnlyMissingOrLow: true, Limit: 100})
+	if err != nil {
+		t.Fatalf("ListProducts: %v", err)
+	}
+	for _, p := range list {
+		if p.ID == id {
+			t.Errorf("product ID=%d should not be in missing/low list", id)
+			return
+		}
+	}
+}
+
+// assertAllInGroup checks that all products in list belong to the expected group.
+func assertAllInGroup(t *testing.T, list []products.Product, groupID products.GroupID) {
+	t.Helper()
+	for _, p := range list {
+		if p.GroupID == nil || *p.GroupID != groupID {
+			t.Errorf("product %q should be in group %d", p.Name, groupID)
+		}
+	}
+}
+
+// assertNoOverlap checks that two product lists have no common products by ID.
+func assertNoOverlap(t *testing.T, list1, list2 []products.Product) {
+	t.Helper()
+	for _, p1 := range list1 {
+		for _, p2 := range list2 {
+			if p1.ID == p2.ID {
+				t.Errorf("pagination overlap: product %q appears in both pages", p1.Name)
+			}
+		}
+	}
+}
+
+// mustCreateGroup creates a group and fails the test on error.
+func mustCreateGroup(t *testing.T, r *Repo, ctx context.Context, name string) products.GroupID {
+	t.Helper()
+	id, err := r.CreateGroup(ctx, name)
+	if err != nil {
+		t.Fatalf("CreateGroup(%s): %v", name, err)
+	}
+	return id
+}
+
+// mustCreateProduct creates a product and fails the test on error.
+func mustCreateProduct(t *testing.T, r *Repo, ctx context.Context, p products.NewProduct) products.ProductID {
+	t.Helper()
+	id, err := r.CreateProduct(ctx, p)
+	if err != nil {
+		t.Fatalf("CreateProduct(%s): %v", p.Name, err)
+	}
+	return id
+}
+
+// mustSetQuantity sets product quantity and fails the test on error.
+func mustSetQuantity(t *testing.T, r *Repo, ctx context.Context, id products.ProductID, qty products.Quantity) {
+	t.Helper()
+	if err := r.SetProductQuantity(ctx, id, qty); err != nil {
+		t.Fatalf("SetProductQuantity(%d, %v): %v", id, qty, err)
 	}
 }
 
@@ -59,149 +191,78 @@ func TestRepo_ListProducts_FilteringAndPaging(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	// Create test groups
-	vegetablesID, err := r.CreateGroup(ctx, "warzywa")
-	if err != nil {
-		t.Fatalf("CreateGroup(warzywa): %v", err)
-	}
-	fruitsID, err := r.CreateGroup(ctx, "owoce")
-	if err != nil {
-		t.Fatalf("CreateGroup(owoce): %v", err)
-	}
-	dairyID, err := r.CreateGroup(ctx, "nabiał")
-	if err != nil {
-		t.Fatalf("CreateGroup(nabiał): %v", err)
-	}
+	// Create test groups with synthetic names
+	groupAID := mustCreateGroup(t, r, ctx, "test-group-a")
+	groupBID := mustCreateGroup(t, r, ctx, "test-group-b")
+	groupCID := mustCreateGroup(t, r, ctx, "test-group-c")
 
-	// Create test products
+	// Create test products with synthetic names (not real product names)
 	testProducts := []products.NewProduct{
-		{Name: "marchewka", IconKey: "carrot", GroupID: &vegetablesID, Quantity: 1.5, Unit: products.UnitKG},
-		{Name: "ziemniaki", IconKey: "potato", GroupID: &vegetablesID, Quantity: 2.0, Unit: products.UnitKG},
-		{Name: "jabłka", IconKey: "apple", GroupID: &fruitsID, Quantity: 0, Unit: products.UnitPiece},
-		{Name: "mleko", IconKey: "milk", GroupID: &dairyID, Quantity: 1.0, Unit: products.UnitLiter},
-		{Name: "śmietana", IconKey: "sour-cream", GroupID: &dairyID, Quantity: 0, Unit: products.UnitLiter},
+		{Name: "test-product-alpha", IconKey: "cart", GroupID: &groupAID, Quantity: 1.5, Unit: products.UnitKG},
+		{Name: "test-product-beta", IconKey: "cart", GroupID: &groupAID, Quantity: 2.0, Unit: products.UnitKG},
+		{Name: "test-product-gamma", IconKey: "cart", GroupID: &groupBID, Quantity: 0, Unit: products.UnitPiece},
+		{Name: "test-product-delta", IconKey: "cart", GroupID: &groupCID, Quantity: 1.0, Unit: products.UnitLiter},
+		{Name: "test-śmietanka", IconKey: "cart", GroupID: &groupCID, Quantity: 0, Unit: products.UnitLiter},
 	}
 
-	createdIDs := make([]products.ProductID, 0, len(testProducts))
 	for _, p := range testProducts {
-		id, err := r.CreateProduct(ctx, p)
-		if err != nil {
-			t.Fatalf("CreateProduct(%s): %v", p.Name, err)
-		}
-		createdIDs = append(createdIDs, id)
+		mustCreateProduct(t, r, ctx, p)
 	}
 
 	t.Run("empty filter returns all products", func(t *testing.T) {
-		all, err := r.ListProducts(ctx, products.ProductFilter{
-			Limit: products.MaxProductsPageSize,
-		})
-		if err != nil {
-			t.Fatalf("ListProducts: %v", err)
-		}
-		if len(all) != len(testProducts) {
-			t.Errorf("expected %d products, got %d", len(testProducts), len(all))
-		}
+		assertProductCount(t, r, ctx, products.ProductFilter{Limit: products.MaxProductsPageSize}, len(testProducts))
 	})
 
 	t.Run("filter by single group", func(t *testing.T) {
-		list, err := r.ListProducts(ctx, products.ProductFilter{
-			GroupIDs: []products.GroupID{vegetablesID},
+		list := assertProductCount(t, r, ctx, products.ProductFilter{
+			GroupIDs: []products.GroupID{groupAID},
 			Limit:    products.MaxProductsPageSize,
-		})
-		if err != nil {
-			t.Fatalf("ListProducts: %v", err)
-		}
-		if len(list) != 2 {
-			t.Errorf("expected 2 vegetables, got %d", len(list))
-		}
-		for _, p := range list {
-			if p.GroupID == nil || *p.GroupID != vegetablesID {
-				t.Errorf("product %q should be in vegetables group", p.Name)
-			}
-		}
+		}, 2)
+		assertAllInGroup(t, list, groupAID)
 	})
 
 	t.Run("filter by multiple groups", func(t *testing.T) {
-		list, err := r.ListProducts(ctx, products.ProductFilter{
-			GroupIDs: []products.GroupID{vegetablesID, fruitsID},
+		assertProductCount(t, r, ctx, products.ProductFilter{
+			GroupIDs: []products.GroupID{groupAID, groupBID},
 			Limit:    products.MaxProductsPageSize,
-		})
-		if err != nil {
-			t.Fatalf("ListProducts: %v", err)
-		}
-		if len(list) != 3 {
-			t.Errorf("expected 3 products (2 vegetables + 1 fruit), got %d", len(list))
-		}
+		}, 3)
 	})
 
 	t.Run("filter by name query", func(t *testing.T) {
-		list, err := r.ListProducts(ctx, products.ProductFilter{
-			NameQuery: "marchew",
+		list := assertProductCount(t, r, ctx, products.ProductFilter{
+			NameQuery: "alpha",
 			Limit:     products.MaxProductsPageSize,
-		})
-		if err != nil {
-			t.Fatalf("ListProducts: %v", err)
-		}
-		if len(list) != 1 {
-			t.Errorf("expected 1 product matching 'marchew', got %d", len(list))
-		}
-		if len(list) > 0 && list[0].Name != "marchewka" {
-			t.Errorf("expected 'marchewka', got %q", list[0].Name)
-		}
+		}, 1)
+		assertProductInList(t, list, "test-product-alpha")
 	})
 
 	t.Run("filter by name with Polish diacritics", func(t *testing.T) {
-		// Test uppercase Polish letter in search
-		list, err := r.ListProducts(ctx, products.ProductFilter{
+		list := assertProductCount(t, r, ctx, products.ProductFilter{
 			NameQuery: "Śmie",
 			Limit:     products.MaxProductsPageSize,
-		})
-		if err != nil {
-			t.Fatalf("ListProducts: %v", err)
-		}
-		if len(list) != 1 {
-			t.Errorf("expected 1 product matching 'Śmie', got %d", len(list))
-		}
-		if len(list) > 0 && list[0].Name != "śmietana" {
-			t.Errorf("expected 'śmietana', got %q", list[0].Name)
-		}
+		}, 1)
+		assertProductInList(t, list, "test-śmietanka")
 	})
 
 	t.Run("filter by name and group combined", func(t *testing.T) {
-		list, err := r.ListProducts(ctx, products.ProductFilter{
-			NameQuery: "ml",
-			GroupIDs:  []products.GroupID{dairyID},
+		list := assertProductCount(t, r, ctx, products.ProductFilter{
+			NameQuery: "delta",
+			GroupIDs:  []products.GroupID{groupCID},
 			Limit:     products.MaxProductsPageSize,
-		})
-		if err != nil {
-			t.Fatalf("ListProducts: %v", err)
-		}
-		if len(list) != 1 {
-			t.Errorf("expected 1 product, got %d", len(list))
-		}
-		if len(list) > 0 && list[0].Name != "mleko" {
-			t.Errorf("expected 'mleko', got %q", list[0].Name)
-		}
+		}, 1)
+		assertProductInList(t, list, "test-product-delta")
 	})
 
 	t.Run("filter missing or low quantity", func(t *testing.T) {
-		list, err := r.ListProducts(ctx, products.ProductFilter{
+		// gamma and śmietanka have quantity=0
+		assertProductCount(t, r, ctx, products.ProductFilter{
 			OnlyMissingOrLow: true,
 			Limit:            products.MaxProductsPageSize,
-		})
-		if err != nil {
-			t.Fatalf("ListProducts: %v", err)
-		}
-		// jabłka and śmietana have quantity=0, so they should be marked as missing
-		if len(list) != 2 {
-			t.Errorf("expected 2 missing/low products, got %d", len(list))
-		}
+		}, 2)
 	})
 
 	t.Run("count products with filter", func(t *testing.T) {
-		count, err := r.CountProducts(ctx, products.ProductFilter{
-			GroupIDs: []products.GroupID{vegetablesID},
-		})
+		count, err := r.CountProducts(ctx, products.ProductFilter{GroupIDs: []products.GroupID{groupAID}})
 		if err != nil {
 			t.Fatalf("CountProducts: %v", err)
 		}
@@ -211,46 +272,13 @@ func TestRepo_ListProducts_FilteringAndPaging(t *testing.T) {
 	})
 
 	t.Run("pagination offset", func(t *testing.T) {
-		// Get first 2 products
-		first, err := r.ListProducts(ctx, products.ProductFilter{
-			Limit:  2,
-			Offset: 0,
-		})
-		if err != nil {
-			t.Fatalf("ListProducts (first): %v", err)
-		}
-		// Get next 2 products
-		second, err := r.ListProducts(ctx, products.ProductFilter{
-			Limit:  2,
-			Offset: 2,
-		})
-		if err != nil {
-			t.Fatalf("ListProducts (second): %v", err)
-		}
-
-		if len(first) != 2 {
-			t.Errorf("expected 2 products in first page, got %d", len(first))
-		}
-		if len(second) != 2 {
-			t.Errorf("expected 2 products in second page, got %d", len(second))
-		}
-
-		// Ensure no overlap
-		for _, p1 := range first {
-			for _, p2 := range second {
-				if p1.ID == p2.ID {
-					t.Errorf("pagination overlap: product %q appears in both pages", p1.Name)
-				}
-			}
-		}
+		first := assertProductCount(t, r, ctx, products.ProductFilter{Limit: 2, Offset: 0}, 2)
+		second := assertProductCount(t, r, ctx, products.ProductFilter{Limit: 2, Offset: 2}, 2)
+		assertNoOverlap(t, first, second)
 	})
 
 	t.Run("limit is clamped to MaxProductsPageSize", func(t *testing.T) {
-		// This should not error even with very high limit
-		_, err := r.ListProducts(ctx, products.ProductFilter{
-			Limit:  9999,
-			Offset: 0,
-		})
+		_, err := r.ListProducts(ctx, products.ProductFilter{Limit: 9999, Offset: 0})
 		if err != nil {
 			t.Fatalf("ListProducts (limit clamp): %v", err)
 		}
@@ -266,75 +294,24 @@ func TestRepo_SetProductQuantity_SyncsMissingFlag(t *testing.T) {
 	defer cancel()
 
 	// Create a product with quantity > 0
-	id, err := r.CreateProduct(ctx, products.NewProduct{
-		Name:     "test product",
+	id := mustCreateProduct(t, r, ctx, products.NewProduct{
+		Name:     "test-qty-sync",
 		IconKey:  "cart",
 		Quantity: 5,
 		Unit:     products.UnitPiece,
 	})
-	if err != nil {
-		t.Fatalf("CreateProduct: %v", err)
-	}
 
 	// Set quantity to 0 - should set missing flag
-	if err := r.SetProductQuantity(ctx, id, 0); err != nil {
-		t.Fatalf("SetProductQuantity(0): %v", err)
-	}
-
-	// Verify product is now missing
-	list, err := r.ListProducts(ctx, products.ProductFilter{OnlyMissingOrLow: true, Limit: 10})
-	if err != nil {
-		t.Fatalf("ListProducts: %v", err)
-	}
-	found := false
-	for _, p := range list {
-		if p.ID == id {
-			found = true
-			if !p.Missing {
-				t.Errorf("product with quantity=0 should be missing")
-			}
-		}
-	}
-	if !found {
-		t.Errorf("product should appear in missing/low list after setting quantity=0")
-	}
+	mustSetQuantity(t, r, ctx, id, 0)
+	assertProductMissing(t, r, ctx, id)
 
 	// Set quantity > 0 - should clear missing flag
-	if err := r.SetProductQuantity(ctx, id, 5); err != nil {
-		t.Fatalf("SetProductQuantity(5): %v", err)
-	}
-
-	list, err = r.ListProducts(ctx, products.ProductFilter{OnlyMissingOrLow: true, Limit: 10})
-	if err != nil {
-		t.Fatalf("ListProducts: %v", err)
-	}
-	for _, p := range list {
-		if p.ID == id {
-			t.Errorf("product with quantity>0 should not be in missing/low list")
-		}
-	}
+	mustSetQuantity(t, r, ctx, id, 5)
+	assertProductNotMissing(t, r, ctx, id)
 
 	// Set quantity back to 0 - should set missing flag again
-	if err := r.SetProductQuantity(ctx, id, 0); err != nil {
-		t.Fatalf("SetProductQuantity(0): %v", err)
-	}
-
-	list, err = r.ListProducts(ctx, products.ProductFilter{OnlyMissingOrLow: true, Limit: 10})
-	if err != nil {
-		t.Fatalf("ListProducts: %v", err)
-	}
-	found = false
-	for _, p := range list {
-		if p.ID == id {
-			found = true
-			if !p.Missing {
-				t.Errorf("product with quantity=0 should be missing")
-			}
-		}
-	}
-	if !found {
-		t.Errorf("product should appear in missing/low list after setting quantity=0")
-	}
+	mustSetQuantity(t, r, ctx, id, 0)
+	assertProductMissing(t, r, ctx, id)
 }
 
 func TestRepo_SuggestProductsByName_PolishDiacritics(t *testing.T) {
@@ -345,30 +322,28 @@ func TestRepo_SuggestProductsByName_PolishDiacritics(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	// Create products with Polish characters
+	// Create products with Polish characters (synthetic test names)
 	testProducts := []products.NewProduct{
-		{Name: "śmietana", IconKey: "sour-cream", Quantity: 1, Unit: products.UnitLiter},
-		{Name: "żurawina", IconKey: "cart", Quantity: 1, Unit: products.UnitKG},
-		{Name: "ćwikła", IconKey: "beetroot", Quantity: 1, Unit: products.UnitPiece},
+		{Name: "test-śliwka", IconKey: "cart", Quantity: 1, Unit: products.UnitLiter},
+		{Name: "test-żółw", IconKey: "cart", Quantity: 1, Unit: products.UnitKG},
+		{Name: "test-ćma", IconKey: "cart", Quantity: 1, Unit: products.UnitPiece},
 	}
 
 	for _, p := range testProducts {
-		if _, err := r.CreateProduct(ctx, p); err != nil {
-			t.Fatalf("CreateProduct(%s): %v", p.Name, err)
-		}
+		mustCreateProduct(t, r, ctx, p)
 	}
 
 	tests := []struct {
 		query    string
 		expected string
 	}{
-		{"Śmie", "śmietana"},
-		{"śmie", "śmietana"},
-		{"ŚMIE", "śmietana"},
-		{"Żura", "żurawina"},
-		{"żura", "żurawina"},
-		{"Ćwi", "ćwikła"},
-		{"ćwi", "ćwikła"},
+		{"Śliw", "test-śliwka"},
+		{"śliw", "test-śliwka"},
+		{"ŚLIW", "test-śliwka"},
+		{"Żół", "test-żółw"},
+		{"żół", "test-żółw"},
+		{"Ćma", "test-ćma"},
+		{"ćma", "test-ćma"},
 	}
 
 	for _, tc := range tests {
