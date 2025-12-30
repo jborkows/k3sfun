@@ -139,6 +139,14 @@ func shoppingDoneBtnClass(done bool) string {
 	return "icon-btn sl-done sl-done-off"
 }
 
+// slItemDoneClass returns additional CSS class for done items.
+func slItemDoneClass(done bool) string {
+	if done {
+		return " sl-item-done"
+	}
+	return ""
+}
+
 func shoppingIconSrc(item shoppinglist.Item) string {
 	iconKey := strings.TrimSpace(item.IconKey)
 	if iconKey != "" {
@@ -185,4 +193,69 @@ func quantityMin(integerOnly bool) string {
 		return "1"
 	}
 	return "0.1"
+}
+
+// groupProducts groups products by their group name.
+// Products without a group are placed in a group with empty name.
+// The order of products within each group is preserved from input.
+func groupProducts(prods []products.Product) []ProductGroup {
+	if len(prods) == 0 {
+		return nil
+	}
+
+	// Use a slice to maintain order, map for lookup
+	var groups []ProductGroup
+	groupIndex := make(map[string]int)
+
+	for _, p := range prods {
+		groupName := p.GroupName
+		if idx, exists := groupIndex[groupName]; exists {
+			groups[idx].Products = append(groups[idx].Products, p)
+		} else {
+			groupIndex[groupName] = len(groups)
+			groups = append(groups, ProductGroup{
+				Name:     groupName,
+				Products: []products.Product{p},
+			})
+		}
+	}
+
+	return groups
+}
+
+// groupShoppingItems groups shopping list items by their group name.
+// Items without a group are placed in a group with empty name.
+// The order of items within each group is preserved from input.
+func groupShoppingItems(items []shoppinglist.Item) []ShoppingItemGroup {
+	if len(items) == 0 {
+		return nil
+	}
+
+	// Use a slice to maintain order, map for lookup
+	var groups []ShoppingItemGroup
+	groupIndex := make(map[string]int)
+
+	for _, item := range items {
+		groupName := item.GroupName
+		if idx, exists := groupIndex[groupName]; exists {
+			groups[idx].Items = append(groups[idx].Items, item)
+		} else {
+			groupIndex[groupName] = len(groups)
+			groups = append(groups, ShoppingItemGroup{
+				Name:  groupName,
+				Items: []shoppinglist.Item{item},
+			})
+		}
+	}
+
+	return groups
+}
+
+// groupNameDisplay returns a display-friendly group name.
+// Returns "(brak grupy)" for empty group names.
+func groupNameDisplay(name string) string {
+	if name == "" {
+		return "(brak grupy)"
+	}
+	return name
 }

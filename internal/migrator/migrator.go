@@ -32,7 +32,11 @@ func Up(db *sql.DB) error {
 	}
 
 	if err := m.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
-		return err
+		version, dirty, verr := m.Version()
+		if verr != nil && !errors.Is(verr, migrate.ErrNilVersion) {
+			return fmt.Errorf("migration failed: %w (could not get version: %v)", err, verr)
+		}
+		return fmt.Errorf("migration failed at version %d (dirty=%v): %w", version, dirty, err)
 	}
 	return ensureShoppingListDoneAt(db)
 }

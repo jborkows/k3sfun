@@ -175,6 +175,35 @@ button.secondary:hover { background: rgba(255,255,255,0.06); }
 
 .footer { color: var(--muted); font-size: 12px; padding-bottom: 40px; }
 
+/* Product and Shopping List Group Styling */
+.product-group { margin-bottom: 20px; }
+.product-group-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--accent);
+  margin: 0 0 10px;
+  padding: 8px 12px;
+  background: rgba(125, 211, 252, 0.08);
+  border-radius: 8px;
+  border-left: 3px solid var(--accent);
+}
+
+.sl-group { margin-bottom: 16px; }
+.sl-group-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent);
+  margin: 0 0 8px;
+  padding: 6px 10px;
+  background: rgba(125, 211, 252, 0.08);
+  border-radius: 6px;
+  border-left: 3px solid var(--accent);
+}
+
+.sl-item-done {
+  opacity: 0.5;
+}
+
 .products-grid {
   display: grid;
   grid-template-columns: 1fr;

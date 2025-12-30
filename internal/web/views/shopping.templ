@@ -31,63 +31,64 @@ templ ShoppingListCardContent(data ShoppingListData) {
 		</form>
 
 		if len(data.Items) == 0 {
-			<p class="muted">Brak produktów na liście. Użyj „Na listę” w zapasach albo dodaj ręcznie powyżej.</p>
+			<p class="muted">Brak produktów na liście. Użyj „Na listę" w zapasach albo dodaj ręcznie powyżej.</p>
 		} else {
-			<div class="sl-items">
-				for _, item := range data.Items {
-					<div class="sl-item">
-						<div class="sl-top">
-							<div class={ shoppingNameClass(item.Done) }>
-								{ item.Name }
-								if shoppingGroupLabel(item) != "" {
-									<span class="muted">({ shoppingGroupLabel(item) })</span>
-								}
-							</div>
-						</div>
+			for _, group := range groupShoppingItems(data.Items) {
+				<div class="sl-group">
+					<h3 class="sl-group-title">{ groupNameDisplay(group.Name) }</h3>
+					<div class="sl-items">
+						for _, item := range group.Items {
+							<div class={ "sl-item" + slItemDoneClass(item.Done) }>
+								<div class="sl-top">
+									<div class={ shoppingNameClass(item.Done) }>
+										{ item.Name }
+									</div>
+								</div>
 
-						<div class="sl-mid">
-							<img class="sl-icon" width="32" height="32" src={ shoppingIconSrc(item) } alt="" />
+								<div class="sl-mid">
+									<img class="sl-icon" width="32" height="32" src={ shoppingIconSrc(item) } alt="" />
 
-							<form class="sl-qty" hx-patch={ "/shopping-list/items/" + shoppingItemID(item) } hx-target="#shopping-list" hx-swap="outerHTML" hx-trigger="change">
-								<input class="num-input" type="number" step={ shoppingItemStep(item) } min={ shoppingItemMin(item) } name="quantity" value={ formatQty(item.Quantity) } />
-								if item.ProductID != nil {
-									<input type="hidden" name="unit" value={ string(item.Unit) } />
-									<span class="unit-fixed">{ string(item.Unit) }</span>
-								} else {
-									<select name="unit">
-										@DynamicUnitOptions(data.Units, item.Unit)
-									</select>
-								}
-							</form>
+									<form class="sl-qty" hx-patch={ "/shopping-list/items/" + shoppingItemID(item) } hx-target="#shopping-list" hx-swap="outerHTML" hx-trigger="change">
+										<input class="num-input" type="number" step={ shoppingItemStep(item) } min={ shoppingItemMin(item) } name="quantity" value={ formatQty(item.Quantity) } />
+										if item.ProductID != nil {
+											<input type="hidden" name="unit" value={ string(item.Unit) } />
+											<span class="unit-fixed">{ string(item.Unit) }</span>
+										} else {
+											<select name="unit">
+												@DynamicUnitOptions(data.Units, item.Unit)
+											</select>
+										}
+									</form>
 
-							<form class="sl-done-form" hx-patch={ "/shopping-list/items/" + shoppingItemID(item) } hx-target="#shopping-list" hx-swap="outerHTML">
-								<input type="hidden" name="done" value={ shoppingNextDone(item.Done) } />
-								<button class={ shoppingDoneBtnClass(item.Done) } type="submit" aria-label="Zrobione">
-									if item.Done {
-										✅
-									} else {
-										<span class="sl-done-empty" aria-hidden="true"></span>
-									}
-								</button>
-							</form>
-
-							<div class="sl-right">
-								if item.ProductID == nil {
-									<form hx-post={ "/shopping-list/items/" + shoppingItemID(item) + "/product" } hx-swap="none">
-										<button class="icon-btn" type="submit" aria-label="Dodaj do zapasów">
-											<img class="icon" src="/static/icons/plus.svg" alt="" />
+									<form class="sl-done-form" hx-patch={ "/shopping-list/items/" + shoppingItemID(item) } hx-target="#shopping-list" hx-swap="outerHTML">
+										<input type="hidden" name="done" value={ shoppingNextDone(item.Done) } />
+										<button class={ shoppingDoneBtnClass(item.Done) } type="submit" aria-label="Zrobione">
+											if item.Done {
+												✅
+											} else {
+												<span class="sl-done-empty" aria-hidden="true"></span>
+											}
 										</button>
 									</form>
-								}
-								<form class="sl-delete" hx-delete={ "/shopping-list/items/" + shoppingItemID(item) } hx-target="#shopping-list" hx-swap="outerHTML">
-									<button class="icon-btn secondary" type="submit" aria-label="Usuń">🗑️</button>
-								</form>
+
+									<div class="sl-right">
+										if item.ProductID == nil {
+											<form hx-post={ "/shopping-list/items/" + shoppingItemID(item) + "/product" } hx-swap="none">
+												<button class="icon-btn" type="submit" aria-label="Dodaj do zapasów">
+													<img class="icon" src="/static/icons/plus.svg" alt="" />
+												</button>
+											</form>
+										}
+										<form class="sl-delete" hx-delete={ "/shopping-list/items/" + shoppingItemID(item) } hx-target="#shopping-list" hx-swap="outerHTML">
+											<button class="icon-btn secondary" type="submit" aria-label="Usuń">🗑️</button>
+										</form>
+									</div>
+								</div>
 							</div>
-						</div>
+						}
 					</div>
-				}
-			</div>
+				</div>
+			}
 		}
 	</section>
 }
-

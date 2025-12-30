@@ -6,6 +6,18 @@ import (
 	"shopping/internal/infrastructure/oidc"
 )
 
+// ProductGroup represents a group of products for display purposes.
+type ProductGroup struct {
+	Name     string
+	Products []products.Product
+}
+
+// ShoppingItemGroup represents a group of shopping list items for display purposes.
+type ShoppingItemGroup struct {
+	Name  string
+	Items []shoppinglist.Item
+}
+
 type BaseData struct {
 	Title         string
 	User          *oidc.User

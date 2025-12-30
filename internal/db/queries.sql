@@ -55,7 +55,7 @@ WHERE
   (? = 0 OR p.quantity_value = 0 OR p.quantity_value <= p.min_quantity_value)
   AND (? = '' OR lower(p.name) LIKE '%' || lower(?) || '%')
   AND (? = 0 OR p.group_id IN (sqlc.slice('group_ids')))
-ORDER BY lower(p.name)
+ORDER BY COALESCE(lower(p.group_name), 'zzz'), lower(p.name)
 LIMIT ?
 OFFSET ?;
 
@@ -120,7 +120,7 @@ SELECT
 FROM shopping_list_items sli
 LEFT JOIN products p ON p.id = sli.product_id
 LEFT JOIN groups g ON g.id = p.group_id
-ORDER BY sli.created_at DESC, sli.id DESC;
+ORDER BY sli.done ASC, COALESCE(lower(g.name), 'zzz'), lower(sli.name);
 
 -- name: GetShoppingListItem :one
 SELECT
