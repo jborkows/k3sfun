@@ -79,15 +79,28 @@ templ ProductsListContent(data ProductsListData) {
 							<div class="product-header">
 								<img class="product-icon" width="40" height="40" src={ "/static/icons/" + productIconKey(p) + ".svg" } alt="" />
 								<div class="product-meta">
-									<div class="product-name">{ p.Name }</div>
-									<div class="product-badges">
-										if p.IsMissing() {
-											<span class="badge badge-warn">Brak</span>
-										} else {
-											<form class="badge-form" hx-post={ "/products/" + strconv.FormatInt(int64(p.ID), 10) + "/missing" + productsListQS(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, data.Page) } hx-target="#products-list" hx-swap="outerHTML">
-												<button class="badge badge-action" type="submit">Brak</button>
-											</form>
-										}
+									<div class="product-name-row">
+										<span class="product-name">{ p.Name }</span>
+										<details class="group-select">
+											<summary class="group-select-trigger">{ productCurrentGroupLabel(p) }</summary>
+											<div class="group-select-popover" role="listbox" aria-label="Grupa">
+												<label class="ms-option">
+													<input type="radio" name="group_id" value="" hx-post={ productGroupPostURL(p, productsListQS(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, data.Page)) } hx-target="#products-list" hx-swap="outerHTML" checked?={ p.GroupID == nil } />
+													(brak grupy)
+												</label>
+												for _, g := range data.Groups {
+													<label class="ms-option">
+														<input type="radio" name="group_id" value={ strconv.FormatInt(int64(g.ID), 10) } hx-post={ productGroupPostURL(p, productsListQS(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, data.Page)) } hx-target="#products-list" hx-swap="outerHTML" checked?={ p.GroupID != nil && *p.GroupID == g.ID } />
+														{ g.Name }
+													</label>
+												}
+											</div>
+										</details>
+									</div>
+									<div class="product-actions">
+										<form class="brak-form" hx-post={ "/products/" + strconv.FormatInt(int64(p.ID), 10) + "/missing" + productsListQS(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, data.Page) } hx-target="#products-list" hx-swap="outerHTML">
+											<button class={ "brak-btn" + brakBtnClass(p) } type="submit">Brak</button>
+										</form>
 									</div>
 								</div>
 								<div class="product-cta">
@@ -113,34 +126,6 @@ templ ProductsListContent(data ProductsListData) {
 									<form hx-post={ "/products/" + strconv.FormatInt(int64(p.ID), 10) + "/min" + productsListQS(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, data.Page) } hx-target="#products-list" hx-swap="outerHTML" hx-trigger="change">
 										<input class="num-input" type="number" step={ quantityStep(p.IntegerOnly) } min="0" name="min_quantity" value={ formatQty(p.MinQuantity) } />
 									</form>
-								</div>
-
-								if !p.IsMissing() {
-									<div class="product-control product-control-missing">
-										<form hx-post={ "/products/" + strconv.FormatInt(int64(p.ID), 10) + "/missing" + productsListQS(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, data.Page) } hx-target="#products-list" hx-swap="outerHTML">
-											<button class="secondary" type="submit">Brak</button>
-										</form>
-									</div>
-								}
-
-								<div class="product-control product-control-group">
-									<details class="multiselect singleselect">
-										<summary><span class="ss-current">Zmień grupę</span></summary>
-										<div class="multiselect-popover" role="listbox" aria-label="Grupa">
-											<input class="ms-search" type="search" placeholder="Szukaj grup…" autocomplete="off" data-ms-filter="groups" />
-
-											<label class="ms-option">
-												<input type="radio" name="group_id" value="" hx-post={ productGroupPostURL(p, productsListQS(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, data.Page)) } hx-target="#products-list" hx-swap="outerHTML" checked?={ p.GroupID == nil } />
-												(brak grupy)
-											</label>
-											for _, g := range data.Groups {
-												<label class="ms-option">
-													<input type="radio" name="group_id" value={ strconv.FormatInt(int64(g.ID), 10) } hx-post={ productGroupPostURL(p, productsListQS(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, data.Page)) } hx-target="#products-list" hx-swap="outerHTML" checked?={ p.GroupID != nil && *p.GroupID == g.ID } />
-													{ g.Name }
-												</label>
-											}
-										</div>
-									</details>
 								</div>
 							</div>
 						</div>

@@ -114,6 +114,13 @@ func productGroupPostURL(p products.Product, listQS string) string {
 	return "/products/" + strconv.FormatInt(int64(p.ID), 10) + "/group" + listQS
 }
 
+func brakBtnClass(p products.Product) string {
+	if p.IsMissing() || p.Quantity <= p.MinQuantity {
+		return " brak-btn-active"
+	}
+	return ""
+}
+
 func shoppingItemID(item shoppinglist.Item) string {
 	return strconv.FormatInt(int64(item.ID), 10)
 }
