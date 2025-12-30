@@ -7,9 +7,15 @@ templ ShoppingListCard(data ShoppingListData) {
 }
 
 templ ShoppingListCardContent(data ShoppingListData) {
-	<section class="card" id="shopping-list" sse-swap="shopping-list" hx-swap="outerHTML">
-		<h2>Lista zakupów</h2>
-		<details class="add-item-details">
+	<section class="card sl-readonly" id="shopping-list" sse-swap="shopping-list" hx-swap="outerHTML">
+		<div class="sl-header">
+			<h2>Lista zakupów</h2>
+			<label class="sl-readonly-toggle">
+				<input type="checkbox" id="sl-readonly-checkbox" checked onchange="document.getElementById('shopping-list').classList.toggle('sl-readonly', this.checked)" />
+				<span>Tylko podgląd</span>
+			</label>
+		</div>
+		<details class="add-item-details sl-editable">
 			<summary>Dodaj ręcznie</summary>
 			<form hx-post="/shopping-list" hx-target="#shopping-list" hx-swap="outerHTML">
 				<div class="form-row">
@@ -46,9 +52,10 @@ templ ShoppingListCardContent(data ShoppingListData) {
 									<div class={ shoppingNameClass(item.Done) }>
 										{ item.Name }
 									</div>
+									<span class="sl-qty-readonly">{ formatQty(item.Quantity) } { string(item.Unit) }</span>
 								</div>
 
-								<div class="sl-mid">
+								<div class="sl-mid sl-editable">
 									<img class="sl-icon" width="32" height="32" src={ shoppingIconSrc(item) } alt="" />
 
 									<form class="sl-qty" hx-patch={ "/shopping-list/items/" + shoppingItemID(item) } hx-target="#shopping-list" hx-swap="outerHTML" hx-trigger="change">

@@ -156,6 +156,20 @@ button.secondary:hover { background: rgba(255,255,255,0.06); }
 }
 .suggestion:hover { background: rgba(255,255,255,0.06); }
 
+.sl-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.sl-header h2 { margin: 0; }
+.sl-readonly-toggle {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--muted);
+  user-select: none;
+}
+.sl-readonly-toggle input { width: 18px; height: 18px; }
+.sl-qty-readonly { display: none; color: var(--muted); font-size: 14px; margin-left: auto; }
+
 .sl-items { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
 .sl-item {
   position: relative;
@@ -341,4 +355,14 @@ button.secondary:hover { background: rgba(255,255,255,0.06); }
   .sl-right { margin-left: auto; }
   .icon-btn { width: 40px; height: 40px; border-radius: 12px; }
   .icon-btn .icon { width: 20px; height: 20px; }
+
+  /* Show read-only toggle on mobile */
+  .sl-readonly-toggle { display: flex; }
+
+  /* Read-only mode styles for mobile */
+  .sl-readonly .sl-editable { display: none; }
+  .sl-readonly .sl-qty-readonly { display: block; }
+  .sl-readonly .sl-item { padding: 10px 12px; }
+  .sl-readonly .sl-top { padding-right: 0; }
+  .sl-readonly .sl-item-done { display: none; }
 }
