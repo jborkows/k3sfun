@@ -11,7 +11,6 @@ type Repository interface {
 	SetProductQuantity(ctx context.Context, productID ProductID, qty Quantity) error
 	AddProductQuantity(ctx context.Context, productID ProductID, delta Quantity) error
 	SetProductMinQuantity(ctx context.Context, productID ProductID, min Quantity) error
-	SetProductMissing(ctx context.Context, productID ProductID, missing bool) error
 	SetProductGroup(ctx context.Context, productID ProductID, groupID *GroupID) error
 	SetProductUnit(ctx context.Context, productID ProductID, unit Unit) error
 	// GetProductIntegerOnly returns whether the product requires integer quantities.

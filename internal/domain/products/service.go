@@ -94,15 +94,9 @@ func (s *Service) SetProductMinQuantity(ctx context.Context, productID ProductID
 	return s.repo.SetProductMinQuantity(ctx, productID, min)
 }
 
-// SetProductMissing sets the missing flag for a product.
-// When marking as missing (true), it also zeros out the quantity.
-func (s *Service) SetProductMissing(ctx context.Context, productID ProductID, missing bool) error {
-	if missing {
-		if err := s.repo.SetProductQuantity(ctx, productID, Quantity(0)); err != nil {
-			return err
-		}
-	}
-	return s.repo.SetProductMissing(ctx, productID, missing)
+// MarkProductMissing marks a product as missing by setting its quantity to 0.
+func (s *Service) MarkProductMissing(ctx context.Context, productID ProductID) error {
+	return s.repo.SetProductQuantity(ctx, productID, Quantity(0))
 }
 
 func (s *Service) SetProductGroup(ctx context.Context, productID ProductID, groupID *GroupID) error {

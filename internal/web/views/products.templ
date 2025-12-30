@@ -79,11 +79,10 @@ templ ProductsListContent(data ProductsListData) {
 							<div class="product-name">{ p.Name }</div>
 							<div class="product-badges">
 								<span class="badge">{ productCurrentGroupLabel(p) }</span>
-								if p.Missing {
+								if p.IsMissing() {
 									<span class="badge badge-warn">Brak</span>
-								} else if p.Quantity > 0 {
+								} else {
 									<form class="badge-form" hx-post={ "/products/" + strconv.FormatInt(int64(p.ID), 10) + "/missing" + productsListQS(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, data.Page) } hx-target="#products-list" hx-swap="outerHTML">
-										<input type="hidden" name="missing" value="1"/>
 										<button class="badge badge-action" type="submit">Brak</button>
 									</form>
 								}
@@ -114,10 +113,9 @@ templ ProductsListContent(data ProductsListData) {
 							</form>
 						</div>
 
-					if p.Quantity > 0 || !p.Missing {
+					if !p.IsMissing() {
 						<div class="product-control product-control-missing">
 							<form hx-post={ "/products/" + strconv.FormatInt(int64(p.ID), 10) + "/missing" + productsListQS(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, data.Page) } hx-target="#products-list" hx-swap="outerHTML">
-								<input type="hidden" name="missing" value="1"/>
 								<button class="secondary" type="submit">Brak</button>
 							</form>
 						</div>

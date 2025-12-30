@@ -2,7 +2,6 @@ package shoppinglist
 
 import (
 	"context"
-	"log/slog"
 	"time"
 
 	"shopping/internal/domain/products"
@@ -95,12 +94,6 @@ func (s *Service) SetDone(ctx context.Context, id ItemID, done bool) error {
 	if item.ProductID != nil && qty > 0 {
 		if err := s.productsSvc.AddProductQuantity(ctx, *item.ProductID, qty); err != nil {
 			return err
-		}
-		if err := s.productsSvc.SetProductMissing(ctx, *item.ProductID, false); err != nil {
-			slog.Warn("failed to clear missing flag after adding quantity",
-				"product_id", *item.ProductID,
-				"error", err,
-			)
 		}
 	}
 	return s.repo.SetDone(ctx, id, done)

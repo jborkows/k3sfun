@@ -14,7 +14,7 @@ import (
 
 const addProductQuantity = `-- name: AddProductQuantity :exec
 UPDATE products
-SET quantity_value = quantity_value + ?, missing = 0, updated_at = CURRENT_TIMESTAMP
+SET quantity_value = quantity_value + ?, updated_at = CURRENT_TIMESTAMP
 WHERE id = ?
 `
 
@@ -72,7 +72,7 @@ const countProductsFiltered = `-- name: CountProductsFiltered :one
 SELECT COUNT(*)
 FROM v_products p
 WHERE
-  (? = 0 OR p.missing = 1 OR p.quantity_value <= p.min_quantity_value)
+  (? = 0 OR p.quantity_value = 0 OR p.quantity_value <= p.min_quantity_value)
   AND (? = '' OR lower(p.name) LIKE '%' || lower(?) || '%')
   AND (? = 0 OR p.group_id IN (/*SLICE:group_ids*/?))
 `
@@ -119,8 +119,8 @@ func (q *Queries) CreateGroup(ctx context.Context, name string) (int64, error) {
 }
 
 const createProduct = `-- name: CreateProduct :one
-INSERT INTO products(name, icon_key, group_id, quantity_value, quantity_unit, min_quantity_value, missing, integer_only, created_at, updated_at)
-VALUES (?, ?, ?, ?, ?, ?, 0, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+INSERT INTO products(name, icon_key, group_id, quantity_value, quantity_unit, min_quantity_value, integer_only, created_at, updated_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 RETURNING id
 `
 
@@ -291,7 +291,6 @@ SELECT
   p.quantity_value,
   p.quantity_unit,
   p.min_quantity_value,
-  p.missing,
   p.integer_only,
   p.updated_at
 FROM v_products p
@@ -316,7 +315,6 @@ func (q *Queries) ListProductsAll(ctx context.Context) ([]VProduct, error) {
 			&i.QuantityValue,
 			&i.QuantityUnit,
 			&i.MinQuantityValue,
-			&i.Missing,
 			&i.IntegerOnly,
 			&i.UpdatedAt,
 		); err != nil {
@@ -343,12 +341,11 @@ SELECT
   p.quantity_value,
   p.quantity_unit,
   p.min_quantity_value,
-  p.missing,
   p.integer_only,
   p.updated_at
 FROM v_products p
 WHERE
-  (? = 0 OR p.missing = 1 OR p.quantity_value <= p.min_quantity_value)
+  (? = 0 OR p.quantity_value = 0 OR p.quantity_value <= p.min_quantity_value)
   AND (? = '' OR lower(p.name) LIKE '%' || lower(?) || '%')
   AND (? = 0 OR p.group_id IN (/*SLICE:group_ids*/?))
 ORDER BY lower(p.name)
@@ -400,7 +397,6 @@ func (q *Queries) ListProductsFiltered(ctx context.Context, arg ListProductsFilt
 			&i.QuantityValue,
 			&i.QuantityUnit,
 			&i.MinQuantityValue,
-			&i.Missing,
 			&i.IntegerOnly,
 			&i.UpdatedAt,
 		); err != nil {
@@ -427,11 +423,10 @@ SELECT
   p.quantity_value,
   p.quantity_unit,
   p.min_quantity_value,
-  p.missing,
   p.integer_only,
   p.updated_at
 FROM v_products p
-WHERE p.missing = 1 OR p.quantity_value <= p.min_quantity_value
+WHERE p.quantity_value = 0 OR p.quantity_value <= p.min_quantity_value
 ORDER BY p.name
 `
 
@@ -453,7 +448,6 @@ func (q *Queries) ListProductsMissingOrLow(ctx context.Context) ([]VProduct, err
 			&i.QuantityValue,
 			&i.QuantityUnit,
 			&i.MinQuantityValue,
-			&i.Missing,
 			&i.IntegerOnly,
 			&i.UpdatedAt,
 		); err != nil {
@@ -611,39 +605,20 @@ func (q *Queries) SetProductMinQuantity(ctx context.Context, arg SetProductMinQu
 	return err
 }
 
-const setProductMissing = `-- name: SetProductMissing :exec
-UPDATE products
-SET missing = ?, updated_at = CURRENT_TIMESTAMP
-WHERE id = ?
-`
-
-type SetProductMissingParams struct {
-	Missing int64
-	ID      int64
-}
-
-func (q *Queries) SetProductMissing(ctx context.Context, arg SetProductMissingParams) error {
-	_, err := q.db.ExecContext(ctx, setProductMissing, arg.Missing, arg.ID)
-	return err
-}
-
 const setProductQuantity = `-- name: SetProductQuantity :exec
 UPDATE products
 SET quantity_value = ?,
-    missing = CASE WHEN ? > 0 THEN 0 ELSE 1 END,
     updated_at = CURRENT_TIMESTAMP
 WHERE id = ?
 `
 
 type SetProductQuantityParams struct {
 	QuantityValue float64
-	Column2       interface{}
 	ID            int64
 }
 
-// Automatically sync missing flag: quantity > 0 means not missing, quantity = 0 means missing
 func (q *Queries) SetProductQuantity(ctx context.Context, arg SetProductQuantityParams) error {
-	_, err := q.db.ExecContext(ctx, setProductQuantity, arg.QuantityValue, arg.Column2, arg.ID)
+	_, err := q.db.ExecContext(ctx, setProductQuantity, arg.QuantityValue, arg.ID)
 	return err
 }
 

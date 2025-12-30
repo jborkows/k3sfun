@@ -110,7 +110,7 @@ func assertProductInList(t *testing.T, list []products.Product, name string) {
 	t.Errorf("expected product %q in list, not found", name)
 }
 
-// assertProductMissing checks that a product is in the missing/low list and has Missing=true.
+// assertProductMissing checks that a product is in the missing/low list (quantity = 0).
 func assertProductMissing(t *testing.T, queries products.Queries, ctx context.Context, id products.ProductID) {
 	t.Helper()
 	list, err := queries.ListProducts(ctx, products.ProductFilter{OnlyMissingOrLow: true, Limit: 100})
@@ -119,8 +119,8 @@ func assertProductMissing(t *testing.T, queries products.Queries, ctx context.Co
 	}
 	for _, p := range list {
 		if p.ID == id {
-			if !p.Missing {
-				t.Errorf("product ID=%d should have Missing=true", id)
+			if !p.IsMissing() {
+				t.Errorf("product ID=%d should have quantity=0 (missing)", id)
 			}
 			return
 		}
@@ -290,7 +290,7 @@ func TestProductsService_ListProducts_FilteringAndPaging(t *testing.T) {
 	})
 }
 
-func TestProductsService_SetQuantity_SyncsMissingFlag(t *testing.T) {
+func TestProductsService_SetQuantity_DeterminesMissingStatus(t *testing.T) {
 	env, ctx := setupTestEnv(t)
 
 	// Create a product with quantity > 0
@@ -301,15 +301,15 @@ func TestProductsService_SetQuantity_SyncsMissingFlag(t *testing.T) {
 		Unit:     products.UnitPiece,
 	})
 
-	// Set quantity to 0 via service - should set missing flag
+	// Set quantity to 0 - product should be considered missing
 	mustSetQuantity(t, env.svc, ctx, id, 0)
 	assertProductMissing(t, env.queries, ctx, id)
 
-	// Set quantity > 0 via service - should clear missing flag
+	// Set quantity > 0 - product should no longer be missing
 	mustSetQuantity(t, env.svc, ctx, id, 5)
 	assertProductNotMissing(t, env.queries, ctx, id)
 
-	// Set quantity back to 0 - should set missing flag again
+	// Set quantity back to 0 - product should be missing again
 	mustSetQuantity(t, env.svc, ctx, id, 0)
 	assertProductMissing(t, env.queries, ctx, id)
 }

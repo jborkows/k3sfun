@@ -16,7 +16,7 @@ func (s *Server) registerProductRoutes(mux *http.ServeMux, wrap func(http.Handle
 	mux.Handle("POST /products/{id}/qty", wrap(http.HandlerFunc(s.handleSetQuantity)))
 	mux.Handle("POST /products/{id}/min", wrap(http.HandlerFunc(s.handleSetMin)))
 	mux.Handle("POST /products/{id}/unit", wrap(http.HandlerFunc(s.handleSetUnit)))
-	mux.Handle("POST /products/{id}/missing", wrap(http.HandlerFunc(s.handleSetMissing)))
+	mux.Handle("POST /products/{id}/missing", wrap(http.HandlerFunc(s.handleMarkMissing)))
 	mux.Handle("POST /products/{id}/group", wrap(http.HandlerFunc(s.handleSetGroup)))
 	mux.Handle("POST /groups", wrap(http.HandlerFunc(s.handleCreateGroup)))
 	mux.Handle("POST /groups/new", wrap(http.HandlerFunc(s.handleCreateGroupAndRedirect)))

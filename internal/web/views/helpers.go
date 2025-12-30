@@ -88,7 +88,7 @@ func productsTabClass(active bool) string {
 }
 
 func productRowClass(p products.Product) string {
-	if p.Missing || p.Quantity <= p.MinQuantity {
+	if p.IsMissing() || p.Quantity <= p.MinQuantity {
 		return "warn"
 	}
 	return ""

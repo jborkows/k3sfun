@@ -22,10 +22,9 @@ type Product struct {
 	QuantityValue    float64
 	QuantityUnit     string
 	MinQuantityValue float64
-	Missing          int64
+	IntegerOnly      int64
 	CreatedAt        time.Time
 	UpdatedAt        time.Time
-	IntegerOnly      int64
 }
 
 type ProductIconRule struct {
@@ -66,7 +65,6 @@ type VProduct struct {
 	QuantityValue    float64
 	QuantityUnit     string
 	MinQuantityValue float64
-	Missing          int64
 	IntegerOnly      int64
 	UpdatedAt        time.Time
 }

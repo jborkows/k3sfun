@@ -168,7 +168,6 @@ func (r *Repo) ListProducts(ctx context.Context, filter products.ProductFilter) 
 			Quantity:    products.Quantity(p.QuantityValue),
 			Unit:        products.Unit(p.QuantityUnit),
 			MinQuantity: products.Quantity(p.MinQuantityValue),
-			Missing:     p.Missing != 0,
 			IntegerOnly: p.IntegerOnly != 0,
 			UpdatedAt:   p.UpdatedAt,
 		})
@@ -247,10 +246,8 @@ func (r *Repo) CreateProduct(ctx context.Context, p products.NewProduct) (produc
 }
 
 func (r *Repo) SetProductQuantity(ctx context.Context, productID products.ProductID, qty products.Quantity) error {
-	qtyVal := qty.Float64()
 	return r.q.SetProductQuantity(ctx, db.SetProductQuantityParams{
-		QuantityValue: qtyVal,
-		Column2:       qtyVal, // Used in CASE to determine missing flag
+		QuantityValue: qty.Float64(),
 		ID:            int64(productID),
 	})
 }
@@ -264,14 +261,6 @@ func (r *Repo) AddProductQuantity(ctx context.Context, productID products.Produc
 
 func (r *Repo) SetProductMinQuantity(ctx context.Context, productID products.ProductID, min products.Quantity) error {
 	return r.q.SetProductMinQuantity(ctx, db.SetProductMinQuantityParams{MinQuantityValue: min.Float64(), ID: int64(productID)})
-}
-
-func (r *Repo) SetProductMissing(ctx context.Context, productID products.ProductID, missing bool) error {
-	v := int64(0)
-	if missing {
-		v = 1
-	}
-	return r.q.SetProductMissing(ctx, db.SetProductMissingParams{Missing: v, ID: int64(productID)})
 }
 
 func (r *Repo) SetProductGroup(ctx context.Context, productID products.ProductID, groupID *products.GroupID) error {

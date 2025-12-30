@@ -49,9 +49,13 @@ type Product struct {
 	Quantity    Quantity
 	Unit        Unit
 	MinQuantity Quantity
-	Missing     bool
 	IntegerOnly bool
 	UpdatedAt   time.Time
+}
+
+// IsMissing returns true if the product has zero quantity.
+func (p Product) IsMissing() bool {
+	return p.Quantity == 0
 }
 
 type ProductFilter struct {

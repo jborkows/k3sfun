@@ -320,21 +320,16 @@ func (s *Server) handleSetUnit(w http.ResponseWriter, r *http.Request) {
 	s.handleProductsPartial(w, r)
 }
 
-func (s *Server) handleSetMissing(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handleMarkMissing(w http.ResponseWriter, r *http.Request) {
 	id, ok := parsePathProductID(r, "id")
 	if !ok {
 		http.Error(w, "bad id", http.StatusBadRequest)
 		return
 	}
-	if err := r.ParseForm(); err != nil {
-		http.Error(w, "bad form", http.StatusBadRequest)
-		return
-	}
-	missing := r.FormValue("missing") == "on" || r.FormValue("missing") == "1" || r.FormValue("missing") == "true"
 
 	ctx, cancel := context.WithTimeout(r.Context(), DefaultHandlerTimeout)
 	defer cancel()
-	if err := s.products.svc.SetProductMissing(ctx, id, missing); err != nil {
+	if err := s.products.svc.MarkProductMissing(ctx, id); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
