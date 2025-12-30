@@ -2,22 +2,53 @@ package views
 
 import "shopping/internal/domain/products"
 
+func shoppingListClass(editMode bool) string {
+	if editMode {
+		return "card"
+	}
+	return "card sl-readonly"
+}
+
+func shoppingToggleURL(currentEditMode bool) string {
+	if currentEditMode {
+		return "/shopping-list"
+	}
+	return "/shopping-list?edit=1"
+}
+
+func shoppingFormAction(editMode bool, base string) string {
+	if editMode {
+		return base + "?edit=1"
+	}
+	return base
+}
+
 templ ShoppingListCard(data ShoppingListData) {
 	@ShoppingListCardContent(data)
 }
 
 templ ShoppingListCardContent(data ShoppingListData) {
-	<section class="card sl-readonly" id="shopping-list" sse-swap="shopping-list" hx-swap="outerHTML">
+	<section class={ shoppingListClass(data.EditMode) } id="shopping-list" sse-swap="shopping-list" hx-swap="outerHTML">
 		<div class="sl-header">
 			<h2>Lista zakupów</h2>
 			<label class="sl-readonly-toggle">
-				<input type="checkbox" id="sl-readonly-checkbox" checked onchange="document.getElementById('shopping-list').classList.toggle('sl-readonly', this.checked)" />
+				<input
+					type="checkbox"
+					id="sl-readonly-checkbox"
+					if !data.EditMode {
+						checked
+					}
+					hx-get={ shoppingToggleURL(data.EditMode) }
+					hx-target="#shopping-list"
+					hx-swap="outerHTML"
+					hx-push-url="true"
+				/>
 				<span>Tylko podgląd</span>
 			</label>
 		</div>
 		<details class="add-item-details sl-editable">
 			<summary>Dodaj ręcznie</summary>
-			<form hx-post="/shopping-list" hx-target="#shopping-list" hx-swap="outerHTML">
+			<form hx-post={ shoppingFormAction(data.EditMode, "/shopping-list") } hx-target="#shopping-list" hx-swap="outerHTML">
 				<div class="form-row">
 					<input
 						name="name"
@@ -58,7 +89,7 @@ templ ShoppingListCardContent(data ShoppingListData) {
 								<div class="sl-mid sl-editable">
 									<img class="sl-icon" width="32" height="32" src={ shoppingIconSrc(item) } alt="" />
 
-									<form class="sl-qty" hx-patch={ "/shopping-list/items/" + shoppingItemID(item) } hx-target="#shopping-list" hx-swap="outerHTML" hx-trigger="change">
+									<form class="sl-qty" hx-patch={ shoppingFormAction(data.EditMode, "/shopping-list/items/" + shoppingItemID(item)) } hx-target="#shopping-list" hx-swap="outerHTML" hx-trigger="change">
 										<input class="num-input" type="number" step={ shoppingItemStep(item) } min={ shoppingItemMin(item) } name="quantity" value={ formatQty(item.Quantity) } />
 										if item.ProductID != nil {
 											<input type="hidden" name="unit" value={ string(item.Unit) } />
@@ -70,7 +101,7 @@ templ ShoppingListCardContent(data ShoppingListData) {
 										}
 									</form>
 
-									<form class="sl-done-form" hx-patch={ "/shopping-list/items/" + shoppingItemID(item) } hx-target="#shopping-list" hx-swap="outerHTML">
+									<form class="sl-done-form" hx-patch={ shoppingFormAction(data.EditMode, "/shopping-list/items/" + shoppingItemID(item)) } hx-target="#shopping-list" hx-swap="outerHTML">
 										<input type="hidden" name="done" value={ shoppingNextDone(item.Done) } />
 										<button class={ shoppingDoneBtnClass(item.Done) } type="submit" aria-label="Zrobione">
 											if item.Done {
@@ -83,13 +114,13 @@ templ ShoppingListCardContent(data ShoppingListData) {
 
 									<div class="sl-right">
 										if item.ProductID == nil {
-											<form hx-post={ "/shopping-list/items/" + shoppingItemID(item) + "/product" } hx-swap="none">
+											<form hx-post={ shoppingFormAction(data.EditMode, "/shopping-list/items/" + shoppingItemID(item) + "/product") } hx-swap="none">
 												<button class="icon-btn" type="submit" aria-label="Dodaj do zapasów">
 													<img class="icon" src="/static/icons/plus.svg" alt="" />
 												</button>
 											</form>
 										}
-										<form class="sl-delete" hx-delete={ "/shopping-list/items/" + shoppingItemID(item) } hx-target="#shopping-list" hx-swap="outerHTML">
+										<form class="sl-delete" hx-delete={ shoppingFormAction(data.EditMode, "/shopping-list/items/" + shoppingItemID(item)) } hx-target="#shopping-list" hx-swap="outerHTML">
 											<button class="icon-btn secondary" type="submit" aria-label="Usuń">🗑️</button>
 										</form>
 									</div>

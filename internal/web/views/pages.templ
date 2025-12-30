@@ -57,6 +57,13 @@ templ AdminPage(data AdminPageData) {
 	</html>
 }
 
+func shoppingEventsQS(editMode bool) string {
+	if editMode {
+		return "/events?topic=shopping-list&edit=1"
+	}
+	return "/events?topic=shopping-list"
+}
+
 templ ShoppingListPage(data ShoppingListPageData) {
 	<!doctype html>
 	<html lang="en">
@@ -70,7 +77,7 @@ templ ShoppingListPage(data ShoppingListPageData) {
 		</head>
 		<body
 			hx-ext="sse"
-			sse-connect="/events?topic=shopping-list"
+			sse-connect={ shoppingEventsQS(data.EditMode) }
 		>
 			<script src={ "/static/client_id.js?v=" + data.Base.StaticVersion }></script>
 			@Topbar(data.Base)
@@ -79,7 +86,7 @@ templ ShoppingListPage(data ShoppingListPageData) {
 					<h1>Lista zakupów</h1>
 					<div class="spacer"></div>
 				</div>
-				@ShoppingListCard(ShoppingListData{Items: data.Items})
+				@ShoppingListCard(ShoppingListData{Items: data.Items, Units: data.Units, EditMode: data.EditMode})
 			</main>
 			<footer class="container footer">
 				<span>© { strconv.Itoa(time.Now().Year()) }</span>

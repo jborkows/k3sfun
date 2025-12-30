@@ -13,7 +13,14 @@ import (
 )
 
 func (s *Server) handleShoppingListPage(w http.ResponseWriter, r *http.Request) {
+	// Return partial for htmx requests (e.g., toggle checkbox)
+	if r.Header.Get("HX-Request") == "true" {
+		s.handleShoppingListPartial(w, r)
+		return
+	}
+
 	user, _ := s.auth.CurrentUser(r)
+	editMode := parseEditMode(r)
 
 	ctx, cancel := context.WithTimeout(r.Context(), DefaultHandlerTimeout)
 	defer cancel()
@@ -32,8 +39,9 @@ func (s *Server) handleShoppingListPage(w http.ResponseWriter, r *http.Request) 
 			StaticVersion: s.staticV,
 			IsAdmin:       s.isAdmin(user),
 		},
-		Items: items,
-		Units: s.units,
+		Items:    items,
+		Units:    s.units,
+		EditMode: editMode,
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -43,6 +51,8 @@ func (s *Server) handleShoppingListPage(w http.ResponseWriter, r *http.Request) 
 }
 
 func (s *Server) handleShoppingListPartial(w http.ResponseWriter, r *http.Request) {
+	editMode := parseEditMode(r)
+
 	ctx, cancel := context.WithTimeout(r.Context(), DefaultHandlerTimeout)
 	defer cancel()
 
@@ -53,9 +63,14 @@ func (s *Server) handleShoppingListPartial(w http.ResponseWriter, r *http.Reques
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if err := views.ShoppingListCard(views.ShoppingListData{Items: items, Units: s.units}).Render(r.Context(), w); err != nil {
+	if err := views.ShoppingListCard(views.ShoppingListData{Items: items, Units: s.units, EditMode: editMode}).Render(r.Context(), w); err != nil {
 		http.Error(w, fmt.Sprintf("render: %v", err), http.StatusInternalServerError)
 	}
+}
+
+func parseEditMode(r *http.Request) bool {
+	edit := strings.TrimSpace(r.URL.Query().Get("edit"))
+	return edit == "1" || strings.EqualFold(edit, "true")
 }
 
 func (s *Server) handleAddShoppingListByName(w http.ResponseWriter, r *http.Request) {
