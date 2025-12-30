@@ -130,6 +130,21 @@ button.secondary:hover { background: rgba(255,255,255,0.06); }
 .pager { margin: 12px 0; }
 .button.disabled { opacity: 0.45; pointer-events: none; }
 
+.add-item-details { margin-bottom: 16px; }
+.add-item-details > summary {
+  list-style: none;
+  cursor: pointer;
+  user-select: none;
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 14px;
+  padding: 8px 0;
+}
+.add-item-details > summary::-webkit-details-marker { display: none; }
+.add-item-details > summary::before { content: "▶ "; font-size: 10px; }
+.add-item-details[open] > summary::before { content: "▼ "; }
+.add-item-details form { margin-top: 10px; }
+
 .suggestions { margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
 .suggestion {
   width: 100%;

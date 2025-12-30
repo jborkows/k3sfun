@@ -9,26 +9,29 @@ templ ShoppingListCard(data ShoppingListData) {
 templ ShoppingListCardContent(data ShoppingListData) {
 	<section class="card" id="shopping-list" sse-swap="shopping-list" hx-swap="outerHTML">
 		<h2>Lista zakupów</h2>
-		<form hx-post="/shopping-list" hx-target="#shopping-list" hx-swap="outerHTML">
-			<div class="form-row">
-				<input
-					name="name"
-					placeholder="np. mleko"
-					required
-					autocomplete="off"
-					hx-get="/partials/product-suggestions"
-					hx-target="#product-suggestions"
-					hx-swap="innerHTML"
-					hx-trigger="keyup changed delay:200ms"
-				/>
-				<input class="num-input" type="number" step="0.1" min="0.1" name="quantity" value="1" required />
-				<select name="unit">
-					@DynamicUnitOptions(data.Units, products.UnitPiece)
-				</select>
-				<button type="submit">Dodaj</button>
-			</div>
-			<div id="product-suggestions"></div>
-		</form>
+		<details class="add-item-details">
+			<summary>Dodaj ręcznie</summary>
+			<form hx-post="/shopping-list" hx-target="#shopping-list" hx-swap="outerHTML">
+				<div class="form-row">
+					<input
+						name="name"
+						placeholder="np. mleko"
+						required
+						autocomplete="off"
+						hx-get="/partials/product-suggestions"
+						hx-target="#product-suggestions"
+						hx-swap="innerHTML"
+						hx-trigger="keyup changed delay:200ms"
+					/>
+					<input class="num-input" type="number" step="0.1" min="0.1" name="quantity" value="1" required />
+					<select name="unit">
+						@DynamicUnitOptions(data.Units, products.UnitPiece)
+					</select>
+					<button type="submit">Dodaj</button>
+				</div>
+				<div id="product-suggestions"></div>
+			</form>
+		</details>
 
 		if len(data.Items) == 0 {
 			<p class="muted">Brak produktów na liście. Użyj „Na listę" w zapasach albo dodaj ręcznie powyżej.</p>
