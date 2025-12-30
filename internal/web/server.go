@@ -57,6 +57,9 @@ func (s *Server) Routes() http.Handler {
 
 	mux.Handle("GET /healthz", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(http.StatusOK) }))
 	mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServer(http.Dir("web/static"))))
+	mux.Handle("GET /favicon.ico", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "web/static/icons/cart.svg")
+	}))
 
 	mux.Handle("GET /login", http.HandlerFunc(s.auth.HandleLogin))
 	mux.Handle("GET /oauth2/callback", http.HandlerFunc(s.auth.HandleCallback))

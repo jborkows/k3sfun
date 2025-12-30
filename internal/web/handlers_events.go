@@ -34,11 +34,8 @@ func (s *Server) handleEvents(w http.ResponseWriter, r *http.Request) {
 	sub, unsubscribe := s.events.Subscribe(topic, clientID)
 	defer unsubscribe()
 
-	if err := s.writeEventUpdate(r.Context(), w, topic, r); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	flusher.Flush()
+	// No initial update - page already has data rendered server-side.
+	// Only send updates when events occur.
 
 	keepalive := time.NewTicker(20 * time.Second)
 	defer keepalive.Stop()
