@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <defs>
+    <linearGradient id="can-grad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#cbd5e1"/>
+      <stop offset="1" stop-color="#94a3b8"/>
+    </linearGradient>
+    <linearGradient id="peas-fill" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#86efac"/>
+      <stop offset="1" stop-color="#16a34a"/>
+    </linearGradient>
+  </defs>
+  <!-- Can body -->
+  <rect x="5" y="6" width="14" height="12" rx="1" fill="url(#can-grad)" stroke="#64748b" stroke-width="1.2"/>
+  <!-- Can top rim -->
+  <ellipse cx="12" cy="6" rx="7.5" ry="1.5" fill="#cbd5e1" stroke="#64748b" stroke-width="1"/>
+  <!-- Can label -->
+  <rect x="6" y="8" width="12" height="8" fill="#d9f99d" stroke="#65a30d" stroke-width="0.8" rx="0.5"/>
+  <!-- Peas inside label -->
+  <circle cx="9" cy="10" r="1.2" fill="url(#peas-fill)" stroke="#3f6212" stroke-width="0.5"/>
+  <circle cx="13" cy="9" r="1.2" fill="url(#peas-fill)" stroke="#3f6212" stroke-width="0.5"/>
+  <circle cx="16" cy="10" r="1.2" fill="url(#peas-fill)" stroke="#3f6212" stroke-width="0.5"/>
+  <circle cx="10" cy="13" r="1.2" fill="url(#peas-fill)" stroke="#3f6212" stroke-width="0.5"/>
+  <circle cx="14" cy="12" r="1.2" fill="url(#peas-fill)" stroke="#3f6212" stroke-width="0.5"/>
+  <!-- Highlight on can -->
+  <path d="M7 7v10" stroke="#e2e8f0" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
+</svg>

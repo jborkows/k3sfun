@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <defs>
+    <linearGradient id="beans-grad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#65a30d"/>
+      <stop offset="1" stop-color="#16a34a"/>
+    </linearGradient>
+  </defs>
+  <!-- Package background -->
+  <rect x="4" y="5" width="16" height="14" rx="2" fill="#e0f2fe" stroke="#0ea5e9" stroke-width="1.2"/>
+  <!-- Package pattern -->
+  <path d="M6 8h12M6 11h12M6 14h12M6 17h12" stroke="#0ea5e9" stroke-width="0.8" opacity="0.4"/>
+  <!-- Frozen green beans (wavy shapes) -->
+  <path d="M6 10 Q 8 9 10 10" stroke="url(#beans-grad)" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M11 9 Q 13 8 15 9" stroke="url(#beans-grad)" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M16 10 Q 18 9 20 11" stroke="url(#beans-grad)" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M7 14 Q 9 13 11 14" stroke="url(#beans-grad)" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M13 13 Q 15 12 17 14" stroke="url(#beans-grad)" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Shine on package -->
+  <path d="M6 6c0-0.5 0.5-1 1-1h2" stroke="#67e8f9" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/>
+</svg>
