@@ -20,7 +20,7 @@ a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; }
 
 .container { max-width: 1000px; margin: 0 auto; padding: 16px; }
-.topbar { border-bottom: 1px solid var(--border); background: rgba(0,0,0,0.25); position: sticky; top: 0; backdrop-filter: blur(6px); }
+.topbar { border-bottom: 1px solid var(--border); background: var(--bg); position: sticky; top: 0; }
 .topbar-row { display: flex; align-items: center; gap: 16px; }
 .brand a { color: var(--text); font-weight: 700; }
 .nav a { color: var(--muted); margin-right: 12px; }
