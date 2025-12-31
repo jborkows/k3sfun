@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <defs>
+    <linearGradient id="yogurt-fill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ede9fe"/>
+      <stop offset="1" stop-color="#ddd6fe"/>
+    </linearGradient>
+    <linearGradient id="yogurt-cup" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f5f3ff"/>
+      <stop offset="1" stop-color="#ede9fe"/>
+    </linearGradient>
+  </defs>
+  <!-- Cup body (slightly tapered) -->
+  <path d="M6 8l1.5 12c0 1 1 1.5 2.5 1.5h5c1.5 0 2.5-.5 2.5-1.5L18 8Z" fill="url(#yogurt-cup)" stroke="#a78bfa" stroke-width="1.2" stroke-linejoin="round"/>
+  <!-- Yogurt fill -->
+  <path d="M7 10l1 10c0 0.8 0.8 1.2 2 1.2h4c1.2 0 2-.4 2-1.2l1-10Z" fill="url(#yogurt-fill)" opacity="0.9"/>
+  <!-- Top rim -->
+  <ellipse cx="12" cy="8" rx="5.5" ry="1.2" fill="none" stroke="#a78bfa" stroke-width="1.2"/>
+  <!-- Spoon -->
+  <line x1="3" y1="9" x2="5" y2="18" stroke="#94a3b8" stroke-width="1" stroke-linecap="round"/>
+  <circle cx="4" cy="19" r="1" fill="#cbd5e1" stroke="#94a3b8" stroke-width="0.8"/>
+  <!-- Texture/texture marks -->
+  <circle cx="10" cy="12" r="0.5" fill="#c4b5fd" opacity="0.5"/>
+  <circle cx="14" cy="14" r="0.4" fill="#c4b5fd" opacity="0.5"/>
+</svg>

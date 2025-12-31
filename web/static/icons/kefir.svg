@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <defs>
+    <linearGradient id="kefir-fill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fef3c7"/>
+      <stop offset="1" stop-color="#fcd34d"/>
+    </linearGradient>
+    <linearGradient id="kefir-surface" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fef9e7"/>
+      <stop offset="1" stop-color="#fef3c7"/>
+    </linearGradient>
+  </defs>
+  <!-- Bottle body -->
+  <path d="M8 4h8v12c0 2-1.5 3-4 3s-4-1-4-3V4Z" fill="url(#kefir-fill)" stroke="#d97706" stroke-width="1.2" stroke-linejoin="round"/>
+  <!-- Bottle top/cap -->
+  <rect x="9" y="2" width="6" height="2.5" rx="0.5" fill="#dc2626" stroke="#991b1b" stroke-width="1"/>
+  <!-- Liquid surface -->
+  <ellipse cx="12" cy="8" rx="3.5" ry="1" fill="url(#kefir-surface)" opacity="0.8"/>
+  <!-- Bubbles for fermented appearance -->
+  <circle cx="10" cy="10" r="0.6" fill="#fde047" opacity="0.6"/>
+  <circle cx="14" cy="11" r="0.5" fill="#fde047" opacity="0.5"/>
+  <circle cx="11" cy="14" r="0.5" fill="#fde047" opacity="0.6"/>
+  <!-- Shine highlight -->
+  <ellipse cx="10" cy="6" rx="1" ry="2" fill="#fffbeb" opacity="0.6"/>
+</svg>
