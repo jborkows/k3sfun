@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <!-- Container/jar -->
+  <path d="M6 8h12l-1 12H7L6 8Z" fill="#fef3c7" stroke="#d97706" stroke-width="1.2" stroke-linejoin="round"/>
+  <!-- Jar top -->
+  <rect x="8" y="5" width="8" height="2" rx="0.5" fill="#d97706" stroke="#b45309" stroke-width="0.8"/>
+  <!-- Breadcrumb texture inside -->
+  <circle cx="8" cy="11" r="1" fill="#ca8a04" opacity="0.7"/>
+  <circle cx="11" cy="10" r="0.8" fill="#ca8a04" opacity="0.6"/>
+  <circle cx="14" cy="11" r="0.9" fill="#ca8a04" opacity="0.7"/>
+  <circle cx="16" cy="13" r="0.7" fill="#ca8a04" opacity="0.6"/>
+  <circle cx="9" cy="14" r="0.8" fill="#ca8a04" opacity="0.7"/>
+  <circle cx="13" cy="15" r="0.9" fill="#ca8a04" opacity="0.6"/>
+  <circle cx="10" cy="17" r="0.7" fill="#ca8a04" opacity="0.7"/>
+  <circle cx="15" cy="17" r="0.8" fill="#ca8a04" opacity="0.6"/>
+  <!-- Breadcrumb particles scattered -->
+  <circle cx="5.5" cy="14" r="0.5" fill="#fbbf24" opacity="0.5"/>
+  <circle cx="18" cy="16" r="0.4" fill="#fbbf24" opacity="0.4"/>
+</svg>
