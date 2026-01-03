@@ -74,3 +74,22 @@ type NewProduct struct {
 	Unit        Unit
 	MinQuantity Quantity
 }
+
+// GroupIDsToNames converts a slice of GroupIDs to their corresponding names.
+// Uses O(n+m) algorithm with a lookup map. Unknown IDs are skipped.
+func GroupIDsToNames(groups []Group, ids []GroupID) []string {
+	if len(ids) == 0 {
+		return nil
+	}
+	idToName := make(map[GroupID]string, len(groups))
+	for _, g := range groups {
+		idToName[g.ID] = g.Name
+	}
+	var names []string
+	for _, id := range ids {
+		if name, ok := idToName[id]; ok {
+			names = append(names, name)
+		}
+	}
+	return names
+}
