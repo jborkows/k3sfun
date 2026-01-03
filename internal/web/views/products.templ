@@ -70,6 +70,25 @@ templ ProductsListContent(data ProductsListData) {
 			</div>
 		</form>
 
+		if len(data.SelectedGroupIDs) > 0 {
+			<div class="filter-chips">
+				for _, gid := range data.SelectedGroupIDs {
+					<a
+						class="filter-chip"
+						href={ "/products" + productsListQSWithoutGroup(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, 1, gid) }
+						hx-get={ "/partials/products" + productsListQSWithoutGroup(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, 1, gid) }
+						hx-target="#products-list"
+						hx-swap="outerHTML"
+						hx-push-url={ "/products" + productsListQSWithoutGroup(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, 1, gid) }
+						data-group-id={ strconv.FormatInt(int64(gid), 10) }
+					>
+						{ groupNameByID(data.Groups, gid) }
+						<span class="filter-chip-remove" aria-label="Usuń filtr">×</span>
+					</a>
+				}
+			</div>
+		}
+
 		for _, group := range groupProducts(data.Products) {
 			<div class="product-group">
 				<h3 class="product-group-title">{ groupNameDisplay(group.Name) }</h3>
@@ -147,6 +166,7 @@ templ ProductsListContent(data ProductsListData) {
 						hx-get={ "/partials/products" + productsListQS(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, maxInt64(1, data.Page-1)) }
 						hx-target="#products-list"
 						hx-swap="outerHTML"
+						hx-push-url={ "/products" + productsListQS(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, maxInt64(1, data.Page-1)) }
 					>Poprzednia</a>
 				} else {
 					<span class="button secondary disabled">Poprzednia</span>
@@ -159,6 +179,7 @@ templ ProductsListContent(data ProductsListData) {
 						hx-get={ "/partials/products" + productsListQS(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, minInt64(data.TotalPages, data.Page+1)) }
 						hx-target="#products-list"
 						hx-swap="outerHTML"
+						hx-push-url={ "/products" + productsListQS(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, minInt64(data.TotalPages, data.Page+1)) }
 					>Następna</a>
 				} else {
 					<span class="button secondary disabled">Następna</span>

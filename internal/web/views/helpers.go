@@ -73,6 +73,29 @@ func groupSelected(selected []products.GroupID, id products.GroupID) bool {
 	return false
 }
 
+// groupNameByID returns the name of a group given its ID.
+// Returns empty string if the group is not found.
+func groupNameByID(groups []products.Group, id products.GroupID) string {
+	for _, g := range groups {
+		if g.ID == id {
+			return g.Name
+		}
+	}
+	return ""
+}
+
+// productsListQSWithoutGroup returns a query string without a specific group ID.
+// Used for filter chip removal.
+func productsListQSWithoutGroup(onlyMissing bool, nameQuery string, groupIDs []products.GroupID, page int64, excludeGroupID products.GroupID) string {
+	var filtered []products.GroupID
+	for _, gid := range groupIDs {
+		if gid != excludeGroupID {
+			filtered = append(filtered, gid)
+		}
+	}
+	return productsListQS(onlyMissing, nameQuery, filtered, page)
+}
+
 func productsTitle(onlyMissing bool) string {
 	if onlyMissing {
 		return "Braki / niski stan"

@@ -48,6 +48,14 @@
     for (var i = 0; i < roots.length; i++) updateGroupSummary(roots[i]);
   });
 
+  // Update group summary after HTMX content swap
+  document.addEventListener("htmx:afterSwap", function (e) {
+    var root = e.detail.target;
+    if (!root) return;
+    var ms = root.querySelector("details.multiselect");
+    if (ms) updateGroupSummary(ms);
+  });
+
   document.addEventListener("click", function (e) {
     var target = e.target;
     var open = document.querySelectorAll("details.multiselect[open]");

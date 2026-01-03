@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 
@@ -163,6 +164,9 @@ func (s *Server) handleProductsPartial(w http.ResponseWriter, r *http.Request) {
 		Total:            data.Total,
 	}
 
+	// Set HX-Push-Url header so browser URL updates to match filter state
+	pushURL := buildProductsPageURL(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, data.Page)
+	w.Header().Set("HX-Push-Url", pushURL)
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	if err := views.ProductsList(listData).Render(r.Context(), w); err != nil {
 		http.Error(w, fmt.Sprintf("render: %v", err), http.StatusInternalServerError)
@@ -463,4 +467,28 @@ func parseProductsListQuery(r *http.Request) (onlyMissing bool, nameQuery string
 		}
 	}
 	return onlyMissing, nameQuery, groupIDs, page
+}
+
+// buildProductsPageURL constructs the canonical /products URL for the given filter state.
+// Used for HX-Push-Url header to sync browser URL with filter state.
+func buildProductsPageURL(onlyMissing bool, nameQuery string, groupIDs []products.GroupID, page int64) string {
+	values := url.Values{}
+	if onlyMissing {
+		values.Set("missing", "1")
+	}
+	nameQuery = strings.TrimSpace(nameQuery)
+	if nameQuery != "" {
+		values.Set("q", nameQuery)
+	}
+	for _, gid := range groupIDs {
+		values.Add("group_id", strconv.FormatInt(int64(gid), 10))
+	}
+	if page > 1 {
+		values.Set("page", strconv.FormatInt(page, 10))
+	}
+	encoded := values.Encode()
+	if encoded == "" {
+		return "/products"
+	}
+	return "/products?" + encoded
 }
