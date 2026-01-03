@@ -20,7 +20,7 @@ templ ProductsPage(data ProductsPageData) {
 		</head>
 		<body
 			hx-ext="sse"
-			sse-connect={ productsEventsQS(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, data.Page) }
+			sse-connect={ productsEventsQS(data.OnlyMissing, data.NameQuery, data.Groups, data.SelectedGroupIDs, data.Page) }
 		>
 			<script src={ "/static/client_id.js?v=" + data.Base.StaticVersion }></script>
 			@Topbar(data.Base)

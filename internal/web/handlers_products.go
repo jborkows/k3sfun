@@ -27,12 +27,18 @@ type productsListData struct {
 // fetchProductsListData fetches all data needed to render the products list.
 // This consolidates the duplicated logic from handleProductsPage and handleProductsPartial.
 func (s *Server) fetchProductsListData(ctx context.Context, r *http.Request) (*productsListData, error) {
-	onlyMissing, nameQuery, groupIDs, page := parseProductsListQuery(r)
+	onlyMissing, nameQuery, groupNames, formGroupIDs, page := parseProductsListQuery(r)
 	perPage := products.MaxProductsPageSize
 
 	groups, err := s.products.qry.ListGroups(ctx)
 	if err != nil {
 		return nil, err
+	}
+
+	// Resolve group names to IDs (from URL), and merge with form-submitted IDs
+	groupIDs := resolveGroupNames(groupNames, groups)
+	if len(groupIDs) == 0 {
+		groupIDs = formGroupIDs
 	}
 
 	filter := products.ProductFilter{
@@ -165,7 +171,7 @@ func (s *Server) handleProductsPartial(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Set HX-Push-Url header so browser URL updates to match filter state
-	pushURL := buildProductsPageURL(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, data.Page)
+	pushURL := buildProductsPageURL(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, data.Groups, data.Page)
 	w.Header().Set("HX-Push-Url", pushURL)
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	if err := views.ProductsList(listData).Render(r.Context(), w); err != nil {
@@ -442,21 +448,38 @@ func withQuery(r *http.Request, key, value string) *http.Request {
 	return r2
 }
 
-func parseProductsListQuery(r *http.Request) (onlyMissing bool, nameQuery string, groupIDs []products.GroupID, page int64) {
+func parseProductsListQuery(r *http.Request) (onlyMissing bool, nameQuery string, groupNames []string, groupIDs []products.GroupID, page int64) {
 	q := r.URL.Query()
 	onlyMissing = q.Get("missing") == "1"
 	nameQuery = strings.TrimSpace(q.Get("q"))
 
-	seen := make(map[products.GroupID]struct{})
+	// Parse group names from "groups" parameter (comma-separated) - used in URLs
+	if raw := strings.TrimSpace(q.Get("groups")); raw != "" {
+		seen := make(map[string]struct{})
+		for _, name := range strings.Split(raw, ",") {
+			name = strings.TrimSpace(name)
+			if name == "" {
+				continue
+			}
+			if _, dup := seen[name]; dup {
+				continue
+			}
+			seen[name] = struct{}{}
+			groupNames = append(groupNames, name)
+		}
+	}
+
+	// Also parse group_id parameters (used by form checkboxes)
+	seenIDs := make(map[products.GroupID]struct{})
 	for _, raw := range q["group_id"] {
 		id, ok := parseOptionalGroupID(raw)
 		if !ok {
 			continue
 		}
-		if _, dup := seen[id]; dup {
+		if _, dup := seenIDs[id]; dup {
 			continue
 		}
-		seen[id] = struct{}{}
+		seenIDs[id] = struct{}{}
 		groupIDs = append(groupIDs, id)
 	}
 
@@ -466,12 +489,34 @@ func parseProductsListQuery(r *http.Request) (onlyMissing bool, nameQuery string
 			page = p
 		}
 	}
-	return onlyMissing, nameQuery, groupIDs, page
+	return onlyMissing, nameQuery, groupNames, groupIDs, page
+}
+
+// resolveGroupNames converts group names to GroupIDs using the provided groups list.
+// Unknown group names are silently ignored.
+func resolveGroupNames(groupNames []string, groups []products.Group) []products.GroupID {
+	if len(groupNames) == 0 {
+		return nil
+	}
+
+	// Build name -> ID lookup map
+	nameToID := make(map[string]products.GroupID, len(groups))
+	for _, g := range groups {
+		nameToID[g.Name] = g.ID
+	}
+
+	var ids []products.GroupID
+	for _, name := range groupNames {
+		if id, ok := nameToID[name]; ok {
+			ids = append(ids, id)
+		}
+	}
+	return ids
 }
 
 // buildProductsPageURL constructs the canonical /products URL for the given filter state.
 // Used for HX-Push-Url header to sync browser URL with filter state.
-func buildProductsPageURL(onlyMissing bool, nameQuery string, groupIDs []products.GroupID, page int64) string {
+func buildProductsPageURL(onlyMissing bool, nameQuery string, groupIDs []products.GroupID, groups []products.Group, page int64) string {
 	values := url.Values{}
 	if onlyMissing {
 		values.Set("missing", "1")
@@ -480,8 +525,20 @@ func buildProductsPageURL(onlyMissing bool, nameQuery string, groupIDs []product
 	if nameQuery != "" {
 		values.Set("q", nameQuery)
 	}
-	for _, gid := range groupIDs {
-		values.Add("group_id", strconv.FormatInt(int64(gid), 10))
+	// Convert group IDs to names for URL
+	if len(groupIDs) > 0 {
+		var names []string
+		for _, gid := range groupIDs {
+			for _, g := range groups {
+				if g.ID == gid {
+					names = append(names, g.Name)
+					break
+				}
+			}
+		}
+		if len(names) > 0 {
+			values.Set("groups", strings.Join(names, ","))
+		}
 	}
 	if page > 1 {
 		values.Set("page", strconv.FormatInt(page, 10))

@@ -61,9 +61,9 @@ func ProductsContent(data ProductsPageData) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var4 templ.SafeURL
-		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinURLErrs("/products" + productsListQS(false, data.NameQuery, data.SelectedGroupIDs, 1))
+		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinURLErrs("/products" + productsListQS(false, data.NameQuery, data.Groups, data.SelectedGroupIDs, 1))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `products.templ`, Line: 13, Col: 135}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `products.templ`, Line: 13, Col: 148}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 		if templ_7745c5c3_Err != nil {
@@ -96,9 +96,9 @@ func ProductsContent(data ProductsPageData) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var7 templ.SafeURL
-		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinURLErrs("/products" + productsListQS(true, data.NameQuery, data.SelectedGroupIDs, 1))
+		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinURLErrs("/products" + productsListQS(true, data.NameQuery, data.Groups, data.SelectedGroupIDs, 1))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `products.templ`, Line: 14, Col: 133}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `products.templ`, Line: 14, Col: 146}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 		if templ_7745c5c3_Err != nil {
@@ -301,9 +301,9 @@ func ProductsListContent(data ProductsListData) templ.Component {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var17 templ.SafeURL
-				templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinURLErrs("/products" + productsListQSWithoutGroup(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, 1, gid))
+				templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinURLErrs("/products" + productsListQSWithoutGroup(data.OnlyMissing, data.NameQuery, data.Groups, data.SelectedGroupIDs, 1, gid))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `products.templ`, Line: 78, Col: 118}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `products.templ`, Line: 78, Col: 131}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 				if templ_7745c5c3_Err != nil {
@@ -314,9 +314,9 @@ func ProductsListContent(data ProductsListData) templ.Component {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var18 string
-				templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs("/partials/products" + productsListQSWithoutGroup(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, 1, gid))
+				templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs("/partials/products" + productsListQSWithoutGroup(data.OnlyMissing, data.NameQuery, data.Groups, data.SelectedGroupIDs, 1, gid))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `products.templ`, Line: 79, Col: 129}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `products.templ`, Line: 79, Col: 142}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 				if templ_7745c5c3_Err != nil {
@@ -327,9 +327,9 @@ func ProductsListContent(data ProductsListData) templ.Component {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var19 string
-				templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs("/products" + productsListQSWithoutGroup(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, 1, gid))
+				templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs("/products" + productsListQSWithoutGroup(data.OnlyMissing, data.NameQuery, data.Groups, data.SelectedGroupIDs, 1, gid))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `products.templ`, Line: 82, Col: 125}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `products.templ`, Line: 82, Col: 138}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 				if templ_7745c5c3_Err != nil {
@@ -452,9 +452,9 @@ func ProductsListContent(data ProductsListData) templ.Component {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var28 string
-				templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(productGroupPostURL(p, productsListQS(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, data.Page)))
+				templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(productGroupPostURL(p, productsListQS(data.OnlyMissing, data.NameQuery, data.Groups, data.SelectedGroupIDs, data.Page)))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `products.templ`, Line: 107, Col: 174}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `products.templ`, Line: 107, Col: 187}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
 				if templ_7745c5c3_Err != nil {
@@ -493,9 +493,9 @@ func ProductsListContent(data ProductsListData) templ.Component {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var30 string
-					templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.JoinStringErrs(productGroupPostURL(p, productsListQS(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, data.Page)))
+					templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.JoinStringErrs(productGroupPostURL(p, productsListQS(data.OnlyMissing, data.NameQuery, data.Groups, data.SelectedGroupIDs, data.Page)))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `products.templ`, Line: 112, Col: 211}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `products.templ`, Line: 112, Col: 224}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var30))
 					if templ_7745c5c3_Err != nil {
@@ -534,9 +534,9 @@ func ProductsListContent(data ProductsListData) templ.Component {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var32 string
-				templ_7745c5c3_Var32, templ_7745c5c3_Err = templ.JoinStringErrs("/products/" + strconv.FormatInt(int64(p.ID), 10) + "/missing" + productsListQS(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, data.Page))
+				templ_7745c5c3_Var32, templ_7745c5c3_Err = templ.JoinStringErrs("/products/" + strconv.FormatInt(int64(p.ID), 10) + "/missing" + productsListQS(data.OnlyMissing, data.NameQuery, data.Groups, data.SelectedGroupIDs, data.Page))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `products.templ`, Line: 120, Col: 191}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `products.templ`, Line: 120, Col: 204}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var32))
 				if templ_7745c5c3_Err != nil {
@@ -582,9 +582,9 @@ func ProductsListContent(data ProductsListData) templ.Component {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var36 string
-				templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.JoinStringErrs("/products/" + strconv.FormatInt(int64(p.ID), 10) + "/qty" + productsListQS(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, data.Page))
+				templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.JoinStringErrs("/products/" + strconv.FormatInt(int64(p.ID), 10) + "/qty" + productsListQS(data.OnlyMissing, data.NameQuery, data.Groups, data.SelectedGroupIDs, data.Page))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `products.templ`, Line: 136, Col: 169}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `products.templ`, Line: 136, Col: 182}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var36))
 				if templ_7745c5c3_Err != nil {
@@ -634,9 +634,9 @@ func ProductsListContent(data ProductsListData) templ.Component {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var40 string
-				templ_7745c5c3_Var40, templ_7745c5c3_Err = templ.JoinStringErrs("/products/" + strconv.FormatInt(int64(p.ID), 10) + "/min" + productsListQS(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, data.Page))
+				templ_7745c5c3_Var40, templ_7745c5c3_Err = templ.JoinStringErrs("/products/" + strconv.FormatInt(int64(p.ID), 10) + "/min" + productsListQS(data.OnlyMissing, data.NameQuery, data.Groups, data.SelectedGroupIDs, data.Page))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `products.templ`, Line: 145, Col: 168}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `products.templ`, Line: 145, Col: 181}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var40))
 				if templ_7745c5c3_Err != nil {
@@ -695,9 +695,9 @@ func ProductsListContent(data ProductsListData) templ.Component {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var43 templ.SafeURL
-				templ_7745c5c3_Var43, templ_7745c5c3_Err = templ.JoinURLErrs("/products" + productsListQS(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, maxInt64(1, data.Page-1)))
+				templ_7745c5c3_Var43, templ_7745c5c3_Err = templ.JoinURLErrs("/products" + productsListQS(data.OnlyMissing, data.NameQuery, data.Groups, data.SelectedGroupIDs, maxInt64(1, data.Page-1)))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `products.templ`, Line: 165, Col: 124}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `products.templ`, Line: 165, Col: 137}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var43))
 				if templ_7745c5c3_Err != nil {
@@ -708,9 +708,9 @@ func ProductsListContent(data ProductsListData) templ.Component {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var44 string
-				templ_7745c5c3_Var44, templ_7745c5c3_Err = templ.JoinStringErrs("/partials/products" + productsListQS(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, maxInt64(1, data.Page-1)))
+				templ_7745c5c3_Var44, templ_7745c5c3_Err = templ.JoinStringErrs("/partials/products" + productsListQS(data.OnlyMissing, data.NameQuery, data.Groups, data.SelectedGroupIDs, maxInt64(1, data.Page-1)))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `products.templ`, Line: 166, Col: 135}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `products.templ`, Line: 166, Col: 148}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var44))
 				if templ_7745c5c3_Err != nil {
@@ -721,9 +721,9 @@ func ProductsListContent(data ProductsListData) templ.Component {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var45 string
-				templ_7745c5c3_Var45, templ_7745c5c3_Err = templ.JoinStringErrs("/products" + productsListQS(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, maxInt64(1, data.Page-1)))
+				templ_7745c5c3_Var45, templ_7745c5c3_Err = templ.JoinStringErrs("/products" + productsListQS(data.OnlyMissing, data.NameQuery, data.Groups, data.SelectedGroupIDs, maxInt64(1, data.Page-1)))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `products.templ`, Line: 169, Col: 131}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `products.templ`, Line: 169, Col: 144}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var45))
 				if templ_7745c5c3_Err != nil {
@@ -775,9 +775,9 @@ func ProductsListContent(data ProductsListData) templ.Component {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var48 templ.SafeURL
-				templ_7745c5c3_Var48, templ_7745c5c3_Err = templ.JoinURLErrs("/products" + productsListQS(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, minInt64(data.TotalPages, data.Page+1)))
+				templ_7745c5c3_Var48, templ_7745c5c3_Err = templ.JoinURLErrs("/products" + productsListQS(data.OnlyMissing, data.NameQuery, data.Groups, data.SelectedGroupIDs, minInt64(data.TotalPages, data.Page+1)))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `products.templ`, Line: 178, Col: 138}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `products.templ`, Line: 178, Col: 151}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var48))
 				if templ_7745c5c3_Err != nil {
@@ -788,9 +788,9 @@ func ProductsListContent(data ProductsListData) templ.Component {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var49 string
-				templ_7745c5c3_Var49, templ_7745c5c3_Err = templ.JoinStringErrs("/partials/products" + productsListQS(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, minInt64(data.TotalPages, data.Page+1)))
+				templ_7745c5c3_Var49, templ_7745c5c3_Err = templ.JoinStringErrs("/partials/products" + productsListQS(data.OnlyMissing, data.NameQuery, data.Groups, data.SelectedGroupIDs, minInt64(data.TotalPages, data.Page+1)))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `products.templ`, Line: 179, Col: 149}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `products.templ`, Line: 179, Col: 162}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var49))
 				if templ_7745c5c3_Err != nil {
@@ -801,9 +801,9 @@ func ProductsListContent(data ProductsListData) templ.Component {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var50 string
-				templ_7745c5c3_Var50, templ_7745c5c3_Err = templ.JoinStringErrs("/products" + productsListQS(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, minInt64(data.TotalPages, data.Page+1)))
+				templ_7745c5c3_Var50, templ_7745c5c3_Err = templ.JoinStringErrs("/products" + productsListQS(data.OnlyMissing, data.NameQuery, data.Groups, data.SelectedGroupIDs, minInt64(data.TotalPages, data.Page+1)))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `products.templ`, Line: 182, Col: 145}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `products.templ`, Line: 182, Col: 158}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var50))
 				if templ_7745c5c3_Err != nil {

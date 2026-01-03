@@ -15,7 +15,7 @@ func boolToQuery(v bool) string {
 	return "0"
 }
 
-func productsListQS(onlyMissing bool, nameQuery string, groupIDs []products.GroupID, page int64) string {
+func productsListQS(onlyMissing bool, nameQuery string, groups []products.Group, groupIDs []products.GroupID, page int64) string {
 	values := url.Values{}
 	if onlyMissing {
 		values.Set("missing", "1")
@@ -24,8 +24,20 @@ func productsListQS(onlyMissing bool, nameQuery string, groupIDs []products.Grou
 	if nameQuery != "" {
 		values.Set("q", nameQuery)
 	}
-	for _, gid := range groupIDs {
-		values.Add("group_id", strconv.FormatInt(int64(gid), 10))
+	// Convert group IDs to names for URL
+	if len(groupIDs) > 0 {
+		var names []string
+		for _, gid := range groupIDs {
+			for _, g := range groups {
+				if g.ID == gid {
+					names = append(names, g.Name)
+					break
+				}
+			}
+		}
+		if len(names) > 0 {
+			values.Set("groups", strings.Join(names, ","))
+		}
 	}
 	if page > 1 {
 		values.Set("page", strconv.FormatInt(page, 10))
@@ -37,8 +49,8 @@ func productsListQS(onlyMissing bool, nameQuery string, groupIDs []products.Grou
 	return "?" + encoded
 }
 
-func productsEventsQS(onlyMissing bool, nameQuery string, groupIDs []products.GroupID, page int64) string {
-	listQS := productsListQS(onlyMissing, nameQuery, groupIDs, page)
+func productsEventsQS(onlyMissing bool, nameQuery string, groups []products.Group, groupIDs []products.GroupID, page int64) string {
+	listQS := productsListQS(onlyMissing, nameQuery, groups, groupIDs, page)
 	eventsQS := "/events?topic=products-list"
 	if listQS != "" {
 		eventsQS = "/events?topic=products-list&" + listQS[1:]
@@ -86,14 +98,14 @@ func groupNameByID(groups []products.Group, id products.GroupID) string {
 
 // productsListQSWithoutGroup returns a query string without a specific group ID.
 // Used for filter chip removal.
-func productsListQSWithoutGroup(onlyMissing bool, nameQuery string, groupIDs []products.GroupID, page int64, excludeGroupID products.GroupID) string {
+func productsListQSWithoutGroup(onlyMissing bool, nameQuery string, groups []products.Group, groupIDs []products.GroupID, page int64, excludeGroupID products.GroupID) string {
 	var filtered []products.GroupID
 	for _, gid := range groupIDs {
 		if gid != excludeGroupID {
 			filtered = append(filtered, gid)
 		}
 	}
-	return productsListQS(onlyMissing, nameQuery, filtered, page)
+	return productsListQS(onlyMissing, nameQuery, groups, filtered, page)
 }
 
 func productsTitle(onlyMissing bool) string {

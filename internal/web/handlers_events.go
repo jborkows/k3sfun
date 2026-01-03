@@ -95,7 +95,7 @@ func (s *Server) renderShoppingListHTML(ctx context.Context, editMode bool) ([]b
 func (s *Server) renderProductsListHTML(ctx context.Context, r *http.Request) ([]byte, error) {
 	source := r
 	q := r.URL.Query()
-	hasFilters := q.Has("missing") || q.Has("q") || q.Has("group_id") || q.Has("page")
+	hasFilters := q.Has("missing") || q.Has("q") || q.Has("groups") || q.Has("page")
 	if !hasFilters {
 		if ref := strings.TrimSpace(r.Referer()); ref != "" {
 			if u, err := url.Parse(ref); err == nil {
@@ -106,13 +106,20 @@ func (s *Server) renderProductsListHTML(ctx context.Context, r *http.Request) ([
 		}
 	}
 
-	onlyMissing, nameQuery, groupIDs, page := parseProductsListQuery(source)
+	onlyMissing, nameQuery, groupNames, formGroupIDs, page := parseProductsListQuery(source)
 	perPage := products.MaxProductsPageSize
 
 	groups, err := s.products.qry.ListGroups(ctx)
 	if err != nil {
 		return nil, err
 	}
+
+	// Resolve group names to IDs (from URL), and merge with form-submitted IDs
+	groupIDs := resolveGroupNames(groupNames, groups)
+	if len(groupIDs) == 0 {
+		groupIDs = formGroupIDs
+	}
+
 	total, err := s.products.qry.CountProducts(ctx, products.ProductFilter{
 		OnlyMissingOrLow: onlyMissing,
 		NameQuery:        nameQuery,

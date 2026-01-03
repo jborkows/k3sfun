@@ -10,8 +10,8 @@ templ ProductsContent(data ProductsPageData) {
 		<h1>Zapasy</h1>
 		<div class="spacer"></div>
 		<a class="button" href="/products/new">Dodaj produkt / grupę</a>
-		<a class={ productsTabClass(!data.OnlyMissing) } href={ "/products" + productsListQS(false, data.NameQuery, data.SelectedGroupIDs, 1) }>Wszystko</a>
-		<a class={ productsTabClass(data.OnlyMissing) } href={ "/products" + productsListQS(true, data.NameQuery, data.SelectedGroupIDs, 1) }>Braki / niski stan</a>
+		<a class={ productsTabClass(!data.OnlyMissing) } href={ "/products" + productsListQS(false, data.NameQuery, data.Groups, data.SelectedGroupIDs, 1) }>Wszystko</a>
+		<a class={ productsTabClass(data.OnlyMissing) } href={ "/products" + productsListQS(true, data.NameQuery, data.Groups, data.SelectedGroupIDs, 1) }>Braki / niski stan</a>
 	</div>
 
 	@ProductsListContent(ProductsListData{
@@ -75,11 +75,11 @@ templ ProductsListContent(data ProductsListData) {
 				for _, gid := range data.SelectedGroupIDs {
 					<a
 						class="filter-chip"
-						href={ "/products" + productsListQSWithoutGroup(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, 1, gid) }
-						hx-get={ "/partials/products" + productsListQSWithoutGroup(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, 1, gid) }
+						href={ "/products" + productsListQSWithoutGroup(data.OnlyMissing, data.NameQuery, data.Groups, data.SelectedGroupIDs, 1, gid) }
+						hx-get={ "/partials/products" + productsListQSWithoutGroup(data.OnlyMissing, data.NameQuery, data.Groups, data.SelectedGroupIDs, 1, gid) }
 						hx-target="#products-list"
 						hx-swap="outerHTML"
-						hx-push-url={ "/products" + productsListQSWithoutGroup(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, 1, gid) }
+						hx-push-url={ "/products" + productsListQSWithoutGroup(data.OnlyMissing, data.NameQuery, data.Groups, data.SelectedGroupIDs, 1, gid) }
 						data-group-id={ strconv.FormatInt(int64(gid), 10) }
 					>
 						{ groupNameByID(data.Groups, gid) }
@@ -104,12 +104,12 @@ templ ProductsListContent(data ProductsListData) {
 											<summary class="group-select-trigger">{ productCurrentGroupLabel(p) }</summary>
 											<div class="group-select-popover" role="listbox" aria-label="Grupa">
 												<label class="ms-option">
-													<input type="radio" name="group_id" value="" hx-post={ productGroupPostURL(p, productsListQS(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, data.Page)) } hx-target="#products-list" hx-swap="outerHTML" checked?={ p.GroupID == nil } />
+													<input type="radio" name="group_id" value="" hx-post={ productGroupPostURL(p, productsListQS(data.OnlyMissing, data.NameQuery, data.Groups, data.SelectedGroupIDs, data.Page)) } hx-target="#products-list" hx-swap="outerHTML" checked?={ p.GroupID == nil } />
 													(brak grupy)
 												</label>
 												for _, g := range data.Groups {
 													<label class="ms-option">
-														<input type="radio" name="group_id" value={ strconv.FormatInt(int64(g.ID), 10) } hx-post={ productGroupPostURL(p, productsListQS(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, data.Page)) } hx-target="#products-list" hx-swap="outerHTML" checked?={ p.GroupID != nil && *p.GroupID == g.ID } />
+														<input type="radio" name="group_id" value={ strconv.FormatInt(int64(g.ID), 10) } hx-post={ productGroupPostURL(p, productsListQS(data.OnlyMissing, data.NameQuery, data.Groups, data.SelectedGroupIDs, data.Page)) } hx-target="#products-list" hx-swap="outerHTML" checked?={ p.GroupID != nil && *p.GroupID == g.ID } />
 														{ g.Name }
 													</label>
 												}
@@ -117,7 +117,7 @@ templ ProductsListContent(data ProductsListData) {
 										</details>
 									</div>
 									<div class="product-actions">
-										<form class="brak-form" hx-post={ "/products/" + strconv.FormatInt(int64(p.ID), 10) + "/missing" + productsListQS(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, data.Page) } hx-target="#products-list" hx-swap="outerHTML">
+										<form class="brak-form" hx-post={ "/products/" + strconv.FormatInt(int64(p.ID), 10) + "/missing" + productsListQS(data.OnlyMissing, data.NameQuery, data.Groups, data.SelectedGroupIDs, data.Page) } hx-target="#products-list" hx-swap="outerHTML">
 											<button class={ "brak-btn" + brakBtnClass(p) } type="submit">Brak</button>
 										</form>
 									</div>
@@ -133,7 +133,7 @@ templ ProductsListContent(data ProductsListData) {
 								<div class="product-control">
 									<span class="muted">Ilość</span>
 									<div class="row">
-										<form hx-post={ "/products/" + strconv.FormatInt(int64(p.ID), 10) + "/qty" + productsListQS(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, data.Page) } hx-target="#products-list" hx-swap="outerHTML" hx-trigger="change">
+										<form hx-post={ "/products/" + strconv.FormatInt(int64(p.ID), 10) + "/qty" + productsListQS(data.OnlyMissing, data.NameQuery, data.Groups, data.SelectedGroupIDs, data.Page) } hx-target="#products-list" hx-swap="outerHTML" hx-trigger="change">
 											<input class="num-input" type="number" step={ quantityStep(p.IntegerOnly) } min="0" name="quantity" value={ formatQty(p.Quantity) } />
 										</form>
 										<span class="muted">{ string(p.Unit) }</span>
@@ -142,7 +142,7 @@ templ ProductsListContent(data ProductsListData) {
 
 								<div class="product-control">
 									<span class="muted">Min</span>
-									<form hx-post={ "/products/" + strconv.FormatInt(int64(p.ID), 10) + "/min" + productsListQS(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, data.Page) } hx-target="#products-list" hx-swap="outerHTML" hx-trigger="change">
+									<form hx-post={ "/products/" + strconv.FormatInt(int64(p.ID), 10) + "/min" + productsListQS(data.OnlyMissing, data.NameQuery, data.Groups, data.SelectedGroupIDs, data.Page) } hx-target="#products-list" hx-swap="outerHTML" hx-trigger="change">
 										<input class="num-input" type="number" step={ quantityStep(p.IntegerOnly) } min="0" name="min_quantity" value={ formatQty(p.MinQuantity) } />
 									</form>
 								</div>
@@ -162,11 +162,11 @@ templ ProductsListContent(data ProductsListData) {
 				if data.Page > 1 {
 					<a
 						class="button secondary"
-						href={ "/products" + productsListQS(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, maxInt64(1, data.Page-1)) }
-						hx-get={ "/partials/products" + productsListQS(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, maxInt64(1, data.Page-1)) }
+						href={ "/products" + productsListQS(data.OnlyMissing, data.NameQuery, data.Groups, data.SelectedGroupIDs, maxInt64(1, data.Page-1)) }
+						hx-get={ "/partials/products" + productsListQS(data.OnlyMissing, data.NameQuery, data.Groups, data.SelectedGroupIDs, maxInt64(1, data.Page-1)) }
 						hx-target="#products-list"
 						hx-swap="outerHTML"
-						hx-push-url={ "/products" + productsListQS(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, maxInt64(1, data.Page-1)) }
+						hx-push-url={ "/products" + productsListQS(data.OnlyMissing, data.NameQuery, data.Groups, data.SelectedGroupIDs, maxInt64(1, data.Page-1)) }
 					>Poprzednia</a>
 				} else {
 					<span class="button secondary disabled">Poprzednia</span>
@@ -175,11 +175,11 @@ templ ProductsListContent(data ProductsListData) {
 				if data.Page < data.TotalPages {
 					<a
 						class="button secondary"
-						href={ "/products" + productsListQS(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, minInt64(data.TotalPages, data.Page+1)) }
-						hx-get={ "/partials/products" + productsListQS(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, minInt64(data.TotalPages, data.Page+1)) }
+						href={ "/products" + productsListQS(data.OnlyMissing, data.NameQuery, data.Groups, data.SelectedGroupIDs, minInt64(data.TotalPages, data.Page+1)) }
+						hx-get={ "/partials/products" + productsListQS(data.OnlyMissing, data.NameQuery, data.Groups, data.SelectedGroupIDs, minInt64(data.TotalPages, data.Page+1)) }
 						hx-target="#products-list"
 						hx-swap="outerHTML"
-						hx-push-url={ "/products" + productsListQS(data.OnlyMissing, data.NameQuery, data.SelectedGroupIDs, minInt64(data.TotalPages, data.Page+1)) }
+						hx-push-url={ "/products" + productsListQS(data.OnlyMissing, data.NameQuery, data.Groups, data.SelectedGroupIDs, minInt64(data.TotalPages, data.Page+1)) }
 					>Następna</a>
 				} else {
 					<span class="button secondary disabled">Następna</span>
