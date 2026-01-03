@@ -525,15 +525,16 @@ func buildProductsPageURL(onlyMissing bool, nameQuery string, groupIDs []product
 	if nameQuery != "" {
 		values.Set("q", nameQuery)
 	}
-	// Convert group IDs to names for URL
+	// Convert group IDs to names for URL - O(n+m) using lookup map
 	if len(groupIDs) > 0 {
+		idToName := make(map[products.GroupID]string, len(groups))
+		for _, g := range groups {
+			idToName[g.ID] = g.Name
+		}
 		var names []string
 		for _, gid := range groupIDs {
-			for _, g := range groups {
-				if g.ID == gid {
-					names = append(names, g.Name)
-					break
-				}
+			if name, ok := idToName[gid]; ok {
+				names = append(names, name)
 			}
 		}
 		if len(names) > 0 {
