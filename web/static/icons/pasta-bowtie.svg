@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <!-- Plate -->
+  <circle cx="12" cy="13" r="9" fill="#fef3c7" stroke="#d97706" stroke-width="1.2"/>
+  <!-- Plate rim highlight -->
+  <circle cx="12" cy="13" r="9" fill="none" stroke="#fcd34d" stroke-width="0.8" opacity="0.6"/>
+  <!-- First bowtie pasta (motylki) -->
+  <path d="M6 10c-0.5 -0.3 -0.8 -0.5 -0.8 -1s0.3 -0.7 0.8 -1l1.5 0.5v1l-1.5 0.5Z" fill="#ea580c" stroke="#d97706" stroke-width="0.8" stroke-linejoin="round"/>
+  <rect x="6.5" y="9" width="1" height="2" fill="#ea580c" stroke="#d97706" stroke-width="0.8"/>
+  <path d="M8 10c0.5 -0.3 0.8 -0.5 0.8 -1s-0.3 -0.7 -0.8 -1l-1.5 0.5v1l1.5 0.5Z" fill="#ea580c" stroke="#d97706" stroke-width="0.8" stroke-linejoin="round"/>
+  <!-- Second bowtie pasta -->
+  <path d="M11 12c-0.5 -0.3 -0.8 -0.5 -0.8 -1s0.3 -0.7 0.8 -1l1.5 0.5v1l-1.5 0.5Z" fill="#ea580c" stroke="#d97706" stroke-width="0.8" stroke-linejoin="round"/>
+  <rect x="11.5" y="11" width="1" height="2" fill="#ea580c" stroke="#d97706" stroke-width="0.8"/>
+  <path d="M13 12c0.5 -0.3 0.8 -0.5 0.8 -1s-0.3 -0.7 -0.8 -1l-1.5 0.5v1l1.5 0.5Z" fill="#ea580c" stroke="#d97706" stroke-width="0.8" stroke-linejoin="round"/>
+  <!-- Third bowtie pasta -->
+  <path d="M16 14c-0.5 -0.3 -0.8 -0.5 -0.8 -1s0.3 -0.7 0.8 -1l1.5 0.5v1l-1.5 0.5Z" fill="#ea580c" stroke="#d97706" stroke-width="0.8" stroke-linejoin="round"/>
+  <rect x="16.5" y="13" width="1" height="2" fill="#ea580c" stroke="#d97706" stroke-width="0.8"/>
+  <path d="M18 14c0.5 -0.3 0.8 -0.5 0.8 -1s-0.3 -0.7 -0.8 -1l-1.5 0.5v1l1.5 0.5Z" fill="#ea580c" stroke="#d97706" stroke-width="0.8" stroke-linejoin="round"/>
+</svg>

@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <!-- Stacked lasagne sheets -->
+  <!-- Bottom sheet -->
+  <rect x="4" y="15" width="16" height="2" fill="#ea580c" stroke="#d97706" stroke-width="0.8"/>
+  <!-- Middle sheet -->
+  <rect x="4" y="11" width="16" height="2" fill="#fb923c" stroke="#d97706" stroke-width="0.8"/>
+  <!-- Top sheet -->
+  <rect x="4" y="7" width="16" height="2" fill="#fbbf24" stroke="#d97706" stroke-width="0.8"/>
+  <!-- Wavy pattern on sheets -->
+  <path d="M5 8c1 0.2 2 0.2 3 0s2-0.2 3 0s2 0.2 3 0s2-0.2 3 0" stroke="#d97706" stroke-width="0.6" fill="none" opacity="0.5"/>
+  <path d="M5 12c1 0.2 2 0.2 3 0s2-0.2 3 0s2 0.2 3 0s2-0.2 3 0" stroke="#d97706" stroke-width="0.6" fill="none" opacity="0.5"/>
+  <path d="M5 16c1 0.2 2 0.2 3 0s2-0.2 3 0s2 0.2 3 0s2-0.2 3 0" stroke="#d97706" stroke-width="0.6" fill="none" opacity="0.5"/>
+  <!-- Serving spatula -->
+  <rect x="18" y="8" width="1.5" height="10" fill="#cbd5e1" stroke="#94a3b8" stroke-width="0.8"/>
+  <rect x="17" y="7.5" width="3.5" height="1.5" fill="#cbd5e1" stroke="#94a3b8" stroke-width="0.8" rx="0.3"/>
+</svg>
