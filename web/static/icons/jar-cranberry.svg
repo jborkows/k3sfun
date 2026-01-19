@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
+  <title>Jar Cranberry</title>
+  <defs>
+    <linearGradient id="g1" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#ff7a7a"/>
+      <stop offset="100%" stop-color="#d63447"/>
+    </linearGradient>
+    <linearGradient id="g2" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#ffe9e9"/>
+      <stop offset="100%" stop-color="#ffd1d6"/>
+    </linearGradient>
+  </defs>
+  <!-- Jar body -->
+  <rect x="5" y="5" width="14" height="14" rx="2" ry="2" fill="url(#g1)" stroke="#a11" stroke-width="0.8"/>
+  <!-- Lid -->
+  <rect x="6" y="3.5" width="12" height="2" rx="0.6" fill="#c0392b" stroke="#8b1e1e" stroke-width="0.7"/>
+  <!-- Highlights -->
+  <path d="M7.5 7c1-1 4-1 8 0" fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="1" stroke-linecap="round"/>
+  <!-- Cranberries -->
+  <circle cx="9.2" cy="11.5" r="1.6" fill="#fff7f8" opacity="0.06"/>
+  <circle cx="9.2" cy="11.5" r="1.2" fill="#ffccd0"/>
+  <circle cx="14.8" cy="13.2" r="1.4" fill="#ffccd0"/>
+  <circle cx="12.2" cy="10" r="1.1" fill="#ffccd0"/>
+  <!-- Berry seeds/highlights -->
+  <circle cx="9.6" cy="11.1" r="0.25" fill="#fff" opacity="0.9"/>
+  <circle cx="14.4" cy="12.8" r="0.2" fill="#fff" opacity="0.9"/>
+  <circle cx="12.5" cy="9.6" r="0.18" fill="#fff" opacity="0.9"/>
+</svg>

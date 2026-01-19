@@ -1,7 +1,7 @@
 ---
 description: Agent for smoke testing changes. Reacts on phrases like check how does it looks.
 mode: subagent
-model: anthropic/claude-haiku-4-5
+model: github-copilot/gpt-5-mini
 tools:
   write: true
   edit: true

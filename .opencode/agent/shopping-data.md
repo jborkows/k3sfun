@@ -1,7 +1,7 @@
 ---
 description: Specialized agent for adding product groups, creating SVG icons, and adding products to the shopping list application via SQL migrations
 mode: subagent
-model: anthropic/claude-haiku-4-5
+model: github-copilot/gpt-5-mini
 tools:
   write: true
   edit: true
