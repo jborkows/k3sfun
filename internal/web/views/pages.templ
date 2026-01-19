@@ -28,7 +28,7 @@ templ ProductsPage(data ProductsPageData) {
 				@ProductsContent(data)
 			</main>
 			<footer class="container footer">
-				<span>© { strconv.Itoa(time.Now().Year()) }</span>
+				<span>© { strconv.Itoa(time.Now().Year()) } • v{ data.Base.StaticVersion }</span>
 			</footer>
 		</body>
 	</html>
@@ -51,7 +51,7 @@ templ AdminPage(data AdminPageData) {
 				@AdminContent()
 			</main>
 			<footer class="container footer">
-				<span>© { strconv.Itoa(time.Now().Year()) }</span>
+				<span>© { strconv.Itoa(time.Now().Year()) } • v{ data.Base.StaticVersion }</span>
 			</footer>
 		</body>
 	</html>
@@ -89,7 +89,7 @@ templ ShoppingListPage(data ShoppingListPageData) {
 				@ShoppingListCard(ShoppingListData{Items: data.Items, Units: data.Units, EditMode: data.EditMode})
 			</main>
 			<footer class="container footer">
-				<span>© { strconv.Itoa(time.Now().Year()) }</span>
+				<span>© { strconv.Itoa(time.Now().Year()) } • v{ data.Base.StaticVersion }</span>
 			</footer>
 		</body>
 	</html>

@@ -72,6 +72,12 @@ func (s *Server) Routes() http.Handler {
 	s.registerProductRoutes(mux, wrap)
 	s.registerAdminRoutes(mux, wrap)
 
+	// Expose build/version at /version for health/debugging
+	mux.Handle("GET /version", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		_, _ = w.Write([]byte(s.staticV))
+	}))
+
 	// Apply middleware chain: OpenTelemetry tracing -> Request logging -> Router
 	return ChainMiddleware(mux,
 		OtelMiddleware("shopping"),
