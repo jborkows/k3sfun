@@ -81,7 +81,7 @@ templ ShoppingListCardContent(data ShoppingListData) {
 					<h3 class="sl-group-title">{ groupNameDisplay(group.Name) }</h3>
 					<div class="sl-items">
 						for _, item := range group.Items {
-							<div class={ "sl-item" + slItemDoneClass(item.Done) }>
+						<div class={ "sl-item" + slItemDoneClass(item.Done) } id={ "sl-item-" + shoppingItemID(item) }>
 								<div class="sl-top">
 									<div class={ shoppingNameClass(item.Done) }>
 										{ item.Name }
@@ -92,7 +92,7 @@ templ ShoppingListCardContent(data ShoppingListData) {
 								<div class="sl-mid sl-editable">
 									<img class="sl-icon" width="32" height="32" src={ shoppingIconSrc(item) } alt="" />
 
-									<form class="sl-qty" hx-patch={ shoppingFormAction(data.EditMode, "/shopping-list/items/" + shoppingItemID(item)) } hx-target="#shopping-list" hx-swap="outerHTML" hx-trigger="change">
+								<form class="sl-qty" hx-patch={ shoppingFormAction(data.EditMode, "/shopping-list/items/" + shoppingItemID(item)) } hx-target="#shopping-list" hx-swap="outerHTML" hx-trigger="change" hx-push-url={ "#sl-item-" + shoppingItemID(item) }>
 										<input class="num-input" type="number" step={ shoppingItemStep(item) } min={ shoppingItemMin(item) } name="quantity" value={ formatQty(item.Quantity) } />
 										if item.ProductID != nil {
 											<input type="hidden" name="unit" value={ string(item.Unit) } />
@@ -104,7 +104,7 @@ templ ShoppingListCardContent(data ShoppingListData) {
 										}
 									</form>
 
-									<form class="sl-done-form" hx-patch={ shoppingFormAction(data.EditMode, "/shopping-list/items/" + shoppingItemID(item)) } hx-target="#shopping-list" hx-swap="outerHTML">
+								<form class="sl-done-form" hx-patch={ shoppingFormAction(data.EditMode, "/shopping-list/items/" + shoppingItemID(item)) } hx-target="#shopping-list" hx-swap="outerHTML" hx-push-url={ "#sl-item-" + shoppingItemID(item) }>
 										<input type="hidden" name="done" value={ shoppingNextDone(item.Done) } />
 										<button class={ shoppingDoneBtnClass(item.Done) } type="submit" aria-label="Zrobione">
 											if item.Done {
@@ -123,7 +123,7 @@ templ ShoppingListCardContent(data ShoppingListData) {
 												</button>
 											</form>
 										}
-										<form class="sl-delete" hx-delete={ shoppingFormAction(data.EditMode, "/shopping-list/items/" + shoppingItemID(item)) } hx-target="#shopping-list" hx-swap="outerHTML">
+									<form class="sl-delete" hx-delete={ shoppingFormAction(data.EditMode, "/shopping-list/items/" + shoppingItemID(item)) } hx-target="#shopping-list" hx-swap="outerHTML" hx-push-url={ "#sl-item-" + shoppingItemID(item) }>
 											<button class="icon-btn secondary" type="submit" aria-label="Usuń">🗑️</button>
 										</form>
 									</div>
