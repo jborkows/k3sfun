@@ -21,6 +21,8 @@ jobs:
       IMAGE_REPO: docker.io/${{ secrets.DOCKERHUB_USER }}/shopping
     outputs:
       image_tag: ${{ steps.meta.outputs.image_tag }}
+      prebuild_latest_tag: ${{ steps.prebuild.outputs.prebuild_latest_tag }}
+      prebuild_latest_updated: ${{ steps.prebuild.outputs.prebuild_latest_updated }}
     steps:
       - name: Validate inputs
         shell: sh
@@ -37,6 +39,24 @@ jobs:
 
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Fetch latest tag before build
+        id: prebuild
+        shell: bash
+        run: |
+          set -euo pipefail
+          login_payload=$(jq -n --arg user "$DOCKERHUB_USER" --arg pass "$DOCKERHUB_PASSWORD" '{username:$user,password:$pass}')
+          token=$(curl -sS -H "Content-Type: application/json" -d "$login_payload" https://hub.docker.com/v2/users/login/ | jq -r '.token')
+          if [[ -z "$token" || "$token" == "null" ]]; then
+            echo "Failed to authenticate to Docker Hub" >&2
+            exit 1
+          fi
+          repo="${DOCKERHUB_USER}/shopping"
+          response=$(curl -sS -H "Authorization: JWT ${token}" "https://hub.docker.com/v2/repositories/${repo}/tags?page_size=1&ordering=last_updated")
+          latest_tag=$(jq -r '.results[0].name // empty' <<< "$response")
+          latest_updated=$(jq -r '.results[0].last_updated // empty' <<< "$response")
+          echo "prebuild_latest_tag=${latest_tag}" >> "$GITHUB_OUTPUT"
+          echo "prebuild_latest_updated=${latest_updated}" >> "$GITHUB_OUTPUT"
 
       - name: Set outputs
         id: meta
@@ -126,3 +146,40 @@ jobs:
             -e "s/DOCKERHUB_USER/${DOCKERHUB_USER}/g" \
             -e "s/IMAGE_TAG/${IMAGE_TAG}/g" \
             "$manifest_path" | kubectl apply -f -
+
+  cleanup:
+    name: Cleanup old Docker Hub tags
+    runs-on: ubuntu-latest
+    needs: [build]
+    if: ${{ needs.build.outputs.prebuild_latest_updated != '' }}
+    env:
+      DOCKERHUB_USER: ${{ secrets.DOCKERHUB_USER }}
+      DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
+      CUTOFF_UPDATED: ${{ needs.build.outputs.prebuild_latest_updated }}
+    steps:
+      - name: Delete tags older than pre-build latest
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "${CUTOFF_UPDATED}" ]]; then
+            echo "No cutoff tag found; skipping cleanup."
+            exit 0
+          fi
+          login_payload=$(jq -n --arg user "$DOCKERHUB_USER" --arg pass "$DOCKERHUB_PASSWORD" '{username:$user,password:$pass}')
+          token=$(curl -sS -H "Content-Type: application/json" -d "$login_payload" https://hub.docker.com/v2/users/login/ | jq -r '.token')
+          if [[ -z "$token" || "$token" == "null" ]]; then
+            echo "Failed to authenticate to Docker Hub" >&2
+            exit 1
+          fi
+          repo="${DOCKERHUB_USER}/shopping"
+          url="https://hub.docker.com/v2/repositories/${repo}/tags?page_size=100"
+          while [[ -n "$url" && "$url" != "null" ]]; do
+            response=$(curl -sS -H "Authorization: JWT ${token}" "$url")
+            tags_to_delete=$(jq -r --arg cutoff "$CUTOFF_UPDATED" '.results[] | select(.last_updated < $cutoff) | .name' <<< "$response")
+            for tag in $tags_to_delete; do
+              encoded_tag=$(jq -rn --arg tag "$tag" '$tag|@uri')
+              echo "Deleting ${repo}:${tag}"
+              curl -sS -X DELETE -H "Authorization: JWT ${token}" "https://hub.docker.com/v2/repositories/${repo}/tags/${encoded_tag}/" >/dev/null
+            done
+            url=$(jq -r '.next' <<< "$response")
+          done
