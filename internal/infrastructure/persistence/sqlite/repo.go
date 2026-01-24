@@ -323,18 +323,26 @@ func (r *Repo) ListItems(ctx context.Context) ([]shoppinglist.Item, error) {
 			v := products.ProductID(item.ProductID.Int64)
 			pid = &v
 		}
+		unit := ""
+		if item.QuantityUnit != nil {
+			if v, ok := item.QuantityUnit.(string); ok {
+				unit = v
+			}
+		}
 		out = append(out, shoppinglist.Item{
-			ID:          shoppinglist.ItemID(item.ID),
-			Name:        item.Name,
-			ProductID:   pid,
-			IconKey:     item.IconKey,
-			GroupName:   item.GroupName,
-			GroupOrder:  item.GroupOrder,
-			Quantity:    products.Quantity(item.QuantityValue),
-			Unit:        products.Unit(item.QuantityUnit),
-			Done:        item.Done != 0,
-			IntegerOnly: item.IntegerOnly != 0,
-			CreatedAt:   item.CreatedAt,
+			ID:           shoppinglist.ItemID(item.ID),
+			Name:         item.Name,
+			ProductID:    pid,
+			IconKey:      item.IconKey,
+			GroupName:    item.GroupName,
+			GroupOrder:   item.GroupOrder,
+			Quantity:     products.Quantity(item.QuantityValue),
+			Unit:         products.Unit(unit),
+			UnitSingular: item.UnitSingular,
+			UnitPlural:   item.UnitPlural,
+			Done:         item.Done != 0,
+			IntegerOnly:  item.IntegerOnly != 0,
+			CreatedAt:    item.CreatedAt,
 		})
 	}
 	return out, nil
@@ -350,18 +358,26 @@ func (r *Repo) GetItem(ctx context.Context, id shoppinglist.ItemID) (shoppinglis
 		v := products.ProductID(row.ProductID.Int64)
 		pid = &v
 	}
+	unit := ""
+	if row.QuantityUnit != nil {
+		if v, ok := row.QuantityUnit.(string); ok {
+			unit = v
+		}
+	}
 	return shoppinglist.Item{
-		ID:          shoppinglist.ItemID(row.ID),
-		Name:        row.Name,
-		ProductID:   pid,
-		IconKey:     row.IconKey,
-		GroupName:   row.GroupName,
-		GroupOrder:  row.GroupOrder,
-		Quantity:    products.Quantity(row.QuantityValue),
-		Unit:        products.Unit(row.QuantityUnit),
-		Done:        row.Done != 0,
-		IntegerOnly: row.IntegerOnly != 0,
-		CreatedAt:   row.CreatedAt,
+		ID:           shoppinglist.ItemID(row.ID),
+		Name:         row.Name,
+		ProductID:    pid,
+		IconKey:      row.IconKey,
+		GroupName:    row.GroupName,
+		GroupOrder:   row.GroupOrder,
+		Quantity:     products.Quantity(row.QuantityValue),
+		Unit:         products.Unit(unit),
+		UnitSingular: row.UnitSingular,
+		UnitPlural:   row.UnitPlural,
+		Done:         row.Done != 0,
+		IntegerOnly:  row.IntegerOnly != 0,
+		CreatedAt:    row.CreatedAt,
 	}, nil
 }
 

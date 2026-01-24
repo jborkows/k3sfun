@@ -50,6 +50,8 @@ type Unit struct {
 	ID           int64
 	Name         string
 	DisplayOrder int64
+	Singular     string
+	Plural       string
 }
 
 type VGroup struct {

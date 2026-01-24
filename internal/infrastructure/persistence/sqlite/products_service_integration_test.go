@@ -193,6 +193,59 @@ func mustSetQuantity(t *testing.T, svc *products.Service, ctx context.Context, i
 	}
 }
 
+func TestShoppingListItem_UnitForms(t *testing.T) {
+	db := openTestDB(t)
+	setupCleanDB(t, db)
+
+	repo := NewRepo(db)
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	t.Cleanup(cancel)
+
+	if _, err := db.ExecContext(ctx, "INSERT INTO units(name, display_order, singular, plural) VALUES (?, ?, ?, ?)", "unit-test", 1, "unit-one", "unit-many"); err != nil {
+		t.Fatalf("insert unit-test: %v", err)
+	}
+	if _, err := db.ExecContext(ctx, "INSERT INTO units(name, display_order, singular, plural) VALUES (?, ?, ?, ?)", "unit-alt", 2, "alt-one", "alt-many"); err != nil {
+		t.Fatalf("insert unit-alt: %v", err)
+	}
+
+	if err := repo.AddItemByName(ctx, "test-unit", 1, products.Unit("unit-test")); err != nil {
+		t.Fatalf("AddItemByName unit-test: %v", err)
+	}
+	if err := repo.AddItemByName(ctx, "test-alt", 2, products.Unit("unit-alt")); err != nil {
+		t.Fatalf("AddItemByName unit-alt: %v", err)
+	}
+
+	items, err := repo.ListItems(ctx)
+	if err != nil {
+		t.Fatalf("ListItems: %v", err)
+	}
+
+	if len(items) != 2 {
+		t.Fatalf("expected 2 items, got %d", len(items))
+	}
+
+	for _, item := range items {
+		switch item.Name {
+		case "test-unit":
+			if item.UnitSingular != "unit-one" {
+				t.Fatalf("expected singular unit-one, got %q", item.UnitSingular)
+			}
+			if item.UnitPlural != "unit-many" {
+				t.Fatalf("expected plural unit-many, got %q", item.UnitPlural)
+			}
+		case "test-alt":
+			if item.UnitSingular != "alt-one" {
+				t.Fatalf("expected singular alt-one, got %q", item.UnitSingular)
+			}
+			if item.UnitPlural != "alt-many" {
+				t.Fatalf("expected plural alt-many, got %q", item.UnitPlural)
+			}
+		default:
+			t.Fatalf("unexpected item %q", item.Name)
+		}
+	}
+}
+
 func TestProductsService_ListProducts_FilteringAndPaging(t *testing.T) {
 	env, ctx := setupTestEnv(t)
 

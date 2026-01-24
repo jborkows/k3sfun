@@ -195,13 +195,16 @@ SELECT
   COALESCE(g.name, '') AS group_name,
   COALESCE(g.display_order, 999) AS group_order,
   sli.quantity_value,
-  sli.quantity_unit,
+  CASE WHEN lower(sli.quantity_unit) = 'sztuka' THEN 'sztuk' ELSE sli.quantity_unit END AS quantity_unit,
+  COALESCE(u.singular, CASE WHEN lower(sli.quantity_unit) = 'sztuka' THEN 'sztuk' ELSE sli.quantity_unit END) AS unit_singular,
+  COALESCE(u.plural, CASE WHEN lower(sli.quantity_unit) = 'sztuka' THEN 'sztuk' ELSE sli.quantity_unit END) AS unit_plural,
   sli.done,
   COALESCE(p.integer_only, 0) AS integer_only,
   sli.created_at
 FROM shopping_list_items sli
 LEFT JOIN products p ON p.id = sli.product_id
 LEFT JOIN groups g ON g.id = p.group_id
+LEFT JOIN units u ON u.name = CASE WHEN lower(sli.quantity_unit) = 'sztuka' THEN 'sztuk' ELSE sli.quantity_unit END
 WHERE sli.id = ?
 `
 
@@ -213,7 +216,9 @@ type GetShoppingListItemRow struct {
 	GroupName     string
 	GroupOrder    int64
 	QuantityValue float64
-	QuantityUnit  string
+	QuantityUnit  interface{}
+	UnitSingular  string
+	UnitPlural    string
 	Done          int64
 	IntegerOnly   int64
 	CreatedAt     time.Time
@@ -231,6 +236,8 @@ func (q *Queries) GetShoppingListItem(ctx context.Context, id int64) (GetShoppin
 		&i.GroupOrder,
 		&i.QuantityValue,
 		&i.QuantityUnit,
+		&i.UnitSingular,
+		&i.UnitPlural,
 		&i.Done,
 		&i.IntegerOnly,
 		&i.CreatedAt,
@@ -481,13 +488,16 @@ SELECT
   COALESCE(g.name, '') AS group_name,
   COALESCE(g.display_order, 999) AS group_order,
   sli.quantity_value,
-  sli.quantity_unit,
+  CASE WHEN lower(sli.quantity_unit) = 'sztuka' THEN 'sztuk' ELSE sli.quantity_unit END AS quantity_unit,
+  COALESCE(u.singular, CASE WHEN lower(sli.quantity_unit) = 'sztuka' THEN 'sztuk' ELSE sli.quantity_unit END) AS unit_singular,
+  COALESCE(u.plural, CASE WHEN lower(sli.quantity_unit) = 'sztuka' THEN 'sztuk' ELSE sli.quantity_unit END) AS unit_plural,
   sli.done,
   COALESCE(p.integer_only, 0) AS integer_only,
   sli.created_at
 FROM shopping_list_items sli
 LEFT JOIN products p ON p.id = sli.product_id
 LEFT JOIN groups g ON g.id = p.group_id
+LEFT JOIN units u ON u.name = CASE WHEN lower(sli.quantity_unit) = 'sztuka' THEN 'sztuk' ELSE sli.quantity_unit END
 ORDER BY sli.done ASC, COALESCE(g.display_order, 999), COALESCE(lower(g.name), 'zzz'), lower(sli.name)
 `
 
@@ -499,7 +509,9 @@ type ListShoppingListItemsRow struct {
 	GroupName     string
 	GroupOrder    int64
 	QuantityValue float64
-	QuantityUnit  string
+	QuantityUnit  interface{}
+	UnitSingular  string
+	UnitPlural    string
 	Done          int64
 	IntegerOnly   int64
 	CreatedAt     time.Time
@@ -523,6 +535,8 @@ func (q *Queries) ListShoppingListItems(ctx context.Context) ([]ListShoppingList
 			&i.GroupOrder,
 			&i.QuantityValue,
 			&i.QuantityUnit,
+			&i.UnitSingular,
+			&i.UnitPlural,
 			&i.Done,
 			&i.IntegerOnly,
 			&i.CreatedAt,

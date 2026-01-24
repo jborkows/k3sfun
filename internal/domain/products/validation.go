@@ -26,7 +26,6 @@ func NormalizeUnit(u Unit) (Unit, error) {
 	if u == "" {
 		return "", ErrInvalidUnit
 	}
-	// Accept any non-empty unit - units are defined in the database
 	return u, nil
 }
 

@@ -1,0 +1,2 @@
+ALTER TABLE units DROP COLUMN singular;
+ALTER TABLE units DROP COLUMN plural;

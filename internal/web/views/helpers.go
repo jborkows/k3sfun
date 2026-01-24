@@ -307,7 +307,15 @@ func RenderShoppingListExport(w io.Writer, items []shoppinglist.Item) error {
 		if line == "" {
 			continue
 		}
-		if _, err := io.WriteString(w, line+"\t"+formatQty(item.Quantity)+"\t"+normalizedUnit(item.Unit)+"\n"); err != nil {
+		unit := item.UnitPlural
+		if item.Quantity == 1 {
+			unit = item.UnitSingular
+		}
+		unit = strings.TrimSpace(unit)
+		if unit == "" {
+			unit = normalizedUnit(item.Unit)
+		}
+		if _, err := io.WriteString(w, line+" "+formatQty(item.Quantity)+" "+unit+"\n"); err != nil {
 			return err
 		}
 	}
