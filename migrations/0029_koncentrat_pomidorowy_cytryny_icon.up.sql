@@ -30,3 +30,18 @@ INSERT OR IGNORE INTO products (
 )
 VALUES
   ('koncentrat pomidorowy', 'tomato', (SELECT id FROM groups WHERE name = 'warzywa'), 0, 'opakowanie', 0, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+-- Also add koncentrat pomidorowy (alternate naming) to handle variation with parentheses
+INSERT OR IGNORE INTO products (
+  name,
+  icon_key,
+  group_id,
+  quantity_value,
+  quantity_unit,
+  min_quantity_value,
+  integer_only,
+  created_at,
+  updated_at
+)
+VALUES
+  ('koncentrat pomidorowy (opakowanie)', 'tomato', (SELECT id FROM groups WHERE name = 'warzywa'), 0, 'opakowanie', 0, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);

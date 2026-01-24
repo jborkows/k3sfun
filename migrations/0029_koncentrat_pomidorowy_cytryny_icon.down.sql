@@ -1,5 +1,5 @@
 -- Remove the koncentrat product and its icon rule
-DELETE FROM products WHERE name = 'koncentrat pomidorowy';
+DELETE FROM products WHERE name IN ('koncentrat pomidorowy', 'koncentrat pomidorowy (opakowanie)');
 
 DELETE FROM product_icon_rules WHERE match_substring = 'koncentrat pomidor';
 
