@@ -291,6 +291,10 @@ func sortShoppingItems(items []shoppinglist.Item) {
 	sort.SliceStable(items, func(i, j int) bool {
 		a := items[i]
 		b := items[j]
+		// Ensure not-done items come before done items.
+		if a.Done != b.Done {
+			return !a.Done
+		}
 		if a.GroupOrder != b.GroupOrder {
 			return a.GroupOrder < b.GroupOrder
 		}
