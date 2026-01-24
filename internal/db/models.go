@@ -10,8 +10,9 @@ import (
 )
 
 type Group struct {
-	ID   int64
-	Name string
+	ID           int64
+	Name         string
+	DisplayOrder int64
 }
 
 type Product struct {
@@ -52,8 +53,9 @@ type Unit struct {
 }
 
 type VGroup struct {
-	ID   int64
-	Name string
+	ID           int64
+	Name         string
+	DisplayOrder int64
 }
 
 type VProduct struct {

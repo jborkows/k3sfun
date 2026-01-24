@@ -31,20 +31,23 @@ templ ShoppingListCardContent(data ShoppingListData) {
 	<section class={ shoppingListClass(data.EditMode) } id="shopping-list" sse-swap="shopping-list" hx-swap="outerHTML">
 		<div class="sl-header">
 			<h2>Lista zakupów</h2>
-			<label class="sl-readonly-toggle">
-				<input
-					type="checkbox"
-					id="sl-readonly-checkbox"
-					if !data.EditMode {
-						checked
-					}
-					hx-get={ shoppingToggleURL(data.EditMode) }
-					hx-target="#shopping-list"
-					hx-swap="outerHTML"
-					hx-push-url="true"
-				/>
-				<span>Tylko podgląd</span>
-			</label>
+			<div class="sl-actions">
+				<a class="button secondary sl-export" href="/shopping-list/export">Eksportuj</a>
+				<label class="sl-readonly-toggle">
+					<input
+						type="checkbox"
+						id="sl-readonly-checkbox"
+						if !data.EditMode {
+							checked
+						}
+						hx-get={ shoppingToggleURL(data.EditMode) }
+						hx-target="#shopping-list"
+						hx-swap="outerHTML"
+						hx-push-url="true"
+					/>
+					<span>Tylko podgląd</span>
+				</label>
+			</div>
 		</div>
 		<details class="add-item-details sl-editable">
 			<summary>Dodaj ręcznie</summary>

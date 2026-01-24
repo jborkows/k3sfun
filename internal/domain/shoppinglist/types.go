@@ -14,6 +14,7 @@ type Item struct {
 	ProductID   *products.ProductID
 	IconKey     string
 	GroupName   string
+	GroupOrder  int64
 	Quantity    products.Quantity
 	Unit        products.Unit
 	Done        bool

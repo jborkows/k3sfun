@@ -99,7 +99,7 @@ func ShoppingListCardContent(data ShoppingListData) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\" id=\"shopping-list\" sse-swap=\"shopping-list\" hx-swap=\"outerHTML\"><div class=\"sl-header\"><h2>Lista zakupów</h2><label class=\"sl-readonly-toggle\"><input type=\"checkbox\" id=\"sl-readonly-checkbox\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\" id=\"shopping-list\" sse-swap=\"shopping-list\" hx-swap=\"outerHTML\"><div class=\"sl-header\"><h2>Lista zakupów</h2><div class=\"sl-actions\"><a class=\"button secondary sl-export\" href=\"/shopping-list/export\">Eksportuj</a> <label class=\"sl-readonly-toggle\"><input type=\"checkbox\" id=\"sl-readonly-checkbox\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -116,20 +116,20 @@ func ShoppingListCardContent(data ShoppingListData) templ.Component {
 		var templ_7745c5c3_Var5 string
 		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(shoppingToggleURL(data.EditMode))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `shopping.templ`, Line: 41, Col: 46}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `shopping.templ`, Line: 43, Col: 47}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "\" hx-target=\"#shopping-list\" hx-swap=\"outerHTML\" hx-push-url=\"true\"> <span>Tylko podgląd</span></label></div><details class=\"add-item-details sl-editable\"><summary>Dodaj ręcznie</summary><form hx-post=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "\" hx-target=\"#shopping-list\" hx-swap=\"outerHTML\" hx-push-url=\"true\"> <span>Tylko podgląd</span></label></div></div><details class=\"add-item-details sl-editable\"><summary>Dodaj ręcznie</summary><form hx-post=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var6 string
 		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(shoppingFormAction(data.EditMode, "/shopping-list"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `shopping.templ`, Line: 51, Col: 70}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `shopping.templ`, Line: 54, Col: 70}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 		if templ_7745c5c3_Err != nil {
@@ -161,7 +161,7 @@ func ShoppingListCardContent(data ShoppingListData) templ.Component {
 				var templ_7745c5c3_Var7 string
 				templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(groupNameDisplay(group.Name))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `shopping.templ`, Line: 78, Col: 62}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `shopping.templ`, Line: 81, Col: 62}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 				if templ_7745c5c3_Err != nil {
@@ -219,7 +219,7 @@ func ShoppingListCardContent(data ShoppingListData) templ.Component {
 					var templ_7745c5c3_Var12 string
 					templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(item.Name)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `shopping.templ`, Line: 84, Col: 21}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `shopping.templ`, Line: 87, Col: 21}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 					if templ_7745c5c3_Err != nil {
@@ -232,7 +232,7 @@ func ShoppingListCardContent(data ShoppingListData) templ.Component {
 					var templ_7745c5c3_Var13 string
 					templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(formatQty(item.Quantity))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `shopping.templ`, Line: 86, Col: 65}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `shopping.templ`, Line: 89, Col: 65}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 					if templ_7745c5c3_Err != nil {
@@ -245,7 +245,7 @@ func ShoppingListCardContent(data ShoppingListData) templ.Component {
 					var templ_7745c5c3_Var14 string
 					templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(string(item.Unit))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `shopping.templ`, Line: 86, Col: 87}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `shopping.templ`, Line: 89, Col: 87}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 					if templ_7745c5c3_Err != nil {
@@ -258,7 +258,7 @@ func ShoppingListCardContent(data ShoppingListData) templ.Component {
 					var templ_7745c5c3_Var15 string
 					templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(shoppingIconSrc(item))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `shopping.templ`, Line: 90, Col: 80}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `shopping.templ`, Line: 93, Col: 80}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 					if templ_7745c5c3_Err != nil {
@@ -271,7 +271,7 @@ func ShoppingListCardContent(data ShoppingListData) templ.Component {
 					var templ_7745c5c3_Var16 string
 					templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(shoppingFormAction(data.EditMode, "/shopping-list/items/"+shoppingItemID(item)))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `shopping.templ`, Line: 92, Col: 122}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `shopping.templ`, Line: 95, Col: 122}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 					if templ_7745c5c3_Err != nil {
@@ -284,7 +284,7 @@ func ShoppingListCardContent(data ShoppingListData) templ.Component {
 					var templ_7745c5c3_Var17 string
 					templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(shoppingItemStep(item))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `shopping.templ`, Line: 93, Col: 78}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `shopping.templ`, Line: 96, Col: 78}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 					if templ_7745c5c3_Err != nil {
@@ -297,7 +297,7 @@ func ShoppingListCardContent(data ShoppingListData) templ.Component {
 					var templ_7745c5c3_Var18 string
 					templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(shoppingItemMin(item))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `shopping.templ`, Line: 93, Col: 108}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `shopping.templ`, Line: 96, Col: 108}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 					if templ_7745c5c3_Err != nil {
@@ -310,7 +310,7 @@ func ShoppingListCardContent(data ShoppingListData) templ.Component {
 					var templ_7745c5c3_Var19 string
 					templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(formatQty(item.Quantity))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `shopping.templ`, Line: 93, Col: 159}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `shopping.templ`, Line: 96, Col: 159}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 					if templ_7745c5c3_Err != nil {
@@ -328,7 +328,7 @@ func ShoppingListCardContent(data ShoppingListData) templ.Component {
 						var templ_7745c5c3_Var20 string
 						templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(string(item.Unit))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `shopping.templ`, Line: 95, Col: 69}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `shopping.templ`, Line: 98, Col: 69}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 						if templ_7745c5c3_Err != nil {
@@ -341,7 +341,7 @@ func ShoppingListCardContent(data ShoppingListData) templ.Component {
 						var templ_7745c5c3_Var21 string
 						templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(string(item.Unit))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `shopping.templ`, Line: 96, Col: 55}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `shopping.templ`, Line: 99, Col: 55}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 						if templ_7745c5c3_Err != nil {
@@ -372,7 +372,7 @@ func ShoppingListCardContent(data ShoppingListData) templ.Component {
 					var templ_7745c5c3_Var22 string
 					templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(shoppingFormAction(data.EditMode, "/shopping-list/items/"+shoppingItemID(item)))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `shopping.templ`, Line: 104, Col: 128}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `shopping.templ`, Line: 107, Col: 128}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 					if templ_7745c5c3_Err != nil {
@@ -385,7 +385,7 @@ func ShoppingListCardContent(data ShoppingListData) templ.Component {
 					var templ_7745c5c3_Var23 string
 					templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(shoppingNextDone(item.Done))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `shopping.templ`, Line: 105, Col: 78}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `shopping.templ`, Line: 108, Col: 78}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
 					if templ_7745c5c3_Err != nil {
@@ -440,7 +440,7 @@ func ShoppingListCardContent(data ShoppingListData) templ.Component {
 						var templ_7745c5c3_Var26 string
 						templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(shoppingFormAction(data.EditMode, "/shopping-list/items/"+shoppingItemID(item)+"/product"))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `shopping.templ`, Line: 117, Col: 121}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `shopping.templ`, Line: 120, Col: 121}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
 						if templ_7745c5c3_Err != nil {
@@ -458,7 +458,7 @@ func ShoppingListCardContent(data ShoppingListData) templ.Component {
 					var templ_7745c5c3_Var27 string
 					templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs(shoppingFormAction(data.EditMode, "/shopping-list/items/"+shoppingItemID(item)))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `shopping.templ`, Line: 123, Col: 127}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `shopping.templ`, Line: 126, Col: 127}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
 					if templ_7745c5c3_Err != nil {

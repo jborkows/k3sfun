@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"shopping/internal/domain/products"
 	"shopping/internal/domain/shoppinglist"
@@ -65,6 +66,25 @@ func (s *Server) handleShoppingListPartial(w http.ResponseWriter, r *http.Reques
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	if err := views.ShoppingListCard(views.ShoppingListData{Items: items, Units: s.units, EditMode: editMode}).Render(r.Context(), w); err != nil {
 		http.Error(w, fmt.Sprintf("render: %v", err), http.StatusInternalServerError)
+	}
+}
+
+func (s *Server) handleShoppingListExport(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(r.Context(), DefaultHandlerTimeout)
+	defer cancel()
+
+	items, err := s.shopping.svc.ListItems(ctx)
+	if err != nil {
+		s.writeDBError(w, err)
+		return
+	}
+
+	filename := fmt.Sprintf("lista-zakupow-%s.txt", time.Now().Format("2006-01-02"))
+
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
+	if err := views.RenderShoppingListExport(w, items); err != nil {
+		http.Error(w, fmt.Sprintf("render export: %v", err), http.StatusInternalServerError)
 	}
 }
 

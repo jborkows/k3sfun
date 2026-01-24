@@ -195,8 +195,10 @@ button.secondary:hover { background: rgba(255,255,255,0.06); }
 
 .sl-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
 .sl-header h2 { margin: 0; }
+.sl-actions { display: flex; align-items: center; gap: 12px; }
+.sl-export { text-decoration: none; font-size: 12px; padding: 8px 12px; }
 .sl-readonly-toggle {
-  display: none;
+  display: flex;
   align-items: center;
   gap: 8px;
   cursor: pointer;

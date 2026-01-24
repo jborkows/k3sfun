@@ -193,6 +193,7 @@ SELECT
   sli.name,
   COALESCE(p.icon_key, '') AS icon_key,
   COALESCE(g.name, '') AS group_name,
+  COALESCE(g.display_order, 999) AS group_order,
   sli.quantity_value,
   sli.quantity_unit,
   sli.done,
@@ -210,6 +211,7 @@ type GetShoppingListItemRow struct {
 	Name          string
 	IconKey       string
 	GroupName     string
+	GroupOrder    int64
 	QuantityValue float64
 	QuantityUnit  string
 	Done          int64
@@ -226,6 +228,7 @@ func (q *Queries) GetShoppingListItem(ctx context.Context, id int64) (GetShoppin
 		&i.Name,
 		&i.IconKey,
 		&i.GroupName,
+		&i.GroupOrder,
 		&i.QuantityValue,
 		&i.QuantityUnit,
 		&i.Done,
@@ -255,18 +258,23 @@ func (q *Queries) LinkShoppingListItemToProduct(ctx context.Context, arg LinkSho
 const listGroups = `-- name: ListGroups :many
 SELECT id, name
 FROM v_groups
-ORDER BY name
+ORDER BY display_order, name
 `
 
-func (q *Queries) ListGroups(ctx context.Context) ([]VGroup, error) {
+type ListGroupsRow struct {
+	ID   int64
+	Name string
+}
+
+func (q *Queries) ListGroups(ctx context.Context) ([]ListGroupsRow, error) {
 	rows, err := q.db.QueryContext(ctx, listGroups)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []VGroup
+	var items []ListGroupsRow
 	for rows.Next() {
-		var i VGroup
+		var i ListGroupsRow
 		if err := rows.Scan(&i.ID, &i.Name); err != nil {
 			return nil, err
 		}
@@ -471,6 +479,7 @@ SELECT
   sli.name,
   COALESCE(p.icon_key, '') AS icon_key,
   COALESCE(g.name, '') AS group_name,
+  COALESCE(g.display_order, 999) AS group_order,
   sli.quantity_value,
   sli.quantity_unit,
   sli.done,
@@ -479,7 +488,7 @@ SELECT
 FROM shopping_list_items sli
 LEFT JOIN products p ON p.id = sli.product_id
 LEFT JOIN groups g ON g.id = p.group_id
-ORDER BY sli.done ASC, COALESCE(lower(g.name), 'zzz'), lower(sli.name)
+ORDER BY sli.done ASC, COALESCE(g.display_order, 999), COALESCE(lower(g.name), 'zzz'), lower(sli.name)
 `
 
 type ListShoppingListItemsRow struct {
@@ -488,6 +497,7 @@ type ListShoppingListItemsRow struct {
 	Name          string
 	IconKey       string
 	GroupName     string
+	GroupOrder    int64
 	QuantityValue float64
 	QuantityUnit  string
 	Done          int64
@@ -510,6 +520,7 @@ func (q *Queries) ListShoppingListItems(ctx context.Context) ([]ListShoppingList
 			&i.Name,
 			&i.IconKey,
 			&i.GroupName,
+			&i.GroupOrder,
 			&i.QuantityValue,
 			&i.QuantityUnit,
 			&i.Done,

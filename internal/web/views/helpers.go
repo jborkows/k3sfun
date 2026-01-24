@@ -1,9 +1,11 @@
 package views
 
 import (
+	"io"
 	"net/url"
 	"shopping/internal/domain/products"
 	"shopping/internal/domain/shoppinglist"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -261,11 +263,15 @@ func groupShoppingItems(items []shoppinglist.Item) []ShoppingItemGroup {
 		return nil
 	}
 
+	ordered := make([]shoppinglist.Item, len(items))
+	copy(ordered, items)
+	sortShoppingItems(ordered)
+
 	// Use a slice to maintain order, map for lookup
 	var groups []ShoppingItemGroup
 	groupIndex := make(map[string]int)
 
-	for _, item := range items {
+	for _, item := range ordered {
 		groupName := item.GroupName
 		if idx, exists := groupIndex[groupName]; exists {
 			groups[idx].Items = append(groups[idx].Items, item)
@@ -279,6 +285,33 @@ func groupShoppingItems(items []shoppinglist.Item) []ShoppingItemGroup {
 	}
 
 	return groups
+}
+
+func sortShoppingItems(items []shoppinglist.Item) {
+	sort.SliceStable(items, func(i, j int) bool {
+		a := items[i]
+		b := items[j]
+		if a.GroupOrder != b.GroupOrder {
+			return a.GroupOrder < b.GroupOrder
+		}
+		if groupCmp := strings.Compare(a.GroupName, b.GroupName); groupCmp != 0 {
+			return groupCmp < 0
+		}
+		return strings.Compare(strings.ToLower(a.Name), strings.ToLower(b.Name)) < 0
+	})
+}
+
+func RenderShoppingListExport(w io.Writer, items []shoppinglist.Item) error {
+	for _, item := range items {
+		line := strings.TrimSpace(item.Name)
+		if line == "" {
+			continue
+		}
+		if _, err := io.WriteString(w, line+"\t"+formatQty(item.Quantity)+"\t"+normalizedUnit(item.Unit)+"\n"); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // groupNameDisplay returns a display-friendly group name.

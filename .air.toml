@@ -3,7 +3,7 @@ tmp_dir = "tmp"
 
 [build]
 cmd = "make gen && go build -o ./tmp/shopping ./cmd/shopping"
-bin = "tmp/shopping"
+entrypoint = "tmp/shopping"
 delay = 200
 include_ext = ["go", "tpl", "templ", "html", "css", "js", "sql", "yaml"]
 exclude_dir = ["tmp", "data", ".git", ".cache", ".gocache", ".gomodcache"]

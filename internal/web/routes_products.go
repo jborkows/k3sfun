@@ -7,6 +7,7 @@ func (s *Server) registerProductRoutes(mux *http.ServeMux, wrap func(http.Handle
 	mux.Handle("GET /products", wrap(http.HandlerFunc(s.handleProductsPage)))
 	mux.Handle("GET /products/new", wrap(http.HandlerFunc(s.handleProductsNewPage)))
 	mux.Handle("GET /shopping-list", wrap(http.HandlerFunc(s.handleShoppingListPage)))
+	mux.Handle("GET /shopping-list/export", wrap(http.HandlerFunc(s.handleShoppingListExport)))
 	mux.Handle("GET /icons/auto", wrap(http.HandlerFunc(s.handleAutoIcon)))
 	mux.Handle("GET /partials/products", wrap(http.HandlerFunc(s.handleProductsPartial)))
 	mux.Handle("GET /partials/shopping-list", wrap(http.HandlerFunc(s.handleShoppingListPartial)))

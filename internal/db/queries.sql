@@ -1,7 +1,7 @@
 -- name: ListGroups :many
 SELECT id, name
 FROM v_groups
-ORDER BY name;
+ORDER BY display_order, name;
 
 -- name: CreateGroup :one
 INSERT INTO groups(name) VALUES (?)
@@ -112,6 +112,7 @@ SELECT
   sli.name,
   COALESCE(p.icon_key, '') AS icon_key,
   COALESCE(g.name, '') AS group_name,
+  COALESCE(g.display_order, 999) AS group_order,
   sli.quantity_value,
   sli.quantity_unit,
   sli.done,
@@ -120,7 +121,7 @@ SELECT
 FROM shopping_list_items sli
 LEFT JOIN products p ON p.id = sli.product_id
 LEFT JOIN groups g ON g.id = p.group_id
-ORDER BY sli.done ASC, COALESCE(lower(g.name), 'zzz'), lower(sli.name);
+ORDER BY sli.done ASC, COALESCE(g.display_order, 999), COALESCE(lower(g.name), 'zzz'), lower(sli.name);
 
 -- name: GetShoppingListItem :one
 SELECT
@@ -129,6 +130,7 @@ SELECT
   sli.name,
   COALESCE(p.icon_key, '') AS icon_key,
   COALESCE(g.name, '') AS group_name,
+  COALESCE(g.display_order, 999) AS group_order,
   sli.quantity_value,
   sli.quantity_unit,
   sli.done,
