@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+  <path d="M6 8c2-3 10-3 12 0 0 0-1 6-6 8-5-2-6-8-6-8z" fill="#D9534F" stroke="#B22B2B"/>
+  <path d="M14 5c0 1-1 2-2 2s-2-1-2-2" stroke="#8B0000" fill="none"/>
+  <path d="M12 12l1.5 3" stroke="#FFEE88"/>
+  <path d="M16 10c1-1 2-2 2-3" stroke="#FF4500"/> <!-- flame accent -->
+</svg>
