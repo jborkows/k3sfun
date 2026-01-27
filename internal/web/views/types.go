@@ -64,16 +64,18 @@ type AdminPageData struct {
 }
 
 type ShoppingListData struct {
-	Items    []shoppinglist.Item
-	Units    []products.Unit
-	EditMode bool
+	Items     []shoppinglist.Item
+	Units     []products.Unit
+	EditMode  bool
+	ShortMode bool
 }
 
 type ShoppingListPageData struct {
-	Base     BaseData
-	Items    []shoppinglist.Item
-	Units    []products.Unit
-	EditMode bool
+	Base      BaseData
+	Items     []shoppinglist.Item
+	Units     []products.Unit
+	EditMode  bool
+	ShortMode bool
 }
 
 type ProductsNewPageData struct {

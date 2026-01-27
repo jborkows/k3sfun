@@ -57,9 +57,12 @@ templ AdminPage(data AdminPageData) {
 	</html>
 }
 
-func shoppingEventsQS(editMode bool) string {
+func shoppingEventsQS(editMode bool, shortMode bool) string {
+	if shortMode {
+		return "/events?topic=shopping-list&view=short"
+	}
 	if editMode {
-		return "/events?topic=shopping-list&edit=1"
+		return "/events?topic=shopping-list&view=edit"
 	}
 	return "/events?topic=shopping-list"
 }
@@ -75,10 +78,10 @@ templ ShoppingListPage(data ShoppingListPageData) {
 			<script src={ data.Base.HTMXSrc }></script>
 			<script src={ data.Base.HTMXSSESrc() }></script>
 		</head>
-		<body
-			hx-ext="sse"
-			sse-connect={ shoppingEventsQS(data.EditMode) }
-		>
+	<body
+		hx-ext="sse"
+		sse-connect={ shoppingEventsQS(data.EditMode, data.ShortMode) }
+	>
 			<script src={ "/static/client_id.js?v=" + data.Base.StaticVersion }></script>
 			@Topbar(data.Base)
 			<main class="container">
@@ -86,7 +89,7 @@ templ ShoppingListPage(data ShoppingListPageData) {
 					<h1>Lista zakupów</h1>
 					<div class="spacer"></div>
 				</div>
-				@ShoppingListCard(ShoppingListData{Items: data.Items, Units: data.Units, EditMode: data.EditMode})
+				@ShoppingListCard(ShoppingListData{Items: data.Items, Units: data.Units, EditMode: data.EditMode, ShortMode: data.ShortMode})
 			</main>
 			<footer class="container footer">
 				<span>© { strconv.Itoa(time.Now().Year()) } • v{ data.Base.StaticVersion }</span>
@@ -101,7 +104,7 @@ templ Topbar(base BaseData) {
 			<div class="brand"><a href="/products">shopping</a></div>
 			<nav class="nav">
 				<a href="/products">Zapasy</a>
-				<a href="/shopping-list">Lista zakupów</a>
+				<a href="/shopping-list?view=short">Lista zakupów</a>
 				if base.IsAdmin {
 					<a href="/admin">Admin</a>
 				}
@@ -128,4 +131,3 @@ templ Topbar(base BaseData) {
 		</div>
 	</header>
 }
-

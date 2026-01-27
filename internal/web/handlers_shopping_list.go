@@ -21,7 +21,10 @@ func (s *Server) handleShoppingListPage(w http.ResponseWriter, r *http.Request) 
 	}
 
 	user, _ := s.auth.CurrentUser(r)
-	editMode := parseEditMode(r)
+	editMode, shortMode := parseShoppingView(r)
+	if !editMode && !shortMode {
+		shortMode = true
+	}
 
 	ctx, cancel := context.WithTimeout(r.Context(), DefaultHandlerTimeout)
 	defer cancel()
@@ -40,9 +43,10 @@ func (s *Server) handleShoppingListPage(w http.ResponseWriter, r *http.Request) 
 			StaticVersion: s.staticV,
 			IsAdmin:       s.isAdmin(user),
 		},
-		Items:    items,
-		Units:    s.units,
-		EditMode: editMode,
+		Items:     items,
+		Units:     s.units,
+		EditMode:  editMode,
+		ShortMode: shortMode,
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -52,7 +56,10 @@ func (s *Server) handleShoppingListPage(w http.ResponseWriter, r *http.Request) 
 }
 
 func (s *Server) handleShoppingListPartial(w http.ResponseWriter, r *http.Request) {
-	editMode := parseEditMode(r)
+	editMode, shortMode := parseShoppingView(r)
+	if !editMode && !shortMode {
+		shortMode = true
+	}
 
 	ctx, cancel := context.WithTimeout(r.Context(), DefaultHandlerTimeout)
 	defer cancel()
@@ -64,7 +71,7 @@ func (s *Server) handleShoppingListPartial(w http.ResponseWriter, r *http.Reques
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if err := views.ShoppingListCard(views.ShoppingListData{Items: items, Units: s.units, EditMode: editMode}).Render(r.Context(), w); err != nil {
+	if err := views.ShoppingListCard(views.ShoppingListData{Items: items, Units: s.units, EditMode: editMode, ShortMode: shortMode}).Render(r.Context(), w); err != nil {
 		http.Error(w, fmt.Sprintf("render: %v", err), http.StatusInternalServerError)
 	}
 }
@@ -88,9 +95,15 @@ func (s *Server) handleShoppingListExport(w http.ResponseWriter, r *http.Request
 	}
 }
 
-func parseEditMode(r *http.Request) bool {
-	edit := strings.TrimSpace(r.URL.Query().Get("edit"))
-	return edit == "1" || strings.EqualFold(edit, "true")
+func parseShoppingView(r *http.Request) (bool, bool) {
+	view := strings.TrimSpace(r.URL.Query().Get("view"))
+	switch strings.ToLower(view) {
+	case "edit", "full":
+		return true, false
+	case "short":
+		return false, true
+	}
+	return false, false
 }
 
 func (s *Server) handleAddShoppingListByName(w http.ResponseWriter, r *http.Request) {

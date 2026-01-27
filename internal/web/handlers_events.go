@@ -66,8 +66,11 @@ func (s *Server) writeEventUpdate(ctx context.Context, w http.ResponseWriter, to
 	var err error
 	switch topic {
 	case eventShoppingList:
-		editMode := parseEditMode(r)
-		payload, err = s.renderShoppingListHTML(ctx, editMode)
+		editMode, shortMode := parseShoppingView(r)
+		if !editMode && !shortMode {
+			shortMode = true
+		}
+		payload, err = s.renderShoppingListHTML(ctx, editMode, shortMode)
 	case eventProductsList:
 		payload, err = s.renderProductsListHTML(ctx, r)
 	default:
@@ -80,13 +83,13 @@ func (s *Server) writeEventUpdate(ctx context.Context, w http.ResponseWriter, to
 	return writeSSE(w, string(topic), payload)
 }
 
-func (s *Server) renderShoppingListHTML(ctx context.Context, editMode bool) ([]byte, error) {
+func (s *Server) renderShoppingListHTML(ctx context.Context, editMode bool, shortMode bool) ([]byte, error) {
 	items, err := s.shopping.svc.ListItems(ctx)
 	if err != nil {
 		return nil, err
 	}
 	var buf bytes.Buffer
-	if err := views.ShoppingListCard(views.ShoppingListData{Items: items, Units: s.units, EditMode: editMode}).Render(ctx, &buf); err != nil {
+	if err := views.ShoppingListCard(views.ShoppingListData{Items: items, Units: s.units, EditMode: editMode, ShortMode: shortMode}).Render(ctx, &buf); err != nil {
 		return nil, err
 	}
 	return buf.Bytes(), nil

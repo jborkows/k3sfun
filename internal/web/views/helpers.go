@@ -2,6 +2,7 @@ package views
 
 import (
 	"io"
+	"math"
 	"net/url"
 	"shopping/internal/domain/products"
 	"shopping/internal/domain/shoppinglist"
@@ -285,6 +286,63 @@ func groupShoppingItems(items []shoppinglist.Item) []ShoppingItemGroup {
 	}
 
 	return groups
+}
+
+func allShoppingItemsDone(items []shoppinglist.Item) bool {
+	if len(items) == 0 {
+		return true
+	}
+	for _, item := range items {
+		if !item.Done {
+			return false
+		}
+	}
+	return true
+}
+
+func shoppingGroupsForView(items []shoppinglist.Item, shortMode bool) []ShoppingItemGroup {
+	groups := groupShoppingItems(items)
+	if !shortMode {
+		return groups
+	}
+	var filtered []ShoppingItemGroup
+	for _, group := range groups {
+		var remaining []shoppinglist.Item
+		for _, item := range group.Items {
+			if !item.Done {
+				remaining = append(remaining, item)
+			}
+		}
+		if len(remaining) == 0 {
+			continue
+		}
+		filtered = append(filtered, ShoppingItemGroup{Name: group.Name, Items: remaining})
+	}
+	return filtered
+}
+
+func shoppingShortQuantity(item shoppinglist.Item) string {
+	return shoppingShortQtyValue(item).String()
+}
+
+func shoppingShortQtyValue(item shoppinglist.Item) products.Quantity {
+	qty := item.Quantity
+	if item.IntegerOnly && !qty.IsInteger() {
+		qty = products.Quantity(math.Ceil(qty.Float64()))
+	}
+	return qty
+}
+
+func shoppingUnitLabel(item shoppinglist.Item, qty products.Quantity) string {
+	unit := item.UnitPlural
+	if qty == 1 {
+		unit = item.UnitSingular
+	}
+	unit = strings.TrimSpace(unit)
+	if unit == "" {
+		unit = normalizedUnit(item.Unit)
+	}
+	return unit
 }
 
 func sortShoppingItems(items []shoppinglist.Item) {
