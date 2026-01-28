@@ -1,0 +1,12 @@
+
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+  <!-- Roll of tape: outer ring, inner hole, and a tape tail -->
+  <circle cx="10" cy="12" r="5" />
+  <circle cx="10" cy="12" r="2.2" fill="white" stroke="currentColor" />
+  <!-- tape body to the right -->
+  <path d="M15 11.2c2 0 4-0.6 4 1.8 0 2.4-2 2.8-4 2.8h-5" stroke-linecap="round" />
+  <!-- tape tail/sticky end -->
+  <path d="M19 13.5c-0.6 0.4-1.2 0.8-2 1.1" stroke-linecap="round" />
+  <!-- subtle details -->
+  <path d="M7 11.5v1.5" stroke-linecap="round" />
+</svg>
