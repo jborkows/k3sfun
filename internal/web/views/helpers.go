@@ -2,7 +2,6 @@ package views
 
 import (
 	"io"
-	"math"
 	"net/url"
 	"shopping/internal/domain/products"
 	"shopping/internal/domain/shoppinglist"
@@ -114,7 +113,7 @@ func productsTabClass(active bool) string {
 }
 
 func productRowClass(p products.Product) string {
-	if p.IsMissing() || p.Quantity <= p.MinQuantity {
+	if p.IsMissing() {
 		return "warn"
 	}
 	return ""
@@ -141,7 +140,7 @@ func productGroupPostURL(p products.Product, listQS string) string {
 }
 
 func brakBtnClass(p products.Product) string {
-	if p.IsMissing() || p.Quantity <= p.MinQuantity {
+	if p.IsMissing() {
 		return " brak-btn-active"
 	}
 	return ""
@@ -211,12 +210,12 @@ func quantityStep(integerOnly bool) string {
 
 // shoppingItemStep returns the HTML step attribute for shopping list item quantity input.
 func shoppingItemStep(item shoppinglist.Item) string {
-	return quantityStep(item.IntegerOnly)
+	return "0.1"
 }
 
 // shoppingItemMin returns the HTML min attribute for shopping list item quantity input.
 func shoppingItemMin(item shoppinglist.Item) string {
-	return quantityMin(item.IntegerOnly)
+	return "0.1"
 }
 
 // quantityMin returns the HTML min attribute value for quantity inputs.
@@ -326,11 +325,7 @@ func shoppingShortQuantity(item shoppinglist.Item) string {
 }
 
 func shoppingShortQtyValue(item shoppinglist.Item) products.Quantity {
-	qty := item.Quantity
-	if item.IntegerOnly && !qty.IsInteger() {
-		qty = products.Quantity(math.Ceil(qty.Float64()))
-	}
-	return qty
+	return item.Quantity
 }
 
 func shoppingUnitLabel(item shoppinglist.Item, qty products.Quantity) string {

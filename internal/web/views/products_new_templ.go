@@ -166,7 +166,7 @@ func ProductsNewContent(data ProductsNewPageData) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</select> <input class=\"num-input\" type=\"number\" step=\"0.1\" min=\"0\" name=\"min_quantity\" value=\"0\"> <select name=\"group_id\"><option value=\"\">(brak grupy)</option> ")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</select> <select name=\"group_id\"><option value=\"\">(brak grupy)</option> ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -178,7 +178,7 @@ func ProductsNewContent(data ProductsNewPageData) templ.Component {
 			var templ_7745c5c3_Var9 string
 			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.FormatInt(int64(g.ID), 10))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `products_new.templ`, Line: 53, Col: 56}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `products_new.templ`, Line: 52, Col: 56}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 			if templ_7745c5c3_Err != nil {
@@ -191,7 +191,7 @@ func ProductsNewContent(data ProductsNewPageData) templ.Component {
 			var templ_7745c5c3_Var10 string
 			templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(g.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `products_new.templ`, Line: 53, Col: 67}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `products_new.templ`, Line: 52, Col: 67}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 			if templ_7745c5c3_Err != nil {

@@ -10,12 +10,8 @@ type Repository interface {
 
 	SetProductQuantity(ctx context.Context, productID ProductID, qty Quantity) error
 	AddProductQuantity(ctx context.Context, productID ProductID, delta Quantity) error
-	SetProductMinQuantity(ctx context.Context, productID ProductID, min Quantity) error
 	SetProductGroup(ctx context.Context, productID ProductID, groupID *GroupID) error
 	SetProductUnit(ctx context.Context, productID ProductID, unit Unit) error
-	// GetProductIntegerOnly returns whether the product requires integer quantities.
-	// This is a DB-level configuration, not editable from frontend.
-	GetProductIntegerOnly(ctx context.Context, productID ProductID) (bool, error)
 
 	ResolveIconKeyForName(ctx context.Context, name string) (string, bool, error)
 }

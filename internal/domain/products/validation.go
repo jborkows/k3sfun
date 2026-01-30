@@ -33,12 +33,3 @@ func NormalizeUnit(u Unit) (Unit, error) {
 func (q Quantity) IsInteger() bool {
 	return float64(q) == math.Trunc(float64(q))
 }
-
-// ValidateQuantityForIntegerOnly validates that the quantity is an integer
-// if integerOnly is true. Returns an error if validation fails.
-func ValidateQuantityForIntegerOnly(qty Quantity, integerOnly bool) error {
-	if integerOnly && !qty.IsInteger() {
-		return ErrQuantityMustBeInteger
-	}
-	return nil
-}

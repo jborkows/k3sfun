@@ -41,16 +41,14 @@ type Group struct {
 }
 
 type Product struct {
-	ID          ProductID
-	Name        string
-	IconKey     string
-	GroupID     *GroupID
-	GroupName   string
-	Quantity    Quantity
-	Unit        Unit
-	MinQuantity Quantity
-	IntegerOnly bool
-	UpdatedAt   time.Time
+	ID        ProductID
+	Name      string
+	IconKey   string
+	GroupID   *GroupID
+	GroupName string
+	Quantity  Quantity
+	Unit      Unit
+	UpdatedAt time.Time
 }
 
 // IsMissing returns true if the product has zero quantity.
@@ -67,12 +65,11 @@ type ProductFilter struct {
 }
 
 type NewProduct struct {
-	Name        string
-	IconKey     string
-	GroupID     *GroupID
-	Quantity    Quantity
-	Unit        Unit
-	MinQuantity Quantity
+	Name     string
+	IconKey  string
+	GroupID  *GroupID
+	Quantity Quantity
+	Unit     Unit
 }
 
 // GroupIDsToNames converts a slice of GroupIDs to their corresponding names.

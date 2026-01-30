@@ -160,16 +160,14 @@ func (r *Repo) ListProducts(ctx context.Context, filter products.ProductFilter) 
 			groupName = p.GroupName.String
 		}
 		out = append(out, products.Product{
-			ID:          products.ProductID(p.ID),
-			Name:        p.Name,
-			IconKey:     p.IconKey,
-			GroupID:     gid,
-			GroupName:   groupName,
-			Quantity:    products.Quantity(p.QuantityValue),
-			Unit:        products.Unit(p.QuantityUnit),
-			MinQuantity: products.Quantity(p.MinQuantityValue),
-			IntegerOnly: p.IntegerOnly != 0,
-			UpdatedAt:   p.UpdatedAt,
+			ID:        products.ProductID(p.ID),
+			Name:      p.Name,
+			IconKey:   p.IconKey,
+			GroupID:   gid,
+			GroupName: groupName,
+			Quantity:  products.Quantity(p.QuantityValue),
+			Unit:      products.Unit(p.QuantityUnit),
+			UpdatedAt: p.UpdatedAt,
 		})
 	}
 	return out, nil
@@ -234,13 +232,11 @@ func (r *Repo) CreateProduct(ctx context.Context, p products.NewProduct) (produc
 	}
 	// integer_only defaults to 0 (false) - it's configured at DB level only
 	id, err := r.q.CreateProduct(ctx, db.CreateProductParams{
-		Name:             p.Name,
-		IconKey:          p.IconKey,
-		GroupID:          gid,
-		QuantityValue:    p.Quantity.Float64(),
-		QuantityUnit:     string(p.Unit),
-		MinQuantityValue: p.MinQuantity.Float64(),
-		IntegerOnly:      0,
+		Name:          p.Name,
+		IconKey:       p.IconKey,
+		GroupID:       gid,
+		QuantityValue: p.Quantity.Float64(),
+		QuantityUnit:  string(p.Unit),
 	})
 	return products.ProductID(id), err
 }
@@ -259,10 +255,6 @@ func (r *Repo) AddProductQuantity(ctx context.Context, productID products.Produc
 	})
 }
 
-func (r *Repo) SetProductMinQuantity(ctx context.Context, productID products.ProductID, min products.Quantity) error {
-	return r.q.SetProductMinQuantity(ctx, db.SetProductMinQuantityParams{MinQuantityValue: min.Float64(), ID: int64(productID)})
-}
-
 func (r *Repo) SetProductGroup(ctx context.Context, productID products.ProductID, groupID *products.GroupID) error {
 	var gid any = nil
 	if groupID != nil {
@@ -273,14 +265,6 @@ func (r *Repo) SetProductGroup(ctx context.Context, productID products.ProductID
 
 func (r *Repo) SetProductUnit(ctx context.Context, productID products.ProductID, unit products.Unit) error {
 	return r.q.SetProductUnit(ctx, db.SetProductUnitParams{QuantityUnit: string(unit), ID: int64(productID)})
-}
-
-func (r *Repo) GetProductIntegerOnly(ctx context.Context, productID products.ProductID) (bool, error) {
-	v, err := r.q.GetProductIntegerOnly(ctx, int64(productID))
-	if err != nil {
-		return false, err
-	}
-	return v != 0, nil
 }
 
 func (r *Repo) ResolveIconKeyForName(ctx context.Context, name string) (string, bool, error) {
@@ -341,7 +325,6 @@ func (r *Repo) ListItems(ctx context.Context) ([]shoppinglist.Item, error) {
 			UnitSingular: item.UnitSingular,
 			UnitPlural:   item.UnitPlural,
 			Done:         item.Done != 0,
-			IntegerOnly:  item.IntegerOnly != 0,
 			CreatedAt:    item.CreatedAt,
 		})
 	}
@@ -376,7 +359,6 @@ func (r *Repo) GetItem(ctx context.Context, id shoppinglist.ItemID) (shoppinglis
 		UnitSingular: row.UnitSingular,
 		UnitPlural:   row.UnitPlural,
 		Done:         row.Done != 0,
-		IntegerOnly:  row.IntegerOnly != 0,
 		CreatedAt:    row.CreatedAt,
 	}, nil
 }

@@ -20,6 +20,5 @@ type Item struct {
 	UnitSingular string
 	UnitPlural   string
 	Done         bool
-	IntegerOnly  bool
 	CreatedAt    time.Time
 }

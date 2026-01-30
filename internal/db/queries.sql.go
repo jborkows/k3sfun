@@ -72,7 +72,7 @@ const countProductsFiltered = `-- name: CountProductsFiltered :one
 SELECT COUNT(*)
 FROM v_products p
 WHERE
-  (? = 0 OR p.quantity_value = 0 OR p.quantity_value <= p.min_quantity_value)
+  (? = 0 OR p.quantity_value = 0)
   AND (? = '' OR lower(p.name) LIKE '%' || lower(?) || '%')
   AND (? = 0 OR p.group_id IN (/*SLICE:group_ids*/?))
 `
@@ -119,19 +119,17 @@ func (q *Queries) CreateGroup(ctx context.Context, name string) (int64, error) {
 }
 
 const createProduct = `-- name: CreateProduct :one
-INSERT INTO products(name, icon_key, group_id, quantity_value, quantity_unit, min_quantity_value, integer_only, created_at, updated_at)
-VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+INSERT INTO products(name, icon_key, group_id, quantity_value, quantity_unit, created_at, updated_at)
+VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 RETURNING id
 `
 
 type CreateProductParams struct {
-	Name             string
-	IconKey          string
-	GroupID          interface{}
-	QuantityValue    float64
-	QuantityUnit     string
-	MinQuantityValue float64
-	IntegerOnly      int64
+	Name          string
+	IconKey       string
+	GroupID       interface{}
+	QuantityValue float64
+	QuantityUnit  string
 }
 
 func (q *Queries) CreateProduct(ctx context.Context, arg CreateProductParams) (int64, error) {
@@ -141,8 +139,6 @@ func (q *Queries) CreateProduct(ctx context.Context, arg CreateProductParams) (i
 		arg.GroupID,
 		arg.QuantityValue,
 		arg.QuantityUnit,
-		arg.MinQuantityValue,
-		arg.IntegerOnly,
 	)
 	var id int64
 	err := row.Scan(&id)
@@ -173,19 +169,6 @@ func (q *Queries) FindProductIDByName(ctx context.Context, lower string) (int64,
 	return id, err
 }
 
-const getProductIntegerOnly = `-- name: GetProductIntegerOnly :one
-SELECT integer_only
-FROM products
-WHERE id = ?
-`
-
-func (q *Queries) GetProductIntegerOnly(ctx context.Context, id int64) (int64, error) {
-	row := q.db.QueryRowContext(ctx, getProductIntegerOnly, id)
-	var integer_only int64
-	err := row.Scan(&integer_only)
-	return integer_only, err
-}
-
 const getShoppingListItem = `-- name: GetShoppingListItem :one
 SELECT
   sli.id,
@@ -199,7 +182,6 @@ SELECT
   COALESCE(u.singular, CASE WHEN lower(sli.quantity_unit) = 'sztuka' THEN 'sztuk' ELSE sli.quantity_unit END) AS unit_singular,
   COALESCE(u.plural, CASE WHEN lower(sli.quantity_unit) = 'sztuka' THEN 'sztuk' ELSE sli.quantity_unit END) AS unit_plural,
   sli.done,
-  COALESCE(p.integer_only, 0) AS integer_only,
   sli.created_at
 FROM shopping_list_items sli
 LEFT JOIN products p ON p.id = sli.product_id
@@ -220,7 +202,6 @@ type GetShoppingListItemRow struct {
 	UnitSingular  string
 	UnitPlural    string
 	Done          int64
-	IntegerOnly   int64
 	CreatedAt     time.Time
 }
 
@@ -239,7 +220,6 @@ func (q *Queries) GetShoppingListItem(ctx context.Context, id int64) (GetShoppin
 		&i.UnitSingular,
 		&i.UnitPlural,
 		&i.Done,
-		&i.IntegerOnly,
 		&i.CreatedAt,
 	)
 	return i, err
@@ -305,22 +285,31 @@ SELECT
   p.group_name,
   p.quantity_value,
   p.quantity_unit,
-  p.min_quantity_value,
-  p.integer_only,
   p.updated_at
 FROM v_products p
 ORDER BY p.name
 `
 
-func (q *Queries) ListProductsAll(ctx context.Context) ([]VProduct, error) {
+type ListProductsAllRow struct {
+	ID            int64
+	Name          string
+	IconKey       string
+	GroupID       interface{}
+	GroupName     sql.NullString
+	QuantityValue float64
+	QuantityUnit  string
+	UpdatedAt     time.Time
+}
+
+func (q *Queries) ListProductsAll(ctx context.Context) ([]ListProductsAllRow, error) {
 	rows, err := q.db.QueryContext(ctx, listProductsAll)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []VProduct
+	var items []ListProductsAllRow
 	for rows.Next() {
-		var i VProduct
+		var i ListProductsAllRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.Name,
@@ -329,8 +318,6 @@ func (q *Queries) ListProductsAll(ctx context.Context) ([]VProduct, error) {
 			&i.GroupName,
 			&i.QuantityValue,
 			&i.QuantityUnit,
-			&i.MinQuantityValue,
-			&i.IntegerOnly,
 			&i.UpdatedAt,
 		); err != nil {
 			return nil, err
@@ -355,12 +342,10 @@ SELECT
   p.group_name,
   p.quantity_value,
   p.quantity_unit,
-  p.min_quantity_value,
-  p.integer_only,
   p.updated_at
 FROM v_products p
 WHERE
-  (? = 0 OR p.quantity_value = 0 OR p.quantity_value <= p.min_quantity_value)
+  (? = 0 OR p.quantity_value = 0)
   AND (? = '' OR lower(p.name) LIKE '%' || lower(?) || '%')
   AND (? = 0 OR p.group_id IN (/*SLICE:group_ids*/?))
 ORDER BY COALESCE(lower(p.group_name), 'zzz'), lower(p.name)
@@ -378,7 +363,18 @@ type ListProductsFilteredParams struct {
 	Offset   int64
 }
 
-func (q *Queries) ListProductsFiltered(ctx context.Context, arg ListProductsFilteredParams) ([]VProduct, error) {
+type ListProductsFilteredRow struct {
+	ID            int64
+	Name          string
+	IconKey       string
+	GroupID       interface{}
+	GroupName     sql.NullString
+	QuantityValue float64
+	QuantityUnit  string
+	UpdatedAt     time.Time
+}
+
+func (q *Queries) ListProductsFiltered(ctx context.Context, arg ListProductsFilteredParams) ([]ListProductsFilteredRow, error) {
 	query := listProductsFiltered
 	var queryParams []interface{}
 	queryParams = append(queryParams, arg.Column1)
@@ -400,9 +396,9 @@ func (q *Queries) ListProductsFiltered(ctx context.Context, arg ListProductsFilt
 		return nil, err
 	}
 	defer rows.Close()
-	var items []VProduct
+	var items []ListProductsFilteredRow
 	for rows.Next() {
-		var i VProduct
+		var i ListProductsFilteredRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.Name,
@@ -411,8 +407,6 @@ func (q *Queries) ListProductsFiltered(ctx context.Context, arg ListProductsFilt
 			&i.GroupName,
 			&i.QuantityValue,
 			&i.QuantityUnit,
-			&i.MinQuantityValue,
-			&i.IntegerOnly,
 			&i.UpdatedAt,
 		); err != nil {
 			return nil, err
@@ -437,23 +431,32 @@ SELECT
   p.group_name,
   p.quantity_value,
   p.quantity_unit,
-  p.min_quantity_value,
-  p.integer_only,
   p.updated_at
 FROM v_products p
-WHERE p.quantity_value = 0 OR p.quantity_value <= p.min_quantity_value
+WHERE p.quantity_value = 0
 ORDER BY p.name
 `
 
-func (q *Queries) ListProductsMissingOrLow(ctx context.Context) ([]VProduct, error) {
+type ListProductsMissingOrLowRow struct {
+	ID            int64
+	Name          string
+	IconKey       string
+	GroupID       interface{}
+	GroupName     sql.NullString
+	QuantityValue float64
+	QuantityUnit  string
+	UpdatedAt     time.Time
+}
+
+func (q *Queries) ListProductsMissingOrLow(ctx context.Context) ([]ListProductsMissingOrLowRow, error) {
 	rows, err := q.db.QueryContext(ctx, listProductsMissingOrLow)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []VProduct
+	var items []ListProductsMissingOrLowRow
 	for rows.Next() {
-		var i VProduct
+		var i ListProductsMissingOrLowRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.Name,
@@ -462,8 +465,6 @@ func (q *Queries) ListProductsMissingOrLow(ctx context.Context) ([]VProduct, err
 			&i.GroupName,
 			&i.QuantityValue,
 			&i.QuantityUnit,
-			&i.MinQuantityValue,
-			&i.IntegerOnly,
 			&i.UpdatedAt,
 		); err != nil {
 			return nil, err
@@ -492,7 +493,6 @@ SELECT
   COALESCE(u.singular, CASE WHEN lower(sli.quantity_unit) = 'sztuka' THEN 'sztuk' ELSE sli.quantity_unit END) AS unit_singular,
   COALESCE(u.plural, CASE WHEN lower(sli.quantity_unit) = 'sztuka' THEN 'sztuk' ELSE sli.quantity_unit END) AS unit_plural,
   sli.done,
-  COALESCE(p.integer_only, 0) AS integer_only,
   sli.created_at
 FROM shopping_list_items sli
 LEFT JOIN products p ON p.id = sli.product_id
@@ -513,7 +513,6 @@ type ListShoppingListItemsRow struct {
 	UnitSingular  string
 	UnitPlural    string
 	Done          int64
-	IntegerOnly   int64
 	CreatedAt     time.Time
 }
 
@@ -538,7 +537,6 @@ func (q *Queries) ListShoppingListItems(ctx context.Context) ([]ListShoppingList
 			&i.UnitSingular,
 			&i.UnitPlural,
 			&i.Done,
-			&i.IntegerOnly,
 			&i.CreatedAt,
 		); err != nil {
 			return nil, err
@@ -611,22 +609,6 @@ type SetProductGroupParams struct {
 
 func (q *Queries) SetProductGroup(ctx context.Context, arg SetProductGroupParams) error {
 	_, err := q.db.ExecContext(ctx, setProductGroup, arg.GroupID, arg.ID)
-	return err
-}
-
-const setProductMinQuantity = `-- name: SetProductMinQuantity :exec
-UPDATE products
-SET min_quantity_value = ?, updated_at = CURRENT_TIMESTAMP
-WHERE id = ?
-`
-
-type SetProductMinQuantityParams struct {
-	MinQuantityValue float64
-	ID               int64
-}
-
-func (q *Queries) SetProductMinQuantity(ctx context.Context, arg SetProductMinQuantityParams) error {
-	_, err := q.db.ExecContext(ctx, setProductMinQuantity, arg.MinQuantityValue, arg.ID)
 	return err
 }
 

@@ -46,7 +46,6 @@ templ ProductsNewContent(data ProductsNewPageData) {
 				<select name="unit">
 					@UnitOptions(products.UnitPiece)
 				</select>
-				<input class="num-input" type="number" step="0.1" min="0" name="min_quantity" value="0" />
 				<select name="group_id">
 					<option value="">(brak grupy)</option>
 					for _, g := range data.Groups {

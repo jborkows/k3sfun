@@ -16,16 +16,15 @@ type Group struct {
 }
 
 type Product struct {
-	ID               int64
-	Name             string
-	GroupID          interface{}
-	IconKey          string
-	QuantityValue    float64
-	QuantityUnit     string
-	MinQuantityValue float64
-	IntegerOnly      int64
-	CreatedAt        time.Time
-	UpdatedAt        time.Time
+	ID            int64
+	Name          string
+	GroupID       interface{}
+	IconKey       string
+	QuantityValue float64
+	QuantityUnit  string
+	Missing       int64
+	CreatedAt     time.Time
+	UpdatedAt     time.Time
 }
 
 type ProductIconRule struct {
@@ -61,14 +60,13 @@ type VGroup struct {
 }
 
 type VProduct struct {
-	ID               int64
-	Name             string
-	IconKey          string
-	GroupID          interface{}
-	GroupName        sql.NullString
-	QuantityValue    float64
-	QuantityUnit     string
-	MinQuantityValue float64
-	IntegerOnly      int64
-	UpdatedAt        time.Time
+	ID            int64
+	Name          string
+	IconKey       string
+	GroupID       interface{}
+	GroupName     sql.NullString
+	QuantityValue float64
+	QuantityUnit  string
+	Missing       int64
+	UpdatedAt     time.Time
 }

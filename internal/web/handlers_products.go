@@ -191,11 +191,6 @@ func (s *Server) handleCreateProduct(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Nieprawidłowa ilość.", http.StatusBadRequest)
 		return
 	}
-	minQty, err := parseQuantity(r.FormValue("min_quantity"))
-	if err != nil {
-		http.Error(w, "Nieprawidłowa minimalna ilość.", http.StatusBadRequest)
-		return
-	}
 	unit := products.Unit(strings.TrimSpace(r.FormValue("unit")))
 
 	ctx, cancel := context.WithTimeout(r.Context(), DefaultHandlerTimeout)
@@ -206,11 +201,10 @@ func (s *Server) handleCreateProduct(w http.ResponseWriter, r *http.Request) {
 		gid = &groupID
 	}
 	if _, err := s.products.svc.CreateProduct(ctx, products.NewProduct{
-		Name:        name,
-		GroupID:     gid,
-		Quantity:    qty,
-		MinQuantity: minQty,
-		Unit:        unit,
+		Name:     name,
+		GroupID:  gid,
+		Quantity: qty,
+		Unit:     unit,
 	}); err != nil {
 		s.writeUserError(w, err)
 		return
@@ -231,11 +225,6 @@ func (s *Server) handleCreateProductAndRedirect(w http.ResponseWriter, r *http.R
 		http.Error(w, "Nieprawidłowa ilość.", http.StatusBadRequest)
 		return
 	}
-	minQty, err := parseQuantity(r.FormValue("min_quantity"))
-	if err != nil {
-		http.Error(w, "Nieprawidłowa minimalna ilość.", http.StatusBadRequest)
-		return
-	}
 	unit := products.Unit(strings.TrimSpace(r.FormValue("unit")))
 
 	ctx, cancel := context.WithTimeout(r.Context(), DefaultHandlerTimeout)
@@ -246,11 +235,10 @@ func (s *Server) handleCreateProductAndRedirect(w http.ResponseWriter, r *http.R
 		gid = &groupID
 	}
 	if _, err := s.products.svc.CreateProduct(ctx, products.NewProduct{
-		Name:        name,
-		GroupID:     gid,
-		Quantity:    qty,
-		MinQuantity: minQty,
-		Unit:        unit,
+		Name:     name,
+		GroupID:  gid,
+		Quantity: qty,
+		Unit:     unit,
 	}); err != nil {
 		s.writeUserError(w, err)
 		return
@@ -277,31 +265,6 @@ func (s *Server) handleSetQuantity(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), DefaultHandlerTimeout)
 	defer cancel()
 	if err := s.products.svc.SetProductQuantity(ctx, id, qty); err != nil {
-		s.writeUserError(w, err)
-		return
-	}
-	s.events.Publish(eventProductsList, clientIDFromRequest(r))
-	s.renderProductCard(w, r, id)
-}
-
-func (s *Server) handleSetMin(w http.ResponseWriter, r *http.Request) {
-	id, ok := parsePathProductID(r, "id")
-	if !ok {
-		http.Error(w, "bad id", http.StatusBadRequest)
-		return
-	}
-	if err := r.ParseForm(); err != nil {
-		http.Error(w, "bad form", http.StatusBadRequest)
-		return
-	}
-	min, err := parseQuantity(r.FormValue("min_quantity"))
-	if err != nil {
-		http.Error(w, "Nieprawidłowa minimalna ilość.", http.StatusBadRequest)
-		return
-	}
-	ctx, cancel := context.WithTimeout(r.Context(), DefaultHandlerTimeout)
-	defer cancel()
-	if err := s.products.svc.SetProductMinQuantity(ctx, id, min); err != nil {
 		s.writeUserError(w, err)
 		return
 	}

@@ -30,8 +30,6 @@ func userErrorMessage(err error) string {
 		return "Nieprawidłowa jednostka."
 	case errors.Is(err, products.ErrQuantityMustBeNonNegative):
 		return "Ilość musi być większa lub równa 0."
-	case errors.Is(err, products.ErrMinQuantityMustBeNonNegative):
-		return "Minimalna ilość musi być większa lub równa 0."
 	case errors.Is(err, shoppinglist.ErrQuantityMustBePositive):
 		return "Ilość musi być większa od 0."
 	default:

@@ -16,8 +16,6 @@ SELECT
   p.group_name,
   p.quantity_value,
   p.quantity_unit,
-  p.min_quantity_value,
-  p.integer_only,
   p.updated_at
 FROM v_products p
 ORDER BY p.name;
@@ -31,11 +29,9 @@ SELECT
   p.group_name,
   p.quantity_value,
   p.quantity_unit,
-  p.min_quantity_value,
-  p.integer_only,
   p.updated_at
 FROM v_products p
-WHERE p.quantity_value = 0 OR p.quantity_value <= p.min_quantity_value
+WHERE p.quantity_value = 0
 ORDER BY p.name;
 
 -- name: ListProductsFiltered :many
@@ -47,12 +43,10 @@ SELECT
   p.group_name,
   p.quantity_value,
   p.quantity_unit,
-  p.min_quantity_value,
-  p.integer_only,
   p.updated_at
 FROM v_products p
 WHERE
-  (? = 0 OR p.quantity_value = 0 OR p.quantity_value <= p.min_quantity_value)
+  (? = 0 OR p.quantity_value = 0)
   AND (? = '' OR lower(p.name) LIKE '%' || lower(?) || '%')
   AND (? = 0 OR p.group_id IN (sqlc.slice('group_ids')))
 ORDER BY COALESCE(lower(p.group_name), 'zzz'), lower(p.name)
@@ -63,13 +57,13 @@ OFFSET ?;
 SELECT COUNT(*)
 FROM v_products p
 WHERE
-  (? = 0 OR p.quantity_value = 0 OR p.quantity_value <= p.min_quantity_value)
+  (? = 0 OR p.quantity_value = 0)
   AND (? = '' OR lower(p.name) LIKE '%' || lower(?) || '%')
   AND (? = 0 OR p.group_id IN (sqlc.slice('group_ids')));
 
 -- name: CreateProduct :one
-INSERT INTO products(name, icon_key, group_id, quantity_value, quantity_unit, min_quantity_value, integer_only, created_at, updated_at)
-VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+INSERT INTO products(name, icon_key, group_id, quantity_value, quantity_unit, created_at, updated_at)
+VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 RETURNING id;
 
 -- name: SetProductQuantity :exec
@@ -83,11 +77,6 @@ UPDATE products
 SET quantity_value = quantity_value + ?, updated_at = CURRENT_TIMESTAMP
 WHERE id = ?;
 
--- name: SetProductMinQuantity :exec
-UPDATE products
-SET min_quantity_value = ?, updated_at = CURRENT_TIMESTAMP
-WHERE id = ?;
-
 -- name: SetProductUnit :exec
 UPDATE products
 SET quantity_unit = ?, updated_at = CURRENT_TIMESTAMP
@@ -98,11 +87,6 @@ WHERE id = ?;
 -- name: SetProductGroup :exec
 UPDATE products
 SET group_id = ?, updated_at = CURRENT_TIMESTAMP
-WHERE id = ?;
-
--- name: GetProductIntegerOnly :one
-SELECT integer_only
-FROM products
 WHERE id = ?;
 
 -- name: ListShoppingListItems :many
@@ -118,7 +102,6 @@ SELECT
   COALESCE(u.singular, CASE WHEN lower(sli.quantity_unit) = 'sztuka' THEN 'sztuk' ELSE sli.quantity_unit END) AS unit_singular,
   COALESCE(u.plural, CASE WHEN lower(sli.quantity_unit) = 'sztuka' THEN 'sztuk' ELSE sli.quantity_unit END) AS unit_plural,
   sli.done,
-  COALESCE(p.integer_only, 0) AS integer_only,
   sli.created_at
 FROM shopping_list_items sli
 LEFT JOIN products p ON p.id = sli.product_id
@@ -139,7 +122,6 @@ SELECT
   COALESCE(u.singular, CASE WHEN lower(sli.quantity_unit) = 'sztuka' THEN 'sztuk' ELSE sli.quantity_unit END) AS unit_singular,
   COALESCE(u.plural, CASE WHEN lower(sli.quantity_unit) = 'sztuka' THEN 'sztuk' ELSE sli.quantity_unit END) AS unit_plural,
   sli.done,
-  COALESCE(p.integer_only, 0) AS integer_only,
   sli.created_at
 FROM shopping_list_items sli
 LEFT JOIN products p ON p.id = sli.product_id
