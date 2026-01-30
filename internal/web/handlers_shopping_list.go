@@ -198,7 +198,11 @@ func (s *Server) handleSetShoppingListDone(w http.ResponseWriter, r *http.Reques
 		}
 	}
 	s.events.Publish(eventShoppingList, clientIDFromRequest(r))
-	s.shoppingListResponse(w, r)
+	if r.Header.Get("HX-Request") == "true" {
+		s.renderShoppingItem(w, r, shoppinglist.ItemID(id))
+		return
+	}
+	http.Redirect(w, r, "/shopping-list", http.StatusFound)
 }
 
 func (s *Server) handleDeleteShoppingListItem(w http.ResponseWriter, r *http.Request) {
@@ -282,4 +286,28 @@ func (s *Server) shoppingListResponse(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	http.Redirect(w, r, "/shopping-list", http.StatusFound)
+}
+
+// renderShoppingItem fetches a single shopping item and renders just its card.
+// Used for htmx updates to avoid refreshing the entire shopping list.
+func (s *Server) renderShoppingItem(w http.ResponseWriter, r *http.Request, id shoppinglist.ItemID) {
+	editMode, shortMode := parseShoppingView(r)
+	if !editMode && !shortMode {
+		shortMode = true
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), DefaultHandlerTimeout)
+	defer cancel()
+
+	// Fetch the single item
+	item, err := s.shopping.svc.GetItem(ctx, id)
+	if err != nil {
+		s.writeDBError(w, err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	if err := views.ShoppingListItem(item, views.ShoppingListData{Units: s.units, EditMode: editMode, ShortMode: shortMode}).Render(r.Context(), w); err != nil {
+		http.Error(w, fmt.Sprintf("render: %v", err), http.StatusInternalServerError)
+	}
 }

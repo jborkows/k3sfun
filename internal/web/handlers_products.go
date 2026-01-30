@@ -281,7 +281,7 @@ func (s *Server) handleSetQuantity(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.events.Publish(eventProductsList, clientIDFromRequest(r))
-	s.handleProductsPartial(w, r)
+	s.renderProductCard(w, r, id)
 }
 
 func (s *Server) handleSetMin(w http.ResponseWriter, r *http.Request) {
@@ -306,7 +306,7 @@ func (s *Server) handleSetMin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.events.Publish(eventProductsList, clientIDFromRequest(r))
-	s.handleProductsPartial(w, r)
+	s.renderProductCard(w, r, id)
 }
 
 func (s *Server) handleSetUnit(w http.ResponseWriter, r *http.Request) {
@@ -327,7 +327,7 @@ func (s *Server) handleSetUnit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.events.Publish(eventProductsList, clientIDFromRequest(r))
-	s.handleProductsPartial(w, r)
+	s.renderProductCard(w, r, id)
 }
 
 func (s *Server) handleMarkMissing(w http.ResponseWriter, r *http.Request) {
@@ -344,7 +344,7 @@ func (s *Server) handleMarkMissing(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.events.Publish(eventProductsList, clientIDFromRequest(r))
-	s.handleProductsPartial(w, r)
+	s.renderProductCard(w, r, id)
 }
 
 func (s *Server) handleSetGroup(w http.ResponseWriter, r *http.Request) {
@@ -370,7 +370,7 @@ func (s *Server) handleSetGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.events.Publish(eventProductsList, clientIDFromRequest(r))
-	s.handleProductsPartial(w, r)
+	s.renderProductCard(w, r, id)
 }
 
 func parseQuantity(v string) (products.Quantity, error) {
@@ -426,6 +426,59 @@ func parsePathProductID(r *http.Request, param string) (products.ProductID, bool
 	}
 	id, err := strconv.ParseInt(v, 10, 64)
 	return products.ProductID(id), err == nil
+}
+
+// renderProductCard fetches a single product and renders just its card.
+// Used for htmx updates to avoid refreshing the entire product list.
+func (s *Server) renderProductCard(w http.ResponseWriter, r *http.Request, id products.ProductID) {
+	ctx, cancel := context.WithTimeout(r.Context(), DefaultHandlerTimeout)
+	defer cancel()
+
+	// Fetch all products and find the one with matching ID
+	productsList, err := s.products.qry.ListProducts(ctx, products.ProductFilter{Limit: 100})
+	if err != nil {
+		s.writeDBError(w, err)
+		return
+	}
+
+	var product *products.Product
+	for _, p := range productsList {
+		if p.ID == id {
+			product = &p
+			break
+		}
+	}
+	if product == nil {
+		http.Error(w, "product not found", http.StatusNotFound)
+		return
+	}
+
+	// Fetch groups for the card rendering
+	groups, err := s.products.qry.ListGroups(ctx)
+	if err != nil {
+		s.writeDBError(w, err)
+		return
+	}
+
+	// Parse current filter state to maintain context
+	_, nameQuery, groupNames, formGroupIDs, _ := parseProductsListQuery(r)
+	groupIDs := resolveGroupNames(groupNames, groups)
+	if len(groupIDs) == 0 {
+		groupIDs = formGroupIDs
+	}
+	onlyMissing := r.URL.Query().Get("missing") == "1"
+
+	listData := views.ProductsListData{
+		Groups:           groups,
+		OnlyMissing:      onlyMissing,
+		NameQuery:        nameQuery,
+		SelectedGroupIDs: groupIDs,
+	}
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	if err := views.ProductCard(*product, listData).Render(r.Context(), w); err != nil {
+		http.Error(w, fmt.Sprintf("render: %v", err), http.StatusInternalServerError)
+	}
 }
 
 func parseOptionalGroupID(v string) (products.GroupID, bool) {

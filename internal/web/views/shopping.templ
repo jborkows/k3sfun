@@ -1,6 +1,9 @@
 package views
 
-import "shopping/internal/domain/products"
+import (
+	"shopping/internal/domain/products"
+	"shopping/internal/domain/shoppinglist"
+)
 
 func shoppingListClass(editMode bool, shortMode bool) string {
 	if shortMode {
@@ -34,6 +37,74 @@ func shoppingFormAction(editMode bool, shortMode bool, base string) string {
 
 templ ShoppingListCard(data ShoppingListData) {
 	@ShoppingListCardContent(data)
+}
+
+templ ShoppingListItem(item shoppinglist.Item, data ShoppingListData) {
+	<div class={ "sl-item" + slItemDoneClass(item.Done) } id={ "sl-item-" + shoppingItemID(item) }>
+		if data.ShortMode {
+			<div class="sl-short-row">
+				<form class="sl-short-toggle" hx-patch={ shoppingFormAction(data.EditMode, data.ShortMode, "/shopping-list/items/" + shoppingItemID(item)) } hx-target={ "#sl-item-" + shoppingItemID(item) } hx-swap="outerHTML" hx-push-url={ "#sl-item-" + shoppingItemID(item) }>
+					<input type="hidden" name="done" value={ shoppingNextDone(item.Done) } />
+					<input type="hidden" name="quantity" value={ shoppingShortQuantity(item) } />
+					<input type="hidden" name="unit" value={ string(item.Unit) } />
+					<button class="sl-short-check" type="submit" aria-label={ "Kupione: " + item.Name }>
+						✓
+					</button>
+				</form>
+				<div class="sl-short-details">
+					<div class="sl-short-name">{ item.Name }</div>
+					<div class="sl-short-qty">{ shoppingShortQuantity(item) } { shoppingUnitLabel(item, shoppingShortQtyValue(item)) }</div>
+				</div>
+			</div>
+		} else {
+			<div class="sl-top">
+				<div class="sl-title">
+					<img class="sl-icon" width="28" height="28" src={ shoppingIconSrc(item) } alt="" />
+					<div class={ shoppingNameClass(item.Done) }>
+						{ item.Name }
+					</div>
+				</div>
+				<div class="sl-right sl-editable">
+					<form class="sl-done-form" hx-patch={ shoppingFormAction(data.EditMode, data.ShortMode, "/shopping-list/items/" + shoppingItemID(item)) } hx-target={ "#sl-item-" + shoppingItemID(item) } hx-swap="outerHTML" hx-push-url={ "#sl-item-" + shoppingItemID(item) }>
+						<input type="hidden" name="done" value={ shoppingNextDone(item.Done) } />
+						<input type="hidden" name="quantity" value={ formatQty(item.Quantity) } />
+						<input type="hidden" name="unit" value={ string(item.Unit) } />
+						<button class={ shoppingDoneBtnClass(item.Done) } type="submit" aria-label="Zrobione">
+							if item.Done {
+								✅
+							} else {
+								<span class="sl-done-empty" aria-hidden="true"></span>
+							}
+						</button>
+					</form>
+					if item.ProductID == nil {
+						<form hx-post={ shoppingFormAction(data.EditMode, data.ShortMode, "/shopping-list/items/" + shoppingItemID(item) + "/product") } hx-swap="none">
+							<button class="icon-btn" type="submit" aria-label="Dodaj do zapasów">
+								<img class="icon" src="/static/icons/plus.svg" alt="" />
+							</button>
+						</form>
+					}
+					<form class="sl-delete" hx-delete={ shoppingFormAction(data.EditMode, data.ShortMode, "/shopping-list/items/" + shoppingItemID(item)) } hx-target={ "#sl-item-" + shoppingItemID(item) } hx-swap="outerHTML" hx-push-url={ "#sl-item-" + shoppingItemID(item) }>
+						<button class="icon-btn secondary" type="submit" aria-label="Usuń">🗑️</button>
+					</form>
+				</div>
+			</div>
+
+			<div class="sl-mid sl-editable">
+				<form class="sl-qty" hx-patch={ shoppingFormAction(data.EditMode, data.ShortMode, "/shopping-list/items/" + shoppingItemID(item)) } hx-target={ "#sl-item-" + shoppingItemID(item) } hx-swap="outerHTML" hx-trigger="change" hx-push-url={ "#sl-item-" + shoppingItemID(item) }>
+					<input class="num-input" type="number" step={ shoppingItemStep(item) } min={ shoppingItemMin(item) } name="quantity" value={ formatQty(item.Quantity) } />
+					if item.ProductID != nil {
+						<input type="hidden" name="unit" value={ string(item.Unit) } />
+						<span class="unit-fixed">{ string(item.Unit) }</span>
+					} else {
+						<select name="unit">
+							@DynamicUnitOptions(data.Units, item.Unit)
+						</select>
+					}
+				</form>
+			</div>
+		}
+	</div>
 }
 
 templ ShoppingListCardContent(data ShoppingListData) {
@@ -94,71 +165,7 @@ templ ShoppingListCardContent(data ShoppingListData) {
 					}
 					<div class="sl-items">
 						for _, item := range group.Items {
-							<div class={ "sl-item" + slItemDoneClass(item.Done) } id={ "sl-item-" + shoppingItemID(item) }>
-								if data.ShortMode {
-									<div class="sl-short-row">
-										<form class="sl-short-toggle" hx-patch={ shoppingFormAction(data.EditMode, data.ShortMode, "/shopping-list/items/" + shoppingItemID(item)) } hx-target="#shopping-list" hx-swap="outerHTML" hx-push-url={ "#sl-item-" + shoppingItemID(item) }>
-											<input type="hidden" name="done" value={ shoppingNextDone(item.Done) } />
-											<input type="hidden" name="quantity" value={ shoppingShortQuantity(item) } />
-											<input type="hidden" name="unit" value={ string(item.Unit) } />
-											<button class="sl-short-check" type="submit" aria-label={ "Kupione: " + item.Name }>
-												✓
-											</button>
-										</form>
-										<div class="sl-short-details">
-											<div class="sl-short-name">{ item.Name }</div>
-											<div class="sl-short-qty">{ shoppingShortQuantity(item) } { shoppingUnitLabel(item, shoppingShortQtyValue(item)) }</div>
-										</div>
-									</div>
-								} else {
-									<div class="sl-top">
-										<div class="sl-title">
-											<img class="sl-icon" width="28" height="28" src={ shoppingIconSrc(item) } alt="" />
-											<div class={ shoppingNameClass(item.Done) }>
-												{ item.Name }
-											</div>
-										</div>
-										<div class="sl-right sl-editable">
-											<form class="sl-done-form" hx-patch={ shoppingFormAction(data.EditMode, data.ShortMode, "/shopping-list/items/" + shoppingItemID(item)) } hx-target="#shopping-list" hx-swap="outerHTML" hx-push-url={ "#sl-item-" + shoppingItemID(item) }>
-												<input type="hidden" name="done" value={ shoppingNextDone(item.Done) } />
-												<input type="hidden" name="quantity" value={ formatQty(item.Quantity) } />
-												<input type="hidden" name="unit" value={ string(item.Unit) } />
-												<button class={ shoppingDoneBtnClass(item.Done) } type="submit" aria-label="Zrobione">
-													if item.Done {
-														✅
-													} else {
-														<span class="sl-done-empty" aria-hidden="true"></span>
-													}
-												</button>
-											</form>
-											if item.ProductID == nil {
-												<form hx-post={ shoppingFormAction(data.EditMode, data.ShortMode, "/shopping-list/items/" + shoppingItemID(item) + "/product") } hx-swap="none">
-													<button class="icon-btn" type="submit" aria-label="Dodaj do zapasów">
-														<img class="icon" src="/static/icons/plus.svg" alt="" />
-													</button>
-												</form>
-											}
-											<form class="sl-delete" hx-delete={ shoppingFormAction(data.EditMode, data.ShortMode, "/shopping-list/items/" + shoppingItemID(item)) } hx-target="#shopping-list" hx-swap="outerHTML" hx-push-url={ "#sl-item-" + shoppingItemID(item) }>
-												<button class="icon-btn secondary" type="submit" aria-label="Usuń">🗑️</button>
-											</form>
-										</div>
-									</div>
-
-									<div class="sl-mid sl-editable">
-										<form class="sl-qty" hx-patch={ shoppingFormAction(data.EditMode, data.ShortMode, "/shopping-list/items/" + shoppingItemID(item)) } hx-target="#shopping-list" hx-swap="outerHTML" hx-trigger="change" hx-push-url={ "#sl-item-" + shoppingItemID(item) }>
-											<input class="num-input" type="number" step={ shoppingItemStep(item) } min={ shoppingItemMin(item) } name="quantity" value={ formatQty(item.Quantity) } />
-											if item.ProductID != nil {
-												<input type="hidden" name="unit" value={ string(item.Unit) } />
-												<span class="unit-fixed">{ string(item.Unit) }</span>
-											} else {
-												<select name="unit">
-													@DynamicUnitOptions(data.Units, item.Unit)
-												</select>
-											}
-										</form>
-									</div>
-								}
-							</div>
+							@ShoppingListItem(item, data)
 						}
 					</div>
 				</div>
