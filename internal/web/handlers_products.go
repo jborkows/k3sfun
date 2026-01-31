@@ -302,7 +302,37 @@ func (s *Server) handleMarkMissing(w http.ResponseWriter, r *http.Request) {
 
 	ctx, cancel := context.WithTimeout(r.Context(), DefaultHandlerTimeout)
 	defer cancel()
-	if err := s.products.svc.MarkProductMissing(ctx, id); err != nil {
+
+	// Fetch current product to check if it's already missing
+	productsList, err := s.products.qry.ListProducts(ctx, products.ProductFilter{Limit: 1000})
+	if err != nil {
+		s.writeDBError(w, err)
+		return
+	}
+
+	var currentQty products.Quantity
+	found := false
+	for _, p := range productsList {
+		if p.ID == id {
+			currentQty = p.Quantity
+			found = true
+			break
+		}
+	}
+	if !found {
+		http.Error(w, "product not found", http.StatusNotFound)
+		return
+	}
+
+	// Toggle: if missing (qty=0), restore to 1, otherwise mark as missing (qty=0)
+	var newQty products.Quantity
+	if currentQty == 0 {
+		newQty = 1
+	} else {
+		newQty = 0
+	}
+
+	if err := s.products.svc.SetProductQuantity(ctx, id, newQty); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -398,7 +428,7 @@ func (s *Server) renderProductCard(w http.ResponseWriter, r *http.Request, id pr
 	defer cancel()
 
 	// Fetch all products and find the one with matching ID
-	productsList, err := s.products.qry.ListProducts(ctx, products.ProductFilter{Limit: 100})
+	productsList, err := s.products.qry.ListProducts(ctx, products.ProductFilter{Limit: 1000})
 	if err != nil {
 		s.writeDBError(w, err)
 		return

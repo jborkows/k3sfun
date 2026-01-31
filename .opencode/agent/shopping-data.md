@@ -45,7 +45,6 @@ CREATE TABLE products (
   icon_key TEXT NOT NULL DEFAULT 'cart',
   quantity_value REAL NOT NULL DEFAULT 0,      -- 0 means "missing/out of stock"
   quantity_unit TEXT NOT NULL DEFAULT 'sztuk', -- Options: sztuk, kg, litr, gramy, opakowanie
-  min_quantity_value REAL NOT NULL DEFAULT 0,
   integer_only INTEGER NOT NULL DEFAULT 0,     -- 1 for items counted in whole numbers
   created_at DATETIME,
   updated_at DATETIME
