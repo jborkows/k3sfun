@@ -39,15 +39,26 @@ func main() {
 		log.Fatalf("config: %v", err)
 	}
 
+	// Log database path (without sensitive info)
+	dsnForLog := cfg.DBDSN
+	if idx := strings.Index(dsnForLog, "?"); idx != -1 {
+		dsnForLog = dsnForLog[:idx]
+	}
+	slog.Info("Connecting to database", "dsn", dsnForLog)
+
 	conn, err := sqlite.Open(cfg.DBDSN)
 	if err != nil {
+		slog.Error("Failed to open database", "error", err, "dsn", dsnForLog)
 		log.Fatalf("db: %v", err)
 	}
 	defer conn.Close()
+	slog.Info("Database connection established")
 
 	if err := migrator.Up(conn); err != nil {
+		slog.Error("Migrations failed", "error", err)
 		log.Fatalf("migrate: %v", err)
 	}
+	slog.Info("Database migrations completed")
 
 	repo := sqlite.NewRepo(conn)
 	var productsQueries products.Queries = repo

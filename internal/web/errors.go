@@ -2,6 +2,7 @@ package web
 
 import (
 	"errors"
+	"log/slog"
 	"net/http"
 	"strings"
 
@@ -11,7 +12,10 @@ import (
 
 func (s *Server) writeDBError(w http.ResponseWriter, err error) {
 	msg := err.Error()
+	slog.Error("Database error", "error", err, "error_message", msg)
+
 	if strings.Contains(msg, "no such table") {
+		slog.Error("Database schema appears to be missing - table not found", "error", err)
 		http.Error(w, "database schema missing: run migrations in ./migrations (see README.md)", http.StatusInternalServerError)
 		return
 	}

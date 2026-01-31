@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/golang-migrate/migrate/v4"
@@ -15,33 +16,62 @@ import (
 )
 
 func Up(db *sql.DB) error {
+	slog.Info("Starting database migrations...")
+
 	src, err := iofs.New(appmigrations.FS, ".")
 	if err != nil {
-		return err
+		slog.Error("Failed to create migration source", "error", err)
+		return fmt.Errorf("migration source: %w", err)
 	}
 	defer func() { _ = src.Close() }()
 
 	driver, err := sqlite3.WithInstance(db, &sqlite3.Config{})
 	if err != nil {
-		return err
+		slog.Error("Failed to create migration driver", "error", err)
+		return fmt.Errorf("migration driver: %w", err)
 	}
 
 	m, err := migrate.NewWithInstance("iofs", src, "sqlite3", driver)
 	if err != nil {
-		return err
+		slog.Error("Failed to create migration instance", "error", err)
+		return fmt.Errorf("migration instance: %w", err)
 	}
 
-	if err := m.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
-		version, dirty, verr := m.Version()
-		if verr != nil && !errors.Is(verr, migrate.ErrNilVersion) {
-			return fmt.Errorf("migration failed: %w (could not get version: %v)", err, verr)
+	// Get current version before migration
+	versionBefore, dirtyBefore, _ := m.Version()
+	slog.Info("Migration state before", "version", versionBefore, "dirty", dirtyBefore)
+
+	if err := m.Up(); err != nil {
+		if errors.Is(err, migrate.ErrNoChange) {
+			slog.Info("No migrations to apply - database is up to date")
+		} else {
+			version, dirty, verr := m.Version()
+			if verr != nil && !errors.Is(verr, migrate.ErrNilVersion) {
+				slog.Error("Migration failed, could not get version", "error", err, "version_error", verr)
+				return fmt.Errorf("migration failed: %w (could not get version: %v)", err, verr)
+			}
+			slog.Error("Migration failed", "error", err, "version", version, "dirty", dirty)
+			return fmt.Errorf("migration failed at version %d (dirty=%v): %w", version, dirty, err)
 		}
-		return fmt.Errorf("migration failed at version %d (dirty=%v): %w", version, dirty, err)
+	} else {
+		versionAfter, _, _ := m.Version()
+		slog.Info("Migrations applied successfully", "version_before", versionBefore, "version_after", versionAfter)
 	}
+
+	slog.Info("Running post-migration checks...")
+
 	if err := ensureShoppingListDoneAt(db); err != nil {
-		return err
+		slog.Error("Failed to ensure shopping_list_items.done_at column", "error", err)
+		return fmt.Errorf("post-migration check (done_at): %w", err)
 	}
-	return ensureUnitForms(db)
+
+	if err := ensureUnitForms(db); err != nil {
+		slog.Error("Failed to ensure units forms columns", "error", err)
+		return fmt.Errorf("post-migration check (unit forms): %w", err)
+	}
+
+	slog.Info("Database migrations completed successfully")
+	return nil
 }
 
 func ensureShoppingListDoneAt(db *sql.DB) error {
