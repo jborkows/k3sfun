@@ -173,6 +173,39 @@ func (r *Repo) ListProducts(ctx context.Context, filter products.ProductFilter) 
 	return out, nil
 }
 
+// ListProductsAll returns all products without paging. Implemented to satisfy
+// the domain Queries interface when the UI needs to fetch a single product
+// by enumerating the full list (used by renderProductCard).
+func (r *Repo) ListProductsAll(ctx context.Context) ([]products.Product, error) {
+	rows, err := r.q.ListProductsAll(ctx)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]products.Product, 0, len(rows))
+	for _, p := range rows {
+		var gid *products.GroupID
+		if v, ok := p.GroupID.(int64); ok {
+			g := products.GroupID(v)
+			gid = &g
+		}
+		groupName := ""
+		if p.GroupName.Valid {
+			groupName = p.GroupName.String
+		}
+		out = append(out, products.Product{
+			ID:        products.ProductID(p.ID),
+			Name:      p.Name,
+			IconKey:   p.IconKey,
+			GroupID:   gid,
+			GroupName: groupName,
+			Quantity:  products.Quantity(p.QuantityValue),
+			Unit:      products.Unit(p.QuantityUnit),
+			UpdatedAt: p.UpdatedAt,
+		})
+	}
+	return out, nil
+}
+
 func (r *Repo) SuggestProductsByName(ctx context.Context, query string, limit int64) ([]products.Product, error) {
 	if limit <= 0 {
 		limit = 8

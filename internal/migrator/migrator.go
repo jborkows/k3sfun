@@ -50,7 +50,21 @@ func Up(db *sql.DB) error {
 				slog.Error("Migration failed, could not get version", "error", err, "version_error", verr)
 				return fmt.Errorf("migration failed: %w (could not get version: %v)", err, verr)
 			}
-			slog.Error("Migration failed", "error", err, "version", version, "dirty", dirty)
+			// Log structured error details for better observability
+			migrationFile := fmt.Sprintf("migrations/%03d_*.up.sql", version)
+			slog.Error("Migration failed",
+				"error", err,
+				"version", version,
+				"dirty", dirty,
+				"error_type", "migration_failure",
+				"migration_file", migrationFile,
+			)
+			if dirty {
+				slog.Error("Database is in dirty state. To fix: 1) Check the migration file for errors, 2) Run 'migrate -path migrations -database <dsn> force <previous_version>' to reset, 3) Fix the migration SQL, 4) Restart the application",
+					"migration_file", migrationFile,
+					"force_version", version-1,
+				)
+			}
 			return fmt.Errorf("migration failed at version %d (dirty=%v): %w", version, dirty, err)
 		}
 	} else {
