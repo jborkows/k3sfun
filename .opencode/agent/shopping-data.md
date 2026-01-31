@@ -41,13 +41,12 @@ CREATE TABLE groups (
 CREATE TABLE products (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT NOT NULL UNIQUE,
-  group_id INTEGER NULL REFERENCES groups(id),
+  group_id INTEGER NULL REFERENCES groups(id) ON DELETE SET NULL,
   icon_key TEXT NOT NULL DEFAULT 'cart',
   quantity_value REAL NOT NULL DEFAULT 0,      -- 0 means "missing/out of stock"
   quantity_unit TEXT NOT NULL DEFAULT 'sztuk', -- Options: sztuk, kg, litr, gramy, opakowanie
-  integer_only INTEGER NOT NULL DEFAULT 0,     -- 1 for items counted in whole numbers
-  created_at DATETIME,
-  updated_at DATETIME
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 ```
 
@@ -82,13 +81,11 @@ INSERT OR IGNORE INTO products (
   group_id,
   quantity_value,
   quantity_unit,
-  min_quantity_value,
-  integer_only,
   created_at,
   updated_at
 )
 VALUES
-  ('product name', 'icon-key', (SELECT id FROM groups WHERE name = 'group_name'), 0, 'unit', 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+  ('product name', 'icon-key', (SELECT id FROM groups WHERE name = 'group_name'), 0, 'unit', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 ```
 
 ### Down Migration (NNNN_description.down.sql)
@@ -149,6 +146,6 @@ Icons should be:
 - Product names are in Polish
 - Use `INSERT OR IGNORE` for products to avoid duplicates
 - New products start with `quantity_value = 0` (missing/out of stock)
-- Set `integer_only = 1` for items that shouldn't have decimal quantities (e.g., eggs, packages)
+- Use `quantity_unit = 'opakowanie'` for items counted in whole numbers (e.g., eggs, packages)
 - Icon rules use substring matching with priority ordering
 - Higher priority rules are checked first
