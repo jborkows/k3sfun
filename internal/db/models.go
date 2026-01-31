@@ -22,7 +22,6 @@ type Product struct {
 	IconKey       string
 	QuantityValue float64
 	QuantityUnit  string
-	Missing       int64
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
 }
@@ -67,6 +66,5 @@ type VProduct struct {
 	GroupName     sql.NullString
 	QuantityValue float64
 	QuantityUnit  string
-	Missing       int64
 	UpdatedAt     time.Time
 }

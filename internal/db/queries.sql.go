@@ -290,26 +290,15 @@ FROM v_products p
 ORDER BY p.name
 `
 
-type ListProductsAllRow struct {
-	ID            int64
-	Name          string
-	IconKey       string
-	GroupID       interface{}
-	GroupName     sql.NullString
-	QuantityValue float64
-	QuantityUnit  string
-	UpdatedAt     time.Time
-}
-
-func (q *Queries) ListProductsAll(ctx context.Context) ([]ListProductsAllRow, error) {
+func (q *Queries) ListProductsAll(ctx context.Context) ([]VProduct, error) {
 	rows, err := q.db.QueryContext(ctx, listProductsAll)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []ListProductsAllRow
+	var items []VProduct
 	for rows.Next() {
-		var i ListProductsAllRow
+		var i VProduct
 		if err := rows.Scan(
 			&i.ID,
 			&i.Name,
@@ -363,18 +352,7 @@ type ListProductsFilteredParams struct {
 	Offset   int64
 }
 
-type ListProductsFilteredRow struct {
-	ID            int64
-	Name          string
-	IconKey       string
-	GroupID       interface{}
-	GroupName     sql.NullString
-	QuantityValue float64
-	QuantityUnit  string
-	UpdatedAt     time.Time
-}
-
-func (q *Queries) ListProductsFiltered(ctx context.Context, arg ListProductsFilteredParams) ([]ListProductsFilteredRow, error) {
+func (q *Queries) ListProductsFiltered(ctx context.Context, arg ListProductsFilteredParams) ([]VProduct, error) {
 	query := listProductsFiltered
 	var queryParams []interface{}
 	queryParams = append(queryParams, arg.Column1)
@@ -396,9 +374,9 @@ func (q *Queries) ListProductsFiltered(ctx context.Context, arg ListProductsFilt
 		return nil, err
 	}
 	defer rows.Close()
-	var items []ListProductsFilteredRow
+	var items []VProduct
 	for rows.Next() {
-		var i ListProductsFilteredRow
+		var i VProduct
 		if err := rows.Scan(
 			&i.ID,
 			&i.Name,
@@ -437,26 +415,15 @@ WHERE p.quantity_value = 0
 ORDER BY p.name
 `
 
-type ListProductsMissingOrLowRow struct {
-	ID            int64
-	Name          string
-	IconKey       string
-	GroupID       interface{}
-	GroupName     sql.NullString
-	QuantityValue float64
-	QuantityUnit  string
-	UpdatedAt     time.Time
-}
-
-func (q *Queries) ListProductsMissingOrLow(ctx context.Context) ([]ListProductsMissingOrLowRow, error) {
+func (q *Queries) ListProductsMissingOrLow(ctx context.Context) ([]VProduct, error) {
 	rows, err := q.db.QueryContext(ctx, listProductsMissingOrLow)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []ListProductsMissingOrLowRow
+	var items []VProduct
 	for rows.Next() {
-		var i ListProductsMissingOrLowRow
+		var i VProduct
 		if err := rows.Scan(
 			&i.ID,
 			&i.Name,
