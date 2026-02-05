@@ -303,36 +303,8 @@ func (s *Server) handleMarkMissing(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), DefaultHandlerTimeout)
 	defer cancel()
 
-	// Fetch current product to check if it's already missing
-	productsList, err := s.products.qry.ListProducts(ctx, products.ProductFilter{Limit: 1000})
-	if err != nil {
-		s.writeDBError(w, err)
-		return
-	}
-
-	var currentQty products.Quantity
-	found := false
-	for _, p := range productsList {
-		if p.ID == id {
-			currentQty = p.Quantity
-			found = true
-			break
-		}
-	}
-	if !found {
-		http.Error(w, "product not found", http.StatusNotFound)
-		return
-	}
-
-	// Toggle: if missing (qty=0), restore to 1, otherwise mark as missing (qty=0)
-	var newQty products.Quantity
-	if currentQty == 0 {
-		newQty = 1
-	} else {
-		newQty = 0
-	}
-
-	if err := s.products.svc.SetProductQuantity(ctx, id, newQty); err != nil {
+	// Always mark as missing (qty=0)
+	if err := s.products.svc.SetProductQuantity(ctx, id, 0); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -454,18 +426,18 @@ func (s *Server) renderProductCard(w http.ResponseWriter, r *http.Request, id pr
 	}
 
 	// Parse current filter state to maintain context
-	_, nameQuery, groupNames, formGroupIDs, _ := parseProductsListQuery(r)
+	onlyMissing, nameQuery, groupNames, formGroupIDs, page := parseProductsListQuery(r)
 	groupIDs := resolveGroupNames(groupNames, groups)
 	if len(groupIDs) == 0 {
 		groupIDs = formGroupIDs
 	}
-	onlyMissing := r.URL.Query().Get("missing") == "1"
 
 	listData := views.ProductsListData{
 		Groups:           groups,
 		OnlyMissing:      onlyMissing,
 		NameQuery:        nameQuery,
 		SelectedGroupIDs: groupIDs,
+		Page:             page,
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
