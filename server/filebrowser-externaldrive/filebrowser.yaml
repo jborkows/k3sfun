@@ -146,7 +146,7 @@ spec:
             - -c
             - |
               # Download filebrowser binary
-              wget -qO /tmp/filebrowser.tar.gz https://github.com/filebrowser/filebrowser/releases/download/v2.31.2/linux-amd64-filebrowser.tar.gz
+              wget -qO /tmp/filebrowser.tar.gz https://github.com/filebrowser/filebrowser/releases/download/v2.61.2/linux-amd64-filebrowser.tar.gz
               tar -xzf /tmp/filebrowser.tar.gz -C /tmp
               chmod +x /tmp/filebrowser
               

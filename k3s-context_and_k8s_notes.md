@@ -14,3 +14,29 @@ kubectl config get-contexts
 kubectl config rename-context <old-context-name> my-server-name
 kubectl config use-context my-server-name
 ```
+
+# Utils
+## Switch name space
+```bash 
+kubectl config set-context --current --namespace=applications
+```
+## Get names of pods
+```bash 
+kubectl get pods -o custom-columns=":metadata.name" 
+```
+Using it to get shopping list logs
+```bash
+kubectl get pods -o custom-columns=":metadata.name" | rg shopping | xargs kubectl logs
+# or
+kubectl logs -l app=shoppinglist --tail=100 -f
+# or
+kubectl get pods -l app=shoppinglist -o custom-columns=":metadata.name"
+```
+## Restart deployment
+
+```bash
+kubectl rollout restart deployment/shoppinglist
+``` 
+
+
+

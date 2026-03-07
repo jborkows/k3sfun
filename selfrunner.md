@@ -94,3 +94,18 @@ A new listener is created automatically. New runners will register with the
 kubectl get autoscalinglistener,ephemeralrunnerset,ephemeralrunner -n actions-runner-system
 ```
 
+## Errors
+### Constant restart due to registration:
+```bash 
+# To re-install the runners in a cluster:
+export namespace=$namespace
+
+# Remove the annotations from the autoscalingrunner
+kubectl -n $namespace get autoscalingrunnerset --no-headers | awk '{print $1}' | xargs kubectl -n $namespace patch autoscalingrunnersets --type=merge -p='{"metadata": {"annotations": {"actions.github.com/values-hash": null,"runner-scale-set-id": null}}}'
+
+# Remove the ephemeralrunnersets
+kubectl -n $namespace get ephemeralrunnerset --no-headers | awk '{print $1}' | xargs  kubectl -n $namespace delete ephemeralrunnerset
+
+# Remove the annotation from the autoscalinglistener
+kubectl -n $namespace get autoscalinglistener --no-headers | awk '{print $1}' | xargs kubectl -n $namespace patch autoscalinglistener --type=merge -p='{"metadata": {"annotations": {"actions.github.com/runner-spec-hash": null}}}'
+```
