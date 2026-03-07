@@ -8,24 +8,37 @@ spec:
   repo: https://helm.traefik.io/traefik
   targetNamespace: kube-system
   set:
-    additionalArguments[4]: "--log.level=DEBUG"
-    additionalArguments[5]: "--entrypoints.web.address=:80"
-    additionalArguments[6]: "--entrypoints.websecure.address=:443"
+    additionalArguments[0]: "--log.level=DEBUG"
   valuesContent: |-
     api:
       dashboard: true
-
-    entryPoints:
+    
+    ports:
       web:
-        address: ":80"
+        port: 8000
+        expose:
+          default: true
+        exposedPort: 80
+        protocol: TCP
         http:
           redirections:
             entryPoint:
               to: websecure
               scheme: https
+              permanent: true
       websecure:
-        address: ":443"
-
+        port: 8443
+        expose:
+          default: true
+        exposedPort: 443
+        protocol: TCP
+        http:
+          tls:
+            enabled: true
+        http3:
+          enabled: true
+          advertisedPort: 443
+    
     providers:
       kubernetesIngress:
         enabled: true
@@ -33,3 +46,10 @@ spec:
           enabled: true
       kubernetesCRD:
         enabled: true
+    
+    service:
+      enabled: true
+      single: false
+      annotations:
+        metallb.universe.tf/loadBalancerIPs: 192.168.0.124
+        metallb.universe.tf/allow-shared-ip: "traefik-shared"
