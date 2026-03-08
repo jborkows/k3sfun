@@ -1,8 +1,24 @@
 # HTTP/3 Configuration in K3s Traefik
 
-## Status: PARTIALLY WORKING ✅
+## Status: CONFIGURED ✅
 
-Some applications are successfully using HTTP/3, while others remain on HTTP/2.
+HTTP/3 has been successfully enabled on the cluster.
+
+### Fix Applied (2026-03-08)
+
+The `ERR_QUIC_PROTOCOL_ERROR` was caused by HTTP/3 not being properly configured in Traefik. The following changes were made:
+
+1. Created `traefik-config.yaml` with HTTP/3 enabled
+2. Applied HelmChart configuration with:
+   - `http3.enabled: true` on websecure port
+   - `service.single: false` to create separate TCP and UDP services
+   - Both services share the same MetalLB IP (192.168.0.124)
+
+### Result
+- ✅ TCP Service: `traefik` on port 443 (HTTPS)
+- ✅ UDP Service: `traefik-udp` on port 443 (HTTP/3/QUIC)
+- ✅ Both services use the same LoadBalancer IP
+- ✅ UDP port 443 is reachable and responding
 
 ### Working Applications (HTTP/3)
 
