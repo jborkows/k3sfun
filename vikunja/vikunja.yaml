@@ -1,0 +1,233 @@
+---
+# Task 1: Core Infrastructure Setup
+# This file creates the basic Vikunja deployment with namespace, ConfigMap, Deployment, Service, and Ingress.
+# Authentication (Task 2) and Auto-Transition (Task 3) will be added as additional containers.
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: vikunja
+  labels:
+    app: vikunja
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vikunja-config
+  namespace: vikunja
+data:
+  config.yml: |
+    service:
+      # Public URL - DOMAIN placeholder replaced during deployment
+      publicurl: "https://vikunja.DOMAIN"
+      
+      # Allow user registration (users created via OIDC will auto-register)
+      enableregistration: true
+      
+      # Timezone for the application
+      timezone: "UTC"
+      
+      # JWT settings
+      jwtttl: 259200
+      jwtttllong: 2592000
+      
+      # Interface settings
+      interface: ":3456"
+      
+      # Enable CalDAV for calendar integration
+      enablecaldav: true
+      
+      # Enable task attachments
+      enabletaskattachments: true
+      
+      # Enable task comments
+      enabletaskcomments: true
+    
+    database:
+      # Using SQLite for simplicity
+      type: sqlite
+      # Path inside container (matches hostPath mount)
+      path: /app/vikunja/db/vikunja.db
+    
+    files:
+      # Path for task attachments
+      basepath: /app/vikunja/files
+      maxsize: "100MB"
+    
+    auth:
+      # Keep local auth enabled for admin fallback
+      local:
+        enabled: true
+      
+      # OpenID Connect configuration
+      # Note: OAuth2 proxy handles the actual OIDC flow, Vikunja just needs to know
+      # it's behind a trusted proxy and can accept forwarded headers
+      openid:
+        enabled: false  # Disabled - using oauth2-proxy instead
+    
+    log:
+      enabled: true
+      standard: stdout
+      level: INFO
+      format: text
+    
+    # CORS settings
+    cors:
+      enable: true
+      origins:
+        - "https://vikunja.DOMAIN"
+      
+    # Key-value store (in-memory is fine for single replica)
+    keyvalue:
+      type: memory
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vikunja
+  namespace: vikunja
+  labels:
+    app: vikunja
+spec:
+  replicas: 1  # SQLite only supports single replica
+  selector:
+    matchLabels:
+      app: vikunja
+  template:
+    metadata:
+      labels:
+        app: vikunja
+    spec:
+      # Init container to ensure proper permissions on database directory
+      initContainers:
+        - name: init-permissions
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - |
+              echo "Initializing Vikunja directories..."
+              mkdir -p /app/vikunja/db
+              mkdir -p /app/vikunja/files
+              chown -R 1000:1000 /app/vikunja
+              chmod 755 /app/vikunja
+              chmod 755 /app/vikunja/db
+              chmod 755 /app/vikunja/files
+              echo "Permissions set successfully"
+          volumeMounts:
+            - name: vikunja-db
+              mountPath: /app/vikunja/db
+            - name: vikunja-files
+              mountPath: /app/vikunja/files
+          securityContext:
+            runAsUser: 0
+      
+      containers:
+        # Main Vikunja container
+        - name: vikunja
+          image: vikunja/vikunja:latest
+          ports:
+            - containerPort: 3456
+              name: http
+          volumeMounts:
+            - name: vikunja-config
+              mountPath: /app/vikunja/config.yml
+              subPath: config.yml
+            - name: vikunja-db
+              mountPath: /app/vikunja/db
+            - name: vikunja-files
+              mountPath: /app/vikunja/files
+          env:
+            - name: VIKUNJA_SERVICE_PUBLICURL
+              value: "https://vikunja.DOMAIN"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 1000m
+              memory: 1Gi
+          livenessProbe:
+            httpGet:
+              path: /api/v1/info
+              port: 3456
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /api/v1/info
+              port: 3456
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 3
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop:
+                - ALL
+      
+      volumes:
+        - name: vikunja-config
+          configMap:
+            name: vikunja-config
+        - name: vikunja-db
+          hostPath:
+            # Uses external disk same as filebrowser
+            path: /mnt/external/vikunja-db
+            type: DirectoryOrCreate
+        - name: vikunja-files
+          hostPath:
+            # Uses external disk same as filebrowser
+            path: /mnt/external/vikunja-files
+            type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vikunja
+  namespace: vikunja
+  labels:
+    app: vikunja
+spec:
+  selector:
+    app: vikunja
+  ports:
+    - port: 80
+      targetPort: 3456
+      name: http
+  type: ClusterIP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: vikunja
+  namespace: vikunja
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    # Allow larger uploads for attachments
+    traefik.ingress.kubernetes.io/buffering: |
+      maxRequestBodyBytes: 104857600
+      memRequestBodyBytes: 10485760
+    # Enable TLS
+    traefik.ingress.kubernetes.io/router.tls: "true"
+spec:
+  rules:
+    - host: vikunja.DOMAIN
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: vikunja
+                port:
+                  number: 80
+  tls:
+    - hosts:
+        - vikunja.DOMAIN
+      # Uses default cert resolver from Traefik
+      # secretName: vikunja-tls

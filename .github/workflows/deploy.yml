@@ -1,22 +1,22 @@
-name: Deploy mainpage
+name: Deploy Vikunja
 
 on:
   push:
-    branches: [master]
+    branches: [vikunja]
     paths:
-      - 'mainpage/**'
+      - 'vikunja/**'
       - '.github/workflows/deploy.yml'
     tags:
-      - "deploy*"
+      - "vikunja-*"
   workflow_dispatch: {}
 
 concurrency:
-  group: deploy-${{ github.ref }}
+  group: deploy-vikunja-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   deploy:
-    name: Apply Kubernetes manifest
+    name: Deploy Vikunja with OIDC
     runs-on: k3s-home-runner
     container:
       image: bitnami/kubectl:latest
@@ -55,31 +55,63 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          kubectl get namespace applications >/dev/null 2>&1 || kubectl create namespace applications
+          kubectl get namespace vikunja >/dev/null 2>&1 || kubectl create namespace vikunja
 
-      - name: Update mainpage ConfigMap (replace DOMAIN)
+      - name: Check OIDC secret exists
         shell: bash
         run: |
           set -euo pipefail
-          tmp_dir="$(mktemp -d)"
-          sed \
-            -e "s/DOMAIN_NAME/${DOMAIN_NAME}/g" \
-            -e "s/DOMAIN/${DOMAIN_NAME}/g" \
-            "mainpage/index.html" > "${tmp_dir}/index.html"
-          cp -a mainpage/*.css mainpage/*.js mainpage/*.svg "${tmp_dir}/"
-          kubectl -n applications create configmap dashboard-links-site \
-            --from-file="${tmp_dir}/index.html" \
-            --from-file="${tmp_dir}/style.css" \
-            --from-file="${tmp_dir}/script.js" \
-            --from-file="${tmp_dir}/mainpage.svg" \
-            --dry-run=client -o yaml | kubectl apply -f -
+          if kubectl get secret vikunja-oidc -n vikunja >/dev/null 2>&1; then
+            echo "OIDC secret exists - authentication will be enabled"
+            echo "OIDC_ENABLED=true" >> $GITHUB_ENV
+          else
+            echo "::warning::OIDC secret 'vikunja-oidc' not found in namespace 'vikunja'"
+            echo "::warning::Vikunja will be deployed but without OIDC authentication"
+            echo "::warning::Create the secret manually using: kubectl create secret generic vikunja-oidc ..."
+            echo "OIDC_ENABLED=false" >> $GITHUB_ENV
+          fi
 
-      - name: Deploy manifest (replace DOMAIN_NAME / DOMAIN)
+      - name: Deploy Vikunja manifests
         shell: bash
         run: |
           set -euo pipefail
-          manifest_path="mainpage/mainpage.yml"
-          sed \
-            -e "s/DOMAIN_NAME/${DOMAIN_NAME}/g" \
-            -e "s/DOMAIN/${DOMAIN_NAME}/g" \
-            "$manifest_path" | kubectl apply -f -
+          manifest_path="vikunja/vikunja.yaml"
+          sed "s/DOMAIN/${DOMAIN_NAME}/g" "$manifest_path" | kubectl apply -f -
+
+      - name: Wait for deployment
+        shell: bash
+        run: |
+          set -euo pipefail
+          kubectl rollout status deployment/vikunja -n vikunja --timeout=180s || {
+            echo "::error::Deployment did not become ready within timeout"
+            echo "Pod status:"
+            kubectl get pods -n vikunja
+            echo ""
+            echo "Recent events:"
+            kubectl get events -n vikunja --sort-by='.lastTimestamp' | tail -20
+            exit 1
+          }
+
+      - name: Deployment summary
+        shell: bash
+        run: |
+          echo "======================================"
+          echo "Vikunja deployed successfully!"
+          echo "======================================"
+          echo ""
+          echo "URL: https://vikunja.${DOMAIN_NAME}"
+          echo ""
+          if [[ "${OIDC_ENABLED}" == "true" ]]; then
+            echo "Authentication: OIDC enabled via Tailscale tsidp"
+          else
+            echo "Authentication: Local only (OIDC secret missing)"
+          fi
+          echo ""
+          echo "Pod status:"
+          kubectl get pods -n vikunja
+          echo ""
+          echo "Services:"
+          kubectl get svc -n vikunja
+          echo ""
+          echo "Ingress:"
+          kubectl get ingress -n vikunja

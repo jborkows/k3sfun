@@ -1,1 +1,42 @@
-envfile
+# Ignore local environment files
+.env
+.env.local
+
+# Ignore kubeconfig files
+kubeconfig
+.kubeconfig
+*.kubeconfig
+
+# Ignore backup files
+*.backup
+*.bak
+*~
+
+# Ignore OS files
+.DS_Store
+Thumbs.db
+
+# Ignore temporary files
+*.tmp
+*.temp
+tmp/
+temp/
+
+# Ignore IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Ignore downloaded binaries
+*.tar.gz
+*.zip
+
+# Ignore database files (local testing)
+*.db
+*.sqlite
+*.sqlite3
+
+# Ignore logs
+*.log
+logs/
