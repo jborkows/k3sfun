@@ -8,8 +8,11 @@ spec:
   repo: https://helm.traefik.io/traefik
   targetNamespace: kube-system
   set:
-    additionalArguments[0]: "--log.level=DEBUG"
+    additionalArguments[0]: "--log.level=INFO"
   valuesContent: |-
+    image:
+      repository: rancher/mirrored-library-traefik
+      tag: "3.6.9"
     api:
       dashboard: true
     

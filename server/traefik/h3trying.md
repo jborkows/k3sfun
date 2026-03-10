@@ -14,6 +14,25 @@ The `ERR_QUIC_PROTOCOL_ERROR` was caused by HTTP/3 not being properly configured
    - `service.single: false` to create separate TCP and UDP services
    - Both services share the same MetalLB IP (192.168.0.124)
 
+### Fix Applied (2026-03-09) - Missing websecure Port
+
+**Issue**: After recent changes, HTTPS services (including pihole.borkowskij.com/admin) became inaccessible.
+
+**Root Cause**: The k3s Traefik addon HelmChart was missing the `websecure` port configuration in `ports`. This caused the Traefik pod to not expose port 8443, resulting in no service endpoint for port 443.
+
+**Symptoms**:
+- `kubectl describe svc traefik -n kube-system` showed empty Endpoints for port 443
+- External connections to HTTPS services timed out
+- Pod was listening on 8443 internally but port wasn't declared in container spec
+
+**Solution**:
+```bash
+# Patch the HelmChart to include websecure port and image configuration
+kubectl patch helmchart -n kube-system traefik --type=merge -p '{"spec":{"valuesContent":"image:\n  repository: rancher/mirrored-library-traefik\n  tag: \"3.6.9\"\napi:\n  dashboard: true\nports:\n  web:\n    port: 8000\n    expose:\n      default: true\n    exposedPort: 80\n    protocol: TCP\n    http:\n      redirections:\n        entryPoint:\n          to: websecure\n          scheme: https\n          permanent: true\n  websecure:\n    port: 8443\n    expose:\n      default: true\n    exposedPort: 443\n    protocol: TCP\n    http:\n      tls:\n        enabled: true\n    http3:\n      enabled: true\n      advertisedPort: 443\nproviders:\n  kubernetesIngress:\n    enabled: true\n    publishedService:\n      enabled: true\n  kubernetesCRD:\n    enabled: true\nservice:\n  enabled: true\n  single: false\n  annotations:\n    metallb.universe.tf/loadBalancerIPs: 192.168.0.124\n    metallb.universe.tf/allow-shared-ip: traefik-shared"}}'
+```
+
+**Note**: The k3s addon controller manages the Traefik HelmChart. When patching, ensure the `image` section is included with the correct tag format (`3.6.9` not `v3.6.9`).
+
 ### Result
 - ✅ TCP Service: `traefik` on port 443 (HTTPS)
 - ✅ UDP Service: `traefik-udp` on port 443 (HTTP/3/QUIC)
