@@ -115,3 +115,4 @@ jobs:
           echo ""
           echo "Ingress:"
           kubectl get ingress -n vikunja
+
