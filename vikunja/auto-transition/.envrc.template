@@ -1,0 +1,6 @@
+export VIKUNJA_API_URL=url
+export VIKUNJA_API_TOKEN=token
+export PROJECT_ID=number
+export VIEW_ID=number
+export CHECK_INTERVAL=60
+

@@ -1,27 +1,37 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"os"
+	"strconv"
 	"time"
 )
 
 const (
 	defaultAPIURL        = "http://localhost:3456"
-	defaultCheckInterval = 300 // 5 minutes
+	defaultCheckInterval = 1 * 60 * 60
+	defaultProjectID     = 2
+	defaultViewID        = 8
 
 	envAPIURL        = "VIKUNJA_API_URL"
 	envAPIToken      = "VIKUNJA_API_TOKEN"
 	envCheckInterval = "CHECK_INTERVAL"
+	envProjectID     = "PROJECT_ID"
+	envViewID        = "VIEW_ID"
 )
 
-type Config struct {
+type autoTransitionConfig struct {
 	APIURL        string
 	APIToken      string
 	CheckInterval time.Duration
+	ProjectID     int
+	ViewID        int
 }
 
-func loadConfig() Config {
+type Config = autoTransitionConfig
+
+func loadConfig() autoTransitionConfig {
 	apiURL := os.Getenv(envAPIURL)
 	if apiURL == "" {
 		apiURL = defaultAPIURL
@@ -34,14 +44,37 @@ func loadConfig() Config {
 		}
 	}
 
-	return Config{
+	projectID := defaultProjectID
+	if val := os.Getenv(envProjectID); val != "" {
+		if parsed, err := strconv.Atoi(val); err == nil {
+			projectID = parsed
+		}
+	}
+
+	viewID := defaultViewID
+	if val := os.Getenv(envViewID); val != "" {
+		if parsed, err := strconv.Atoi(val); err == nil {
+			viewID = parsed
+		}
+	}
+
+	apiToken := os.Getenv(envAPIToken)
+	if apiToken == "" {
+		if data, err := os.ReadFile("/secrets/API_TOKEN"); err == nil {
+			apiToken = string(bytes.TrimSpace(data))
+		}
+	}
+
+	return autoTransitionConfig{
 		APIURL:        apiURL,
-		APIToken:      os.Getenv(envAPIToken),
+		APIToken:      apiToken,
 		CheckInterval: time.Duration(interval) * time.Second,
+		ProjectID:     projectID,
+		ViewID:        viewID,
 	}
 }
 
-func loadConfigWithToken() Config {
+func loadConfigWithToken() autoTransitionConfig {
 	config := loadConfig()
 
 	info("Vikunja Auto-Transition Sidecar starting...")
