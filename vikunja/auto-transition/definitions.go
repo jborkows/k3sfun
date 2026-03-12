@@ -10,6 +10,8 @@ const (
 	awaitingBucket = BucketName("Awaiting")
 	todoBucket     = BucketName("To-Do")
 	doneBucket     = BucketName("Done")
+	doingBucket    = BucketName("Doing")
+	pendingBucket  = BucketName("Pending")
 	archiveBucket  = BucketName("Archive")
 )
 
