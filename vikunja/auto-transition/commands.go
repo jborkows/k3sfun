@@ -71,3 +71,26 @@ func (a *AutoTransition) archiveOldTasks() {
 		}
 	}
 }
+
+func (a *AutoTransition) moveBlockedTasksToAwaiting() {
+	blockedTasks, err := a.blockedTasksInTodo()
+	if err != nil {
+		info("Error getting blocked tasks in todo: %v", err)
+		return
+	}
+
+	if len(blockedTasks) == 0 {
+		info("No blocked tasks in todo bucket")
+		return
+	}
+
+	info("Found %d blocked task(s) in todo bucket:", len(blockedTasks))
+	for _, task := range blockedTasks {
+		info("Moving blocked task to awaiting: %s (ID: %d)", task.Title, task.ID)
+		if err := a.moveTaskToBucket(task.ID, awaitingBucket); err != nil {
+			info("  ERROR: Failed to move task: %v", err)
+		} else {
+			info("  Successfully moved to awaiting bucket")
+		}
+	}
+}

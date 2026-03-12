@@ -111,3 +111,35 @@ func (a *AutoTransition) tasksToArchive() ([]Task, error) {
 
 	return result, nil
 }
+
+func (a *AutoTransition) blockedTasksInTodo() ([]Task, error) {
+	todoTasks, err := a.taskForBucket(todoBucket)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get tasks from todo bucket: %w", err)
+	}
+
+	activeBuckets := []BucketName{todoBucket, doingBucket, pendingBucket}
+	activeTaskIDs := make(map[int]bool)
+
+	for _, bucketName := range activeBuckets {
+		tasks, err := a.taskForBucket(bucketName)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get tasks from %s bucket: %w", bucketName, err)
+		}
+		for _, task := range tasks {
+			activeTaskIDs[task.ID] = true
+		}
+	}
+
+	var result []Task
+	for _, task := range todoTasks {
+		for _, blocker := range task.RelatedTasks.Blocked {
+			if activeTaskIDs[blocker.ID] {
+				result = append(result, task)
+				break
+			}
+		}
+	}
+
+	return result, nil
+}
