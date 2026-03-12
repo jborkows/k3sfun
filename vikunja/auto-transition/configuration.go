@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"fmt"
 	"os"
 	"strconv"
 	"time"
@@ -97,11 +96,4 @@ func loadConfigWithToken() autoTransitionConfig {
 	}
 
 	return config
-}
-
-func validateConfig(config Config) error {
-	if config.APIURL == "" {
-		return fmt.Errorf("API URL is required")
-	}
-	return nil
 }

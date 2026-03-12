@@ -12,7 +12,7 @@ type AutoTransition struct {
 func NewAutoTransition(config autoTransitionConfig) (*AutoTransition, error) {
 	buckets, err := buckets(config)
 	if err != nil {
-		return nil, fmt.Errorf("While initializing %w", err)
+		return nil, fmt.Errorf("while initializing %w", err)
 	}
 
 	return &AutoTransition{

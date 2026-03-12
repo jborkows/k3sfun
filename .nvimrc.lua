@@ -65,7 +65,8 @@ if has_lint then
 	golangcilint.cmd = "golangci-lint"
 	golangcilint.args = {
 		"run",
-		"--out-format", "json",
+		"--no-config",
+		"--output.json.path", "stdout",
 		"--issues-exit-code", "0",
 		"--show-stats=false",
 	}

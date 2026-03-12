@@ -23,7 +23,11 @@ func buckets(a autoTransitionConfig) (BucketMapping, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			errlog("Failed to close response body: %v", err)
+		}
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
@@ -34,7 +38,7 @@ func buckets(a autoTransitionConfig) (BucketMapping, error) {
 		return nil, fmt.Errorf("failed to decode buckets: %w", err)
 	}
 
-	var bucketCache BucketMapping = make(BucketMapping)
+	bucketCache := make(BucketMapping)
 	for _, b := range buckets {
 		bucketCache[BucketName(b.Title)] = BucketId(b.ID)
 	}
@@ -57,7 +61,11 @@ func (a *AutoTransition) taskDetailFor(taskID int) (*TaskWithRelations, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			errlog("Failed to close response body: %v", err)
+		}
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
@@ -91,7 +99,11 @@ func (a *AutoTransition) taskForBucket(bucketName BucketName) ([]Task, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			errlog("Failed to close response body: %v", err)
+		}
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
