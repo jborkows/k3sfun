@@ -14,13 +14,15 @@ func (a *AutoTransition) moveTaskToBucket(taskID int, targetBucketName BucketNam
 		return fmt.Errorf("bucket %q not found in bucket mapping", targetBucketName)
 	}
 
-	url := fmt.Sprintf("%s/api/v1/tasks/%d", a.APIURL, taskID)
+	// Use view-specific bucket endpoint for Kanban
+	url := fmt.Sprintf("%s/api/v1/projects/%d/views/%d/buckets/%d/tasks",
+		a.APIURL, a.ProjectID, a.ViewID, targetBucketID)
 
-	type updateRequest struct {
-		BucketID int `json:"bucket_id"`
+	type taskBucketRequest struct {
+		TaskID int `json:"task_id"`
 	}
 
-	body, err := json.Marshal(updateRequest{BucketID: int(targetBucketID)})
+	body, err := json.Marshal(taskBucketRequest{TaskID: taskID})
 	if err != nil {
 		return fmt.Errorf("failed to marshal request: %w", err)
 	}
@@ -61,6 +63,11 @@ func (a *AutoTransition) archiveOldTasks() {
 
 	info("Found %d task(s) to archive:", len(tasks))
 	for _, task := range tasks {
-		info("  Would move task to archive: %s (ID: %d, DoneAt: %s)", task.Title, task.ID, task.DoneAt.Format(time.RFC3339))
+		info("Moving task to archive: %s (ID: %d, DoneAt: %s)", task.Title, task.ID, task.DoneAt.Format(time.RFC3339))
+		if err := a.moveTaskToBucket(task.ID, archiveBucket); err != nil {
+			info("  ERROR: Failed to move task: %v", err)
+		} else {
+			info("  Successfully moved to archive bucket")
+		}
 	}
 }
