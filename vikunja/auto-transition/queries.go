@@ -143,3 +143,65 @@ func (a *AutoTransition) blockedTasksInTodo() ([]Task, error) {
 
 	return result, nil
 }
+
+func (a *AutoTransition) unblockedTasksInAwaiting() ([]Task, error) {
+	awaitingTasks, err := a.taskForBucket(awaitingBucket)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get tasks from awaiting bucket: %w", err)
+	}
+
+	doneTasks, err := a.taskForBucket(doneBucket)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get tasks from done bucket: %w", err)
+	}
+
+	doneTaskIDs := make(map[int]bool)
+	for _, task := range doneTasks {
+		doneTaskIDs[task.ID] = true
+	}
+
+	var result []Task
+	for _, task := range awaitingTasks {
+		if len(task.RelatedTasks.Blocked) == 0 {
+			continue
+		}
+
+		allBlockersDone := true
+		for _, blocker := range task.RelatedTasks.Blocked {
+			if !doneTaskIDs[blocker.ID] {
+				allBlockersDone = false
+				break
+			}
+		}
+
+		if allBlockersDone {
+			result = append(result, task)
+		}
+	}
+
+	return result, nil
+}
+
+func (a *AutoTransition) tasksToDeleteFromArchive() ([]Task, error) {
+	tasks, err := a.taskForBucket(archiveBucket)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get tasks from archive bucket: %w", err)
+	}
+
+	threshold := time.Now().AddDate(0, 0, -7)
+
+	var result []Task
+	for _, task := range tasks {
+		if !task.Done {
+			continue
+		}
+		if task.DoneAt == nil {
+			continue
+		}
+		if task.DoneAt.Before(threshold) {
+			result = append(result, task)
+		}
+	}
+
+	return result, nil
+}

@@ -29,5 +29,9 @@ func (a *AutoTransition) Run() {
 
 	a.moveBlockedTasksToAwaiting()
 
+	a.moveUnblockedTasksToTodo()
+
+	a.deleteOldArchivedTasks()
+
 	info("Task checks complete")
 }
