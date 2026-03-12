@@ -210,12 +210,9 @@ spec:
                 - ALL
         
         # Auto-transition sidecar for automatic task state management
-        # DISABLED for now due to bugs - uncomment env var to re-enable
         - name: auto-transition
           image: jborkows/vikunja-auto-transition:latest
           env:
-            - name: DISABLE_AUTO_TRANSITION
-              value: "true"
             - name: VIKUNJA_API_URL
               value: "http://vikunja:80"
             - name: VIKUNJA_API_TOKEN
