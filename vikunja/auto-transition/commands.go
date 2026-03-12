@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"time"
 )
 
@@ -14,7 +13,6 @@ func (a *AutoTransition) moveTaskToBucket(taskID int, targetBucketName BucketNam
 		return fmt.Errorf("bucket %q not found in bucket mapping", targetBucketName)
 	}
 
-	// Use view-specific bucket endpoint for Kanban
 	url := fmt.Sprintf("%s/api/v1/projects/%d/views/%d/buckets/%d/tasks",
 		a.APIURL, a.ProjectID, a.ViewID, targetBucketID)
 
@@ -27,59 +25,14 @@ func (a *AutoTransition) moveTaskToBucket(taskID int, targetBucketName BucketNam
 		return fmt.Errorf("failed to marshal request: %w", err)
 	}
 
-	req, err := http.NewRequest("POST", url, bytes.NewReader(body))
-	if err != nil {
-		return fmt.Errorf("failed to create request: %w", err)
-	}
-
-	setAuthHeader(req, a.APIToken)
-	expectJSON(req)
-
-	client := &http.Client{Timeout: 30 * time.Second}
-	resp, err := client.Do(req)
-	if err != nil {
-		return fmt.Errorf("failed to execute request: %w", err)
-	}
-	defer func() {
-		if err := resp.Body.Close(); err != nil {
-			errlog("Failed to close response body: %v", err)
-		}
-	}()
-
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
-	}
-
-	return nil
+	_, err = a.post(url, bytes.NewReader(body))
+	return err
 }
 
 func (a *AutoTransition) deleteTask(taskID int) error {
 	url := fmt.Sprintf("%s/api/v1/tasks/%d", a.APIURL, taskID)
-
-	req, err := http.NewRequest("DELETE", url, nil)
-	if err != nil {
-		return fmt.Errorf("failed to create request: %w", err)
-	}
-
-	setAuthHeader(req, a.APIToken)
-	expectJSON(req)
-
-	client := &http.Client{Timeout: 30 * time.Second}
-	resp, err := client.Do(req)
-	if err != nil {
-		return fmt.Errorf("failed to execute request: %w", err)
-	}
-	defer func() {
-		if err := resp.Body.Close(); err != nil {
-			errlog("Failed to close response body: %v", err)
-		}
-	}()
-
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
-	}
-
-	return nil
+	_, err := a.delete(url)
+	return err
 }
 
 func (a *AutoTransition) archiveOldTasks() {

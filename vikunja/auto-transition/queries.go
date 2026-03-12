@@ -3,34 +3,21 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"time"
 )
 
 func buckets(a autoTransitionConfig) (BucketMapping, error) {
-
 	url := fmt.Sprintf("%s/api/v1/projects/%d/views/%d/buckets", a.APIURL, a.ProjectID, a.ViewID)
 
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
+	// Create a temporary AutoTransition to use the get method
+	temp := &AutoTransition{
+		autoTransitionConfig: a,
+		BucketMapping:        make(BucketMapping),
 	}
 
-	setAuthHeader(req, a.APIToken)
-
-	client := &http.Client{Timeout: 30 * time.Second}
-	resp, err := client.Do(req)
+	resp, err := temp.get(url)
 	if err != nil {
-		return nil, fmt.Errorf("failed to execute request: %w", err)
-	}
-	defer func() {
-		if err := resp.Body.Close(); err != nil {
-			errlog("Failed to close response body: %v", err)
-		}
-	}()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+		return nil, fmt.Errorf("failed to get buckets: %w", err)
 	}
 
 	var buckets []Bucket
@@ -49,26 +36,9 @@ func buckets(a autoTransitionConfig) (BucketMapping, error) {
 func (a *AutoTransition) taskDetailFor(taskID int) (*TaskWithRelations, error) {
 	url := fmt.Sprintf("%s/api/v1/tasks/%d", a.APIURL, taskID)
 
-	req, err := http.NewRequest("GET", url, nil)
+	resp, err := a.get(url)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
-	}
-
-	setAuthHeader(req, a.APIToken)
-
-	client := &http.Client{Timeout: 30 * time.Second}
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("failed to execute request: %w", err)
-	}
-	defer func() {
-		if err := resp.Body.Close(); err != nil {
-			errlog("Failed to close response body: %v", err)
-		}
-	}()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+		return nil, fmt.Errorf("failed to get task: %w", err)
 	}
 
 	var task TaskWithRelations
@@ -87,26 +57,9 @@ func (a *AutoTransition) taskForBucket(bucketName BucketName) ([]Task, error) {
 
 	url := fmt.Sprintf("%s/api/v1/projects/%d/views/%d/tasks", a.APIURL, a.ProjectID, a.ViewID)
 
-	req, err := http.NewRequest("GET", url, nil)
+	resp, err := a.get(url)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
-	}
-
-	setAuthHeader(req, a.APIToken)
-
-	client := &http.Client{Timeout: 30 * time.Second}
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("failed to execute request: %w", err)
-	}
-	defer func() {
-		if err := resp.Body.Close(); err != nil {
-			errlog("Failed to close response body: %v", err)
-		}
-	}()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+		return nil, fmt.Errorf("failed to get tasks: %w", err)
 	}
 
 	type viewBucket struct {
