@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"time"
 )
 
 func main() {
@@ -18,10 +19,10 @@ func main() {
 
 	at.Run()
 
-	// ticker := time.NewTicker(config.CheckInterval)
-	// defer ticker.Stop()
-	//
-	// for range ticker.C {
-	// 	at.Run()
-	// }
+	ticker := time.NewTicker(config.CheckInterval)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		at.Run()
+	}
 }

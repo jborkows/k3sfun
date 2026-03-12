@@ -42,6 +42,35 @@ func buckets(a autoTransitionConfig) (BucketMapping, error) {
 	return bucketCache, nil
 }
 
+func (a *AutoTransition) taskDetailFor(taskID int) (*TaskWithRelations, error) {
+	url := fmt.Sprintf("%s/api/v1/tasks/%d", a.APIURL, taskID)
+
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	setAuthHeader(req, a.APIToken)
+
+	client := &http.Client{Timeout: 30 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+	}
+
+	var task TaskWithRelations
+	if err := json.NewDecoder(resp.Body).Decode(&task); err != nil {
+		return nil, fmt.Errorf("failed to decode task: %w", err)
+	}
+
+	return &task, nil
+}
+
 func (a *AutoTransition) taskForBucket(bucketName BucketName) ([]Task, error) {
 	bucketID, exists := a.BucketMapping[bucketName]
 	if !exists {
@@ -118,30 +147,50 @@ func (a *AutoTransition) blockedTasksInTodo() ([]Task, error) {
 		return nil, fmt.Errorf("failed to get tasks from todo bucket: %w", err)
 	}
 
-	activeBuckets := []BucketName{todoBucket, doingBucket, pendingBucket}
-	activeTaskIDs := make(map[int]bool)
-
-	for _, bucketName := range activeBuckets {
-		tasks, err := a.taskForBucket(bucketName)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get tasks from %s bucket: %w", bucketName, err)
-		}
-		for _, task := range tasks {
-			activeTaskIDs[task.ID] = true
-		}
-	}
+	activeTaskIDs := a.activeTasks()
 
 	var result []Task
 	for _, task := range todoTasks {
-		for _, blocker := range task.RelatedTasks.Blocked {
-			if activeTaskIDs[blocker.ID] {
-				result = append(result, task)
-				break
-			}
+		fullTask, err := a.taskDetailFor(task.ID)
+		if err != nil {
+			warning("Failed to get task details for ID %d: %v", task.ID, err)
+			continue
+		}
+
+		if isBlockedByActive(*fullTask, activeTaskIDs) {
+			result = append(result, fullTask.Task)
 		}
 	}
 
 	return result, nil
+}
+
+func isBlockedByActive(task TaskWithRelations, activeTaskIDs TaskSet) bool {
+	for _, blocker := range task.RelatedTasks.Blocked {
+		if activeTaskIDs.Contains(blocker.ID) {
+			return true
+		}
+	}
+	for _, blocked := range task.RelatedTasks.Blocking {
+		if activeTaskIDs.Contains(blocked.ID) {
+			return true
+		}
+	}
+	return false
+}
+
+func (a *AutoTransition) activeTasks() TaskSet {
+	activeBuckets := []BucketName{todoBucket, doingBucket, pendingBucket}
+	activeTaskIDs := make(TaskSet)
+
+	for _, bucketName := range activeBuckets {
+		tasks, _ := a.taskForBucket(bucketName)
+		for _, task := range tasks {
+			activeTaskIDs.Add(TaskId(task.ID))
+		}
+	}
+
+	return activeTaskIDs
 }
 
 func (a *AutoTransition) unblockedTasksInAwaiting() ([]Task, error) {
@@ -150,36 +199,56 @@ func (a *AutoTransition) unblockedTasksInAwaiting() ([]Task, error) {
 		return nil, fmt.Errorf("failed to get tasks from awaiting bucket: %w", err)
 	}
 
-	doneTasks, err := a.taskForBucket(doneBucket)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get tasks from done bucket: %w", err)
-	}
-
-	doneTaskIDs := make(map[int]bool)
-	for _, task := range doneTasks {
-		doneTaskIDs[task.ID] = true
-	}
+	doneTaskIDs := a.doneTasks()
 
 	var result []Task
 	for _, task := range awaitingTasks {
-		if len(task.RelatedTasks.Blocked) == 0 {
+		fullTask, err := a.taskDetailFor(task.ID)
+		if err != nil {
+			warning("Failed to get task details for ID %d: %v", task.ID, err)
 			continue
 		}
 
-		allBlockersDone := true
-		for _, blocker := range task.RelatedTasks.Blocked {
-			if !doneTaskIDs[blocker.ID] {
-				allBlockersDone = false
-				break
-			}
+		blockerIDs := getBlockerIDs(*fullTask)
+		if len(blockerIDs) == 0 {
+			continue
 		}
 
-		if allBlockersDone {
-			result = append(result, task)
+		if allBlockersDone(blockerIDs, doneTaskIDs) {
+			result = append(result, fullTask.Task)
 		}
 	}
 
 	return result, nil
+}
+
+func getBlockerIDs(task TaskWithRelations) []TaskId {
+	var blockerIDs []TaskId
+	for _, b := range task.RelatedTasks.Blocked {
+		blockerIDs = append(blockerIDs, b.ID)
+	}
+	for _, b := range task.RelatedTasks.Blocking {
+		blockerIDs = append(blockerIDs, b.ID)
+	}
+	return blockerIDs
+}
+
+func allBlockersDone(blockerIDs []TaskId, doneTaskIDs TaskSet) bool {
+	for _, blockerID := range blockerIDs {
+		if !doneTaskIDs.Contains(blockerID) {
+			return false
+		}
+	}
+	return true
+}
+
+func (a *AutoTransition) doneTasks() TaskSet {
+	doneTasks, _ := a.taskForBucket(doneBucket)
+	doneTaskIDs := make(TaskSet)
+	for _, task := range doneTasks {
+		doneTaskIDs.Add(TaskId(task.ID))
+	}
+	return doneTaskIDs
 }
 
 func (a *AutoTransition) tasksToDeleteFromArchive() ([]Task, error) {
