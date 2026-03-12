@@ -1,5 +1,9 @@
 package main
 
+import (
+	"time"
+)
+
 type BucketName string
 
 const (
@@ -21,6 +25,7 @@ type Task struct {
 	ID           int          `json:"id"`
 	Title        string       `json:"title"`
 	Done         bool         `json:"done"`
+	DoneAt       *time.Time   `json:"done_at"`
 	Labels       []string     `json:"labels"`
 	StartDate    *string      `json:"start_date"`
 	BucketID     *BucketId    `json:"bucket_id"`

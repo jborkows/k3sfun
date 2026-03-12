@@ -87,3 +87,27 @@ func (a *AutoTransition) taskForBucket(bucketName BucketName) ([]Task, error) {
 
 	return []Task{}, nil
 }
+
+func (a *AutoTransition) tasksToArchive() ([]Task, error) {
+	tasks, err := a.taskForBucket(doneBucket)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get tasks from done bucket: %w", err)
+	}
+
+	var result []Task
+	todayStart := time.Now().Truncate(24 * time.Hour)
+
+	for _, task := range tasks {
+		if !task.Done {
+			continue
+		}
+		if task.DoneAt == nil {
+			continue
+		}
+		if task.DoneAt.Before(todayStart) {
+			result = append(result, task)
+		}
+	}
+
+	return result, nil
+}
