@@ -12,4 +12,5 @@ Files:
 - task.go contain main logic loop inside of function Run
 
 
-The Kanban view requires the view-specific bucket endpoint to properly move tasks between buckets
+The Kanban view requires the view-specific bucket endpoint to properly move tasks between buckets.
+Environment variables with api token are available.

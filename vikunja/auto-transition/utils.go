@@ -20,6 +20,12 @@ func errlog(format string, args ...interface{}) {
 	log.Printf("[ERROR] "+format, args...)
 }
 
+func cleanup(resp *http.Response) {
+	if err := resp.Body.Close(); err != nil {
+		errlog("Failed to close response body: %v", err)
+	}
+}
+
 func setAuthHeader(req *http.Request, token string) {
 	req.Header.Set("Authorization", "Bearer "+token)
 }
@@ -62,13 +68,8 @@ func (a *AutoTransition) doRequestFromReq(req *http.Request) (*http.Response, er
 		return nil, fmt.Errorf("failed to execute request: %w", err)
 	}
 
-	defer func() {
-		if err := resp.Body.Close(); err != nil {
-			errlog("Failed to close response body: %v", err)
-		}
-	}()
-
 	if resp.StatusCode != http.StatusOK {
+		cleanup(resp)
 		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 

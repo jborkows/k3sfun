@@ -9,7 +9,6 @@ import (
 func buckets(a autoTransitionConfig) (BucketMapping, error) {
 	url := fmt.Sprintf("%s/api/v1/projects/%d/views/%d/buckets", a.APIURL, a.ProjectID, a.ViewID)
 
-	// Create a temporary AutoTransition to use the get method
 	temp := &AutoTransition{
 		autoTransitionConfig: a,
 		BucketMapping:        make(BucketMapping),
@@ -19,6 +18,7 @@ func buckets(a autoTransitionConfig) (BucketMapping, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get buckets: %w", err)
 	}
+	defer cleanup(resp)
 
 	var buckets []Bucket
 	if err := json.NewDecoder(resp.Body).Decode(&buckets); err != nil {
@@ -40,6 +40,7 @@ func (a *AutoTransition) taskDetailFor(taskID int) (*TaskWithRelations, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get task: %w", err)
 	}
+	defer cleanup(resp)
 
 	var task TaskWithRelations
 	if err := json.NewDecoder(resp.Body).Decode(&task); err != nil {
@@ -61,6 +62,7 @@ func (a *AutoTransition) taskForBucket(bucketName BucketName) ([]Task, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get tasks: %w", err)
 	}
+	defer cleanup(resp)
 
 	type viewBucket struct {
 		ID    int    `json:"id"`
@@ -136,11 +138,6 @@ func isBlockedByActive(task TaskWithRelations, activeTaskIDs TaskSet) bool {
 			return true
 		}
 	}
-	for _, blocked := range task.RelatedTasks.Blocking {
-		if activeTaskIDs.Contains(blocked.ID) {
-			return true
-		}
-	}
 	return false
 }
 
@@ -190,9 +187,6 @@ func (a *AutoTransition) unblockedTasksInAwaiting() ([]Task, error) {
 func getBlockerIDs(task TaskWithRelations) []TaskId {
 	var blockerIDs []TaskId
 	for _, b := range task.RelatedTasks.Blocked {
-		blockerIDs = append(blockerIDs, b.ID)
-	}
-	for _, b := range task.RelatedTasks.Blocking {
 		blockerIDs = append(blockerIDs, b.ID)
 	}
 	return blockerIDs
