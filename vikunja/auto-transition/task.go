@@ -25,13 +25,11 @@ func (a *AutoTransition) Run() {
 	info("Running task checks...")
 	info("%v", a.BucketMapping)
 
-	a.archiveOldTasks()
+	a.deleteOldDoneTasks()
 
 	a.moveBlockedTasksToAwaiting()
 
 	a.moveUnblockedTasksToTodo()
-
-	a.deleteOldArchivedTasks()
 
 	info("Task checks complete")
 }

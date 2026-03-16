@@ -35,25 +35,25 @@ func (a *AutoTransition) deleteTask(taskID int) error {
 	return err
 }
 
-func (a *AutoTransition) archiveOldTasks() {
-	tasks, err := a.tasksToArchive()
+func (a *AutoTransition) deleteOldDoneTasks() {
+	tasks, err := a.tasksToDelete()
 	if err != nil {
-		info("Error getting tasks to archive: %v", err)
+		info("Error getting tasks to delete: %v", err)
 		return
 	}
 
 	if len(tasks) == 0 {
-		info("No tasks to archive")
+		info("No done tasks older than 7 days to delete")
 		return
 	}
 
-	info("Found %d task(s) to archive:", len(tasks))
+	info("Found %d done task(s) older than 7 days to delete:", len(tasks))
 	for _, task := range tasks {
-		info("Moving task to archive: %s (ID: %d, DoneAt: %s)", task.Title, task.ID, task.DoneAt.Format(time.RFC3339))
-		if err := a.moveTaskToBucket(task.ID, archiveBucket); err != nil {
-			info("  ERROR: Failed to move task: %v", err)
+		info("Deleting: %s (ID: %d, DoneAt: %s)", task.Title, task.ID, task.DoneAt.Format(time.RFC3339))
+		if err := a.deleteTask(task.ID); err != nil {
+			info("  ERROR: Failed to delete task: %v", err)
 		} else {
-			info("  Successfully moved to archive bucket")
+			info("  Successfully deleted task")
 		}
 	}
 }
@@ -97,32 +97,9 @@ func (a *AutoTransition) moveUnblockedTasksToTodo() {
 	for _, task := range unblockedTasks {
 		info("Moving unblocked task to todo: %s (ID: %d)", task.Title, task.ID)
 		if err := a.moveTaskToBucket(task.ID, todoBucket); err != nil {
-			info("  ERROR: Failed to move task: %v", err)
+			errlog("Failed to move task: %v", err)
 		} else {
-			info("  Successfully moved to todo bucket")
-		}
-	}
-}
-
-func (a *AutoTransition) deleteOldArchivedTasks() {
-	tasks, err := a.tasksToDeleteFromArchive()
-	if err != nil {
-		info("Error getting tasks to delete from archive: %v", err)
-		return
-	}
-
-	if len(tasks) == 0 {
-		info("No archived tasks older than 7 days to delete")
-		return
-	}
-
-	info("Found %d archived task(s) older than 7 days to delete:", len(tasks))
-	for _, task := range tasks {
-		info("  Deleting: %s (ID: %d, DoneAt: %s)", task.Title, task.ID, task.DoneAt.Format(time.RFC3339))
-		if err := a.deleteTask(task.ID); err != nil {
-			info("    ERROR: Failed to delete task: %v", err)
-		} else {
-			info("    Successfully deleted task")
+			info("Successfully moved to todo bucket")
 		}
 	}
 }

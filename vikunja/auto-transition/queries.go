@@ -84,14 +84,14 @@ func (a *AutoTransition) taskForBucket(bucketName BucketName) ([]Task, error) {
 	return []Task{}, nil
 }
 
-func (a *AutoTransition) tasksToArchive() ([]Task, error) {
+func (a *AutoTransition) tasksToDelete() ([]Task, error) {
 	tasks, err := a.taskForBucket(doneBucket)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get tasks from done bucket: %w", err)
 	}
 
 	var result []Task
-	todayStart := time.Now().Truncate(24 * time.Hour)
+	threshold := time.Now().AddDate(0, 0, -7)
 
 	for _, task := range tasks {
 		if !task.Done {
@@ -100,7 +100,7 @@ func (a *AutoTransition) tasksToArchive() ([]Task, error) {
 		if task.DoneAt == nil {
 			continue
 		}
-		if task.DoneAt.Before(todayStart) {
+		if task.DoneAt.Before(threshold) {
 			result = append(result, task)
 		}
 	}
@@ -208,28 +208,4 @@ func (a *AutoTransition) doneTasks() TaskSet {
 		doneTaskIDs.Add(TaskId(task.ID))
 	}
 	return doneTaskIDs
-}
-
-func (a *AutoTransition) tasksToDeleteFromArchive() ([]Task, error) {
-	tasks, err := a.taskForBucket(archiveBucket)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get tasks from archive bucket: %w", err)
-	}
-
-	threshold := time.Now().AddDate(0, 0, -7)
-
-	var result []Task
-	for _, task := range tasks {
-		if !task.Done {
-			continue
-		}
-		if task.DoneAt == nil {
-			continue
-		}
-		if task.DoneAt.Before(threshold) {
-			result = append(result, task)
-		}
-	}
-
-	return result, nil
 }

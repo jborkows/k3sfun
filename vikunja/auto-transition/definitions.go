@@ -12,7 +12,6 @@ const (
 	doneBucket     = BucketName("Done")
 	doingBucket    = BucketName("Doing")
 	pendingBucket  = BucketName("Pending")
-	archiveBucket  = BucketName("Archive")
 )
 
 type BucketId int

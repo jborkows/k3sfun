@@ -209,7 +209,7 @@ spec:
               drop:
                 - ALL
         
-        # Auto-transition sidecar for automatic task state management
+        # Auto-transition sidecar for automatic task state management (Project 2)
         - name: auto-transition
           image: jborkows/vikunja-auto-transition:latest
           env:
@@ -224,6 +224,35 @@ spec:
               value: "2"
             - name: VIEW_ID
               value: "8"
+            - name: CHECK_INTERVAL
+              value: "60"
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+          volumeMounts:
+            - name: vikunja-api
+              mountPath: /secrets
+              readOnly: true
+        
+        # Auto-transition sidecar for automatic task state management (Project 4)
+        - name: auto-transition-project-4
+          image: jborkows/vikunja-auto-transition:latest
+          env:
+            - name: VIKUNJA_API_URL
+              value: "http://vikunja:80"
+            - name: VIKUNJA_API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: vikunja-api
+                  key: API_TOKEN
+            - name: PROJECT_ID
+              value: "4"
+            - name: VIEW_ID
+              value: "16"
             - name: CHECK_INTERVAL
               value: "60"
           resources:
