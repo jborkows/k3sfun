@@ -31,5 +31,7 @@ func (a *AutoTransition) Run() {
 
 	a.moveUnblockedTasksToTodo()
 
+	a.findTasksBlockingDoneTasks()
+
 	info("Task checks complete")
 }

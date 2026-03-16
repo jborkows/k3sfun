@@ -109,27 +109,33 @@ func (a *AutoTransition) tasksToDelete() ([]Task, error) {
 }
 
 func (a *AutoTransition) blockedTasksInTodo() ([]Task, error) {
-	todoTasks, err := a.taskForBucket(todoBucket)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get tasks from todo bucket: %w", err)
-	}
+	blockedBuckets := []BucketName{todoBucket, doingBucket, pendingBucket}
 
-	activeTaskIDs := a.activeTasks()
+	var allBlockedTasks []Task
 
-	var result []Task
-	for _, task := range todoTasks {
-		fullTask, err := a.taskDetailFor(task.ID)
+	for _, bucketName := range blockedBuckets {
+		bucketTasks, err := a.taskForBucket(bucketName)
 		if err != nil {
-			warning("Failed to get task details for ID %d: %v", task.ID, err)
+			warning("Failed to get tasks from %s bucket: %v", bucketName, err)
 			continue
 		}
 
-		if isBlockedByActive(*fullTask, activeTaskIDs) {
-			result = append(result, fullTask.Task)
+		activeTaskIDs := a.activeTasks()
+
+		for _, task := range bucketTasks {
+			fullTask, err := a.taskDetailFor(task.ID)
+			if err != nil {
+				warning("Failed to get task details for ID %d: %v", task.ID, err)
+				continue
+			}
+
+			if isBlockedByActive(*fullTask, activeTaskIDs) {
+				allBlockedTasks = append(allBlockedTasks, fullTask.Task)
+			}
 		}
 	}
 
-	return result, nil
+	return allBlockedTasks, nil
 }
 
 func isBlockedByActive(task TaskWithRelations, activeTaskIDs TaskSet) bool {
@@ -172,11 +178,7 @@ func (a *AutoTransition) unblockedTasksInAwaiting() ([]Task, error) {
 		}
 
 		blockerIDs := getBlockerIDs(*fullTask)
-		if len(blockerIDs) == 0 {
-			continue
-		}
-
-		if allBlockersDone(blockerIDs, doneTaskIDs) {
+		if len(blockerIDs) == 0 || allBlockersDone(blockerIDs, doneTaskIDs) {
 			result = append(result, fullTask.Task)
 		}
 	}
@@ -208,4 +210,41 @@ func (a *AutoTransition) doneTasks() TaskSet {
 		doneTaskIDs.Add(TaskId(task.ID))
 	}
 	return doneTaskIDs
+}
+
+func (a *AutoTransition) findTasksBlockingDoneTasks() {
+	doneTaskIDs := a.doneTasks()
+	if len(doneTaskIDs) == 0 {
+		return
+	}
+
+	allBuckets := []BucketName{todoBucket, doingBucket, pendingBucket, awaitingBucket}
+	var affectedTasks []Task
+
+	for _, bucketName := range allBuckets {
+		tasks, err := a.taskForBucket(bucketName)
+		if err != nil {
+			continue
+		}
+
+		for _, task := range tasks {
+			fullTask, err := a.taskDetailFor(task.ID)
+			if err != nil {
+				continue
+			}
+
+			for _, blocker := range fullTask.RelatedTasks.Blocking {
+				if doneTaskIDs.Contains(blocker.ID) {
+					affectedTasks = append(affectedTasks, fullTask.Task)
+					info("Task %q (ID: %d) is incorrectly blocking done task ID: %d",
+						fullTask.Title, fullTask.ID, blocker.ID)
+				}
+			}
+		}
+	}
+
+	if len(affectedTasks) > 0 {
+		info("Found %d task(s) blocking done tasks - consider removing these relations",
+			len(affectedTasks))
+	}
 }
