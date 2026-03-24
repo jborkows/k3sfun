@@ -1,0 +1,397 @@
+// Package oidc provides OIDC (OpenID Connect) authentication middleware
+// and handlers for Go web applications.
+//
+// It supports the full OIDC/OAuth2 authentication flow, session management
+// with secure cookies, and route protection via middleware.
+package oidc
+
+import (
+	"context"
+	"crypto/rand"
+	"encoding/base64"
+	"net/http"
+	"strings"
+	"sync"
+	"time"
+
+	"github.com/coreos/go-oidc/v3/oidc"
+	"golang.org/x/oauth2"
+)
+
+// User represents an authenticated user.
+type User struct {
+	Subject string
+	Email   string
+	Name    string
+	Admin   bool
+}
+
+// Authenticator defines the interface for OIDC authentication.
+type Authenticator interface {
+	// Middleware wraps an http.Handler with authentication checks.
+	// Public paths (healthz, login, callback, static) are always allowed.
+	Middleware(next http.Handler) http.Handler
+
+	// HandleLogin initiates the OIDC authentication flow.
+	HandleLogin(w http.ResponseWriter, r *http.Request)
+
+	// HandleCallback processes the OIDC callback and establishes a session.
+	HandleCallback(w http.ResponseWriter, r *http.Request)
+
+	// HandleLogout clears the user session.
+	HandleLogout(w http.ResponseWriter, r *http.Request)
+
+	// CurrentUser returns the authenticated user from the request, if any.
+	CurrentUser(r *http.Request) (*User, bool)
+}
+
+// AuthenticationConfig holds OIDC configuration.
+type AuthenticationConfig struct {
+	// AuthDisabled disables authentication and returns a dev user.
+	// Useful for local development.
+	AuthDisabled bool
+
+	// OIDCIssuer is the OIDC provider URL (e.g., "https://accounts.google.com").
+	OIDCIssuer string
+
+	// OIDCClientID is the OAuth2 client ID.
+	OIDCClientID string
+
+	// OIDCClientSecret is the OAuth2 client secret.
+	OIDCClientSecret string
+
+	// OIDCRedirectURL is the callback URL registered with the provider.
+	OIDCRedirectURL string
+}
+
+// New creates a new Authenticator based on the provided configuration.
+// If AuthDisabled is true, returns a disabledAuth that allows all requests.
+func New(cfg AuthenticationConfig) (Authenticator, error) {
+	if cfg.AuthDisabled {
+		return &disabledAuth{}, nil
+	}
+	return newOIDC(cfg)
+}
+
+// disabledAuth is a no-op authenticator that allows all requests.
+// It returns a development user for CurrentUser.
+type disabledAuth struct{}
+
+func (a *disabledAuth) Middleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { next.ServeHTTP(w, r) })
+}
+
+func (a *disabledAuth) HandleLogin(w http.ResponseWriter, r *http.Request) {
+	http.Redirect(w, r, "/", http.StatusFound)
+}
+func (a *disabledAuth) HandleCallback(w http.ResponseWriter, r *http.Request) {
+	http.Redirect(w, r, "/", http.StatusFound)
+}
+func (a *disabledAuth) HandleLogout(w http.ResponseWriter, r *http.Request) {
+	http.Redirect(w, r, "/", http.StatusFound)
+}
+func (a *disabledAuth) CurrentUser(r *http.Request) (*User, bool) {
+	return &User{Subject: "dev", Email: "dev@example.com", Name: "Dev"}, true
+}
+
+// oidcAuth implements OIDC authentication.
+type oidcAuth struct {
+	oauth2Config oauth2.Config
+	verifier     *oidc.IDTokenVerifier
+
+	sessionsMu sync.RWMutex
+	sessions   map[string]session
+
+	stateCookieName string
+	nonceCookieName string
+	sessionCookie   string
+
+	stopCleanup chan struct{}
+}
+
+type session struct {
+	user      User
+	expiresAt time.Time
+}
+
+// newOIDC creates a new OIDC authenticator.
+func newOIDC(cfg AuthenticationConfig) (*oidcAuth, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	provider, err := oidc.NewProvider(ctx, cfg.OIDCIssuer)
+	if err != nil {
+		return nil, err
+	}
+
+	oauth2Config := oauth2.Config{
+		ClientID:     cfg.OIDCClientID,
+		ClientSecret: cfg.OIDCClientSecret,
+		RedirectURL:  cfg.OIDCRedirectURL,
+		Endpoint:     provider.Endpoint(),
+		Scopes:       []string{oidc.ScopeOpenID, "profile", "email"},
+	}
+
+	auth := &oidcAuth{
+		oauth2Config:    oauth2Config,
+		verifier:        provider.Verifier(&oidc.Config{ClientID: cfg.OIDCClientID}),
+		sessions:        map[string]session{},
+		stateCookieName: "oidc_state",
+		nonceCookieName: "oidc_nonce",
+		sessionCookie:   "shopping_session",
+		stopCleanup:     make(chan struct{}),
+	}
+
+	// Start background cleanup goroutine
+	go auth.cleanupExpiredSessions()
+
+	return auth, nil
+}
+
+// cleanupExpiredSessions periodically removes expired sessions to prevent memory leaks.
+func (a *oidcAuth) cleanupExpiredSessions() {
+	ticker := time.NewTicker(5 * time.Minute)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			a.removeExpired()
+		case <-a.stopCleanup:
+			return
+		}
+	}
+}
+
+// removeExpired removes all sessions that have passed their expiration time.
+func (a *oidcAuth) removeExpired() {
+	now := time.Now()
+	a.sessionsMu.Lock()
+	defer a.sessionsMu.Unlock()
+
+	for sid, sess := range a.sessions {
+		if now.After(sess.expiresAt) {
+			delete(a.sessions, sid)
+		}
+	}
+}
+
+// Close stops the background cleanup goroutine.
+func (a *oidcAuth) Close() {
+	close(a.stopCleanup)
+}
+
+func (a *oidcAuth) Middleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if isPublicPath(r) {
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		if _, ok := a.CurrentUser(r); ok {
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		if r.Header.Get("HX-Request") == "true" {
+			w.Header().Set("HX-Redirect", "/login")
+			http.Error(w, "unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		http.Redirect(w, r, "/login", http.StatusFound)
+	})
+}
+
+func isPublicPath(r *http.Request) bool {
+	switch r.URL.Path {
+	case "/healthz", "/login", "/oauth2/callback":
+		return true
+	}
+	return strings.HasPrefix(r.URL.Path, "/static/")
+}
+
+func (a *oidcAuth) HandleLogin(w http.ResponseWriter, r *http.Request) {
+	state, _ := randToken(24)
+	nonce, _ := randToken(24)
+
+	secure := isSecureRequest(r)
+	setCookie(w, a.stateCookieName, state, secure)
+	setCookie(w, a.nonceCookieName, nonce, secure)
+
+	http.Redirect(w, r, a.oauth2Config.AuthCodeURL(state, oidc.Nonce(nonce)), http.StatusFound)
+}
+
+func (a *oidcAuth) HandleCallback(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	state := r.URL.Query().Get("state")
+	if state == "" || state != cookieValue(r, a.stateCookieName) {
+		http.Error(w, "invalid state", http.StatusBadRequest)
+		return
+	}
+
+	token, err := a.oauth2Config.Exchange(ctx, r.URL.Query().Get("code"))
+	if err != nil {
+		http.Error(w, "token exchange failed", http.StatusBadRequest)
+		return
+	}
+
+	rawIDToken, ok := token.Extra("id_token").(string)
+	if !ok || rawIDToken == "" {
+		http.Error(w, "missing id_token", http.StatusBadRequest)
+		return
+	}
+
+	idToken, err := a.verifier.Verify(ctx, rawIDToken)
+	if err != nil {
+		http.Error(w, "invalid id_token", http.StatusBadRequest)
+		return
+	}
+
+	nonce := cookieValue(r, a.nonceCookieName)
+	if nonce == "" {
+		http.Error(w, "missing nonce", http.StatusBadRequest)
+		return
+	}
+	if idToken.Nonce != nonce {
+		http.Error(w, "invalid nonce", http.StatusBadRequest)
+		return
+	}
+
+	var claims struct {
+		Subject string `json:"sub"`
+		Email   string `json:"email"`
+		Name    string `json:"name"`
+	}
+	if err := idToken.Claims(&claims); err != nil {
+		http.Error(w, "invalid claims", http.StatusBadRequest)
+		return
+	}
+
+	var rawClaims map[string]any
+	_ = idToken.Claims(&rawClaims)
+	admin := extractAdminFromClaims(rawClaims)
+
+	sid, _ := randToken(32)
+	a.sessionsMu.Lock()
+	a.sessions[sid] = session{
+		user:      User{Subject: claims.Subject, Email: claims.Email, Name: claims.Name, Admin: admin},
+		expiresAt: time.Now().Add(24 * time.Hour),
+	}
+	a.sessionsMu.Unlock()
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     a.sessionCookie,
+		Value:    sid,
+		Path:     "/",
+		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
+		Secure:   isSecureRequest(r),
+	})
+
+	clearCookie(w, a.stateCookieName)
+	clearCookie(w, a.nonceCookieName)
+
+	http.Redirect(w, r, "/", http.StatusFound)
+}
+
+func (a *oidcAuth) HandleLogout(w http.ResponseWriter, r *http.Request) {
+	if c, err := r.Cookie(a.sessionCookie); err == nil && c.Value != "" {
+		a.sessionsMu.Lock()
+		delete(a.sessions, c.Value)
+		a.sessionsMu.Unlock()
+	}
+	clearCookie(w, a.sessionCookie)
+	http.Redirect(w, r, "/login", http.StatusFound)
+}
+
+func (a *oidcAuth) CurrentUser(r *http.Request) (*User, bool) {
+	c, err := r.Cookie(a.sessionCookie)
+	if err != nil || c.Value == "" {
+		return nil, false
+	}
+
+	a.sessionsMu.RLock()
+	s, ok := a.sessions[c.Value]
+	a.sessionsMu.RUnlock()
+	if !ok {
+		return nil, false
+	}
+	if time.Now().After(s.expiresAt) {
+		a.sessionsMu.Lock()
+		delete(a.sessions, c.Value)
+		a.sessionsMu.Unlock()
+		return nil, false
+	}
+	return &s.user, true
+}
+
+func randToken(n int) (string, error) {
+	b := make([]byte, n)
+	if _, err := rand.Read(b); err != nil {
+		return "", err
+	}
+	return base64.RawURLEncoding.EncodeToString(b), nil
+}
+
+func setCookie(w http.ResponseWriter, name, value string, secure bool) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     name,
+		Value:    value,
+		Path:     "/",
+		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
+		Secure:   secure,
+		MaxAge:   600,
+	})
+}
+
+func clearCookie(w http.ResponseWriter, name string) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     name,
+		Value:    "",
+		Path:     "/",
+		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
+		MaxAge:   -1,
+	})
+}
+
+func cookieValue(r *http.Request, name string) string {
+	c, err := r.Cookie(name)
+	if err != nil {
+		return ""
+	}
+	return c.Value
+}
+
+func isSecureRequest(r *http.Request) bool {
+	if r.TLS != nil {
+		return true
+	}
+	return strings.EqualFold(r.Header.Get("X-Forwarded-Proto"), "https")
+}
+
+func extractAdminFromClaims(claims map[string]any) bool {
+	if claims == nil {
+		return false
+	}
+	if v, ok := claims["admin"]; ok {
+		return anyToBool(v)
+	}
+	return false
+}
+
+func anyToBool(v any) bool {
+	switch vv := v.(type) {
+	case bool:
+		return vv
+	case string:
+		return strings.EqualFold(strings.TrimSpace(vv), "true")
+	case float64:
+		return vv != 0
+	default:
+		return false
+	}
+}
