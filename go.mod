@@ -6,17 +6,17 @@ toolchain go1.25.5
 
 require (
 	github.com/a-h/templ v0.3.960
-	github.com/coreos/go-oidc/v3 v3.14.1
 	github.com/golang-migrate/migrate/v4 v4.19.1
+	github.com/jborkows/k3sfun/go-web-infra v0.0.0-20260324111923-d8c3f337570e
 	github.com/uptrace/opentelemetry-go-extra/otelsql v0.3.2
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.64.0
 	go.opentelemetry.io/otel v1.39.0
-	golang.org/x/oauth2 v0.30.0
 	modernc.org/sqlite v1.36.0
 )
 
 require (
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
+	github.com/coreos/go-oidc/v3 v3.14.1 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/go-jose/go-jose/v4 v4.0.5 // indirect
@@ -32,8 +32,14 @@ require (
 	go.opentelemetry.io/otel/trace v1.39.0 // indirect
 	golang.org/x/crypto v0.45.0 // indirect
 	golang.org/x/exp v0.0.0-20230315142452-642cacee5cc0 // indirect
+	golang.org/x/oauth2 v0.30.0 // indirect
 	golang.org/x/sys v0.39.0 // indirect
 	modernc.org/libc v1.61.13 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.8.2 // indirect
 )
+
+// TODO: Remove this replace directive once the library is tagged
+// and use the git-based version instead:
+// go get github.com/jborkows/k3sfun/go-web-infra@latest
+replace github.com/jborkows/k3sfun/go-web-infra => ../go-web-infra

@@ -4,11 +4,11 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/jborkows/k3sfun/go-web-infra/oidc"
 	"shopping/internal/domain/admin"
 	"shopping/internal/domain/products"
 	"shopping/internal/domain/shoppinglist"
 	"shopping/internal/infrastructure/config"
-	"shopping/internal/infrastructure/oidc"
 )
 
 // Timeout constants for consistent request handling across all handlers.

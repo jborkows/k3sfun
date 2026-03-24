@@ -12,12 +12,12 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/jborkows/k3sfun/go-web-infra/oidc"
 	"shopping/internal/domain/admin"
 	"shopping/internal/domain/products"
 	"shopping/internal/domain/shoppinglist"
 	"shopping/internal/infrastructure/config"
 	"shopping/internal/infrastructure/logging"
-	"shopping/internal/infrastructure/oidc"
 	"shopping/internal/infrastructure/persistence/sqlite"
 	"shopping/internal/migrator"
 	"shopping/internal/web"
@@ -73,7 +73,7 @@ func main() {
 		log.Fatalf("load units: %v", err)
 	}
 
-	authenticator, err := oidc.New(cfg)
+	authenticator, err := oidc.New(cfg.AuthenticationConfig)
 	if err != nil {
 		log.Fatalf("auth: %v", err)
 	}

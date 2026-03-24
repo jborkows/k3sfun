@@ -1,9 +1,9 @@
 package views
 
 import (
+	"github.com/jborkows/k3sfun/go-web-infra/oidc"
 	"shopping/internal/domain/products"
 	"shopping/internal/domain/shoppinglist"
-	"shopping/internal/infrastructure/oidc"
 )
 
 // ProductGroup represents a group of products for display purposes.

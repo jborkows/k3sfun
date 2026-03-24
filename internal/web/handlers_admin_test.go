@@ -3,8 +3,8 @@ package web
 import (
 	"testing"
 
+	"github.com/jborkows/k3sfun/go-web-infra/oidc"
 	"shopping/internal/infrastructure/config"
-	"shopping/internal/infrastructure/oidc"
 )
 
 func TestServerIsAdmin_AdminClaim(t *testing.T) {
