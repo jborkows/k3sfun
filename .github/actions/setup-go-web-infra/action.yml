@@ -1,0 +1,21 @@
+name: Setup go-web-infra
+description: Checkout and setup go-web-infra dependency
+
+runs:
+  using: composite
+  steps:
+    - name: Checkout go-web-infra
+      uses: actions/checkout@v6
+      with:
+        repository: jborkows/k3sfun
+        path: go-web-infra-src
+        sparse-checkout: |
+          go-web-infra
+        sparse-checkout-cone-mode: false
+
+    - name: Setup go-web-infra
+      shell: bash
+      run: |
+        mv go-web-infra-src/go-web-infra go-web-infra
+        rmdir go-web-infra-src
+        sed -i 's|../go-web-infra|./go-web-infra|' go.mod

@@ -22,19 +22,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Checkout go-web-infra
-        uses: actions/checkout@v6
-        with:
-          repository: jborkows/k3sfun
-          path: ../go-web-infra
-          sparse-checkout: |
-            go-web-infra
-          sparse-checkout-cone-mode: false
-
-      - name: Copy go-web-infra into project
-        run: |
-          cp -r ../go-web-infra/go-web-infra .
-          sed -i 's|../go-web-infra|./go-web-infra|' go.mod
+      - name: Setup go-web-infra
+        uses: ./.github/actions/setup-go-web-infra
 
       - name: Set up Go
         uses: actions/setup-go@v5
@@ -64,19 +53,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Checkout go-web-infra
-        uses: actions/checkout@v6
-        with:
-          repository: jborkows/k3sfun
-          path: ../go-web-infra
-          sparse-checkout: |
-            go-web-infra
-          sparse-checkout-cone-mode: false
-
-      - name: Copy go-web-infra into project
-        run: |
-          cp -r ../go-web-infra/go-web-infra .
-          sed -i 's|../go-web-infra|./go-web-infra|' go.mod
+      - name: Setup go-web-infra
+        uses: ./.github/actions/setup-go-web-infra
 
       - name: Build Docker image
         run: docker build -t shopping:latest .
