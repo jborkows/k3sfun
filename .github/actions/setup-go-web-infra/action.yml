@@ -17,3 +17,4 @@ runs:
       shell: bash
       run: |
         sed -i 's|../go-web-infra|./go-web-infra|' go.mod
+        cat go.mod
