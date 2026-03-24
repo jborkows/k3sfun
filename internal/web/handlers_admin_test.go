@@ -3,7 +3,7 @@ package web
 import (
 	"testing"
 
-	"github.com/jborkows/k3sfun/go-web-infra/oidc"
+	"github.com/jborkows/k3sfunlib/oidc"
 	"shopping/internal/infrastructure/config"
 )
 

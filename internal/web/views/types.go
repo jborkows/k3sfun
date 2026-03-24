@@ -1,7 +1,7 @@
 package views
 
 import (
-	"github.com/jborkows/k3sfun/go-web-infra/oidc"
+	"github.com/jborkows/k3sfunlib/oidc"
 	"shopping/internal/domain/products"
 	"shopping/internal/domain/shoppinglist"
 )

@@ -5,7 +5,7 @@ go 1.26.1
 require (
 	github.com/a-h/templ v0.3.960
 	github.com/golang-migrate/migrate/v4 v4.19.1
-	github.com/jborkows/k3sfun/go-web-infra v0.0.1
+	github.com/jborkows/k3sfunlib v0.0.1
 	github.com/uptrace/opentelemetry-go-extra/otelsql v0.3.2
 	go.opentelemetry.io/otel v1.39.0
 	modernc.org/sqlite v1.36.0
@@ -36,5 +36,3 @@ require (
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.8.2 // indirect
 )
-
-replace github.com/jborkows/k3sfun/go-web-infra => ../go-web-infra

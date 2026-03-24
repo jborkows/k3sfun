@@ -7,7 +7,6 @@ WORKDIR /src
 ARG BUILD_VERSION=dev
 
 COPY go.mod go.sum ./
-COPY ../go-web-infra ./go-web-infra
 RUN go mod download
 
 COPY . .

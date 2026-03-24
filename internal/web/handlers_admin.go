@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jborkows/k3sfun/go-web-infra/oidc"
+	"github.com/jborkows/k3sfunlib/oidc"
 	"shopping/internal/web/views"
 )
 

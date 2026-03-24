@@ -40,9 +40,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Setup go-web-infra
-        uses: ./.github/actions/setup-go-web-infra
-
       - name: Fetch latest tag before build
         id: prebuild
         shell: bash

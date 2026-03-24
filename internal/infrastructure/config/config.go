@@ -3,7 +3,7 @@ package config
 import (
 	"bufio"
 	"errors"
-	"github.com/jborkows/k3sfun/go-web-infra/oidc"
+	"github.com/jborkows/k3sfunlib/oidc"
 	"os"
 	"strings"
 )
