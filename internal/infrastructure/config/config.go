@@ -4,20 +4,17 @@ import (
 	"bufio"
 	"errors"
 	"os"
+	"shopping/internal/infrastructure/oidc"
 	"strings"
 )
 
 type Config struct {
-	Addr         string
-	BaseURL      string
-	DBDSN        string
-	AuthDisabled bool
-	AdminEmails  []string
+	Addr        string
+	BaseURL     string
+	DBDSN       string
+	AdminEmails []string
 
-	OIDCIssuer       string
-	OIDCClientID     string
-	OIDCClientSecret string
-	OIDCRedirectURL  string
+	oidc.AuthenticationConfig
 
 	HTMXSrc string
 }

@@ -11,8 +11,6 @@ import (
 
 	"github.com/coreos/go-oidc/v3/oidc"
 	"golang.org/x/oauth2"
-
-	"shopping/internal/infrastructure/config"
 )
 
 type User struct {
@@ -30,7 +28,15 @@ type Authenticator interface {
 	CurrentUser(r *http.Request) (*User, bool)
 }
 
-func New(cfg config.Config) (Authenticator, error) {
+type AuthenticationConfig struct {
+	AuthDisabled     bool
+	OIDCIssuer       string
+	OIDCClientID     string
+	OIDCClientSecret string
+	OIDCRedirectURL  string
+}
+
+func New(cfg AuthenticationConfig) (Authenticator, error) {
 	if cfg.AuthDisabled {
 		return &disabledAuth{}, nil
 	}
@@ -75,7 +81,7 @@ type session struct {
 	expiresAt time.Time
 }
 
-func newOIDC(cfg config.Config) (*oidcAuth, error) {
+func newOIDC(cfg AuthenticationConfig) (*oidcAuth, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
