@@ -38,7 +38,16 @@ jobs:
           fi
 
       - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Checkout go-web-infra
         uses: actions/checkout@v4
+        with:
+          repository: jborkows/k3sfun
+          path: ../go-web-infra
+          sparse-checkout: |
+            go-web-infra
+          sparse-checkout-cone-mode: false
 
       - name: Fetch latest tag before build
         id: prebuild
