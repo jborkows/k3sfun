@@ -1,9 +1,11 @@
 package web
 
 import (
+	"log/slog"
 	"net/http"
 	"time"
 
+	"github.com/jborkows/k3sfun/go-web-infra/middleware"
 	"github.com/jborkows/k3sfun/go-web-infra/oidc"
 	"shopping/internal/domain/admin"
 	"shopping/internal/domain/products"
@@ -61,9 +63,7 @@ func (s *Server) Routes() http.Handler {
 		http.ServeFile(w, r, "web/static/icons/cart.svg")
 	}))
 
-	mux.Handle("GET /login", http.HandlerFunc(s.auth.HandleLogin))
-	mux.Handle("GET /oauth2/callback", http.HandlerFunc(s.auth.HandleCallback))
-	mux.Handle("POST /logout", http.HandlerFunc(s.auth.HandleLogout))
+	oidc.RegisterAuthRoutes(mux, s.auth)
 
 	mux.Handle("GET /", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { http.Redirect(w, r, "/products", http.StatusFound) }))
 
@@ -79,8 +79,8 @@ func (s *Server) Routes() http.Handler {
 	}))
 
 	// Apply middleware chain: OpenTelemetry tracing -> Request logging -> Router
-	return ChainMiddleware(mux,
-		OtelMiddleware("shopping"),
-		LoggingMiddleware,
+	return middleware.ChainMiddleware(mux,
+		middleware.OtelMiddleware("shopping"),
+		middleware.LoggingMiddleware(middleware.WithLogger(slog.Default())),
 	)
 }
