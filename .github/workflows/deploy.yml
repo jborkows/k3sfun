@@ -53,6 +53,7 @@ jobs:
         run: |
           cp -r ../go-web-infra/go-web-infra .
           sed -i 's|../go-web-infra|./go-web-infra|' go.mod
+          cat go.mod
 
       - name: Fetch latest tag before build
         id: prebuild
