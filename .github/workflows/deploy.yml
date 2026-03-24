@@ -49,6 +49,11 @@ jobs:
             go-web-infra
           sparse-checkout-cone-mode: false
 
+      - name: Copy go-web-infra into project
+        run: |
+          cp -r ../go-web-infra/go-web-infra .
+          sed -i 's|../go-web-infra|./go-web-infra|' go.mod
+
       - name: Fetch latest tag before build
         id: prebuild
         shell: bash
