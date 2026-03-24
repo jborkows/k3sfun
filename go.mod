@@ -1,11 +1,12 @@
 module github.com/jborkows/k3sfun/go-web-infra
 
-go 1.25.0
+go 1.26.1
 
-toolchain go1.25.5
+toolchain go1.26.1
 
 require (
 	github.com/coreos/go-oidc/v3 v3.14.1
+	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.64.0
 	golang.org/x/oauth2 v0.30.0
 )
 

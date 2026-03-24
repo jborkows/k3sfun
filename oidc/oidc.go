@@ -64,8 +64,6 @@ type AuthenticationConfig struct {
 	OIDCRedirectURL string
 }
 
-// New creates a new Authenticator based on the provided configuration.
-// If AuthDisabled is true, returns a disabledAuth that allows all requests.
 func New(cfg AuthenticationConfig) (Authenticator, error) {
 	if cfg.AuthDisabled {
 		return &disabledAuth{}, nil
@@ -73,8 +71,6 @@ func New(cfg AuthenticationConfig) (Authenticator, error) {
 	return newOIDC(cfg)
 }
 
-// disabledAuth is a no-op authenticator that allows all requests.
-// It returns a development user for CurrentUser.
 type disabledAuth struct{}
 
 func (a *disabledAuth) Middleware(next http.Handler) http.Handler {
@@ -94,7 +90,6 @@ func (a *disabledAuth) CurrentUser(r *http.Request) (*User, bool) {
 	return &User{Subject: "dev", Email: "dev@example.com", Name: "Dev"}, true
 }
 
-// oidcAuth implements OIDC authentication.
 type oidcAuth struct {
 	oauth2Config oauth2.Config
 	verifier     *oidc.IDTokenVerifier
@@ -114,7 +109,6 @@ type session struct {
 	expiresAt time.Time
 }
 
-// newOIDC creates a new OIDC authenticator.
 func newOIDC(cfg AuthenticationConfig) (*oidcAuth, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -148,7 +142,6 @@ func newOIDC(cfg AuthenticationConfig) (*oidcAuth, error) {
 	return auth, nil
 }
 
-// cleanupExpiredSessions periodically removes expired sessions to prevent memory leaks.
 func (a *oidcAuth) cleanupExpiredSessions() {
 	ticker := time.NewTicker(5 * time.Minute)
 	defer ticker.Stop()
@@ -163,7 +156,6 @@ func (a *oidcAuth) cleanupExpiredSessions() {
 	}
 }
 
-// removeExpired removes all sessions that have passed their expiration time.
 func (a *oidcAuth) removeExpired() {
 	now := time.Now()
 	a.sessionsMu.Lock()
@@ -176,7 +168,6 @@ func (a *oidcAuth) removeExpired() {
 	}
 }
 
-// Close stops the background cleanup goroutine.
 func (a *oidcAuth) Close() {
 	close(a.stopCleanup)
 }
