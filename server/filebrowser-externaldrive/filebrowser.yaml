@@ -64,6 +64,7 @@ data:
         server {
             listen 8000;
             client_max_body_size 10G;
+            absolute_redirect off;
 
             location /healthz {
                 return 200 'OK';
